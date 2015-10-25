@@ -10,17 +10,30 @@ void setup() {
 
   // initialize serial communications at 9600 bps:
   Serial.begin(115200);
-  Serial.println("time,\tLDR,\tLED");
+  Serial.println("\n\ntime,\tLDR,\tLED");
 }
 
 
 void loop() {
 
-  // First put LED to ground;
+	int time_ctrl;
 
-  analogWrite(PIN_LED,128);
-  int i =0;
-  while (i<1000){
+  analogWrite(PIN_LED, 0);
+  time_ctrl = millis();
+  while (millis() < time_ctrl + 20){
+    ldr = analogRead(PIN_LDR);
+  	time = micros();
+    Serial.print(time);
+    Serial.print(",\t");
+    Serial.print(ldr);
+    Serial.print(",\t");
+    Serial.println("0");
+    delayMicroseconds(100);
+  }
+
+  analogWrite(PIN_LED, 128);
+  time_ctrl = millis();
+  while (millis() < time_ctrl + 300){
     ldr = analogRead(PIN_LDR);
   	time = micros();
     Serial.print(time);
@@ -28,20 +41,21 @@ void loop() {
     Serial.print(ldr);
     Serial.print(",\t");
     Serial.println("128");
-    delayMicroseconds(1000);
-    i++;
+    delayMicroseconds(100);
   }
-  analogWrite(PIN_LED,138);
-  while (1) {
+
+  analogWrite(PIN_LED, 148);
+  time_ctrl = millis();
+  while (millis() < time_ctrl + 120){
     ldr = analogRead(PIN_LDR);
-    time = micros();
+  	time = micros();
     Serial.print(time);
     Serial.print(",\t");
     Serial.print(ldr);
     Serial.print(",\t");
-    Serial.println("138");
+    Serial.println("148");
+    delayMicroseconds(100);
   }
 
-
-
+	delay(1000000);
 }
