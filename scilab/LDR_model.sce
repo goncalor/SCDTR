@@ -17,4 +17,8 @@ lux = logspace(pt1_log(1), pt2_log(1));
 
 r = 10 ** (a * log10(lux) + b);
 
+scf(0);
 plot2d('ll', lux, r)
+xtitle('LDR Characteristic', 'Illuminance (lx)', 'Resistance (Ω)');
+xgrid()
+xs2pdf(0,'LDR_model');
