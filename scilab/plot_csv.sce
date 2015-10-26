@@ -12,6 +12,11 @@ data_values = csvRead(filename, separator, [], [], [], [], [], 1);
 col_names = strsplit(mgetl(filename, 1), separator);
 scale = evstr(x_mdialog('Enter scaling factors for each column', col_names(2:$), string(ones(col_names(2:$)))));
 
+scaled_values = data_values
+for i = 1:size(data_values,2)-1,
+    scaled_values(:,i+1) = data_values(:,i+1)*scale(i)
+end
+
 // define colors and descriptions for columns of data
 colors = {'r-','g-','b-', 'c-', 'm-', 'k-', 'w-'};
 descriptions = col_names(2:$);
@@ -20,7 +25,7 @@ descriptions = col_names(2:$);
 f = scf();
 for i = 1:size(data_values,2)-1,
     // plot columns, with different colors
-    plot(data_values(:,1), data_values(:,i+1)*scale(i), colors(i));
+    plot(data_values(:,1), scaled_values(:,i+1), colors(i));
 end
 
 //
