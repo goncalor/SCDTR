@@ -2,7 +2,7 @@
 mode(0)
 final_val_LDR = 3.06;   // Volt
 final_val_LED = 2.5
-step_time = 22350;   // microseconds
+step_time = 18997;   // microseconds
 
 [aux, min_index] = min(abs(scaled_values(:,2) - final_val_LDR * (1 - exp(-1))));
 
