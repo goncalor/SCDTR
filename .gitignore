@@ -72,3 +72,6 @@
 # Debug files
 *.dSYM/
 
+#MATLAB
+*.mat
+*.asv
