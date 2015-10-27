@@ -63,9 +63,9 @@ if length(s)>0 && s(1)=='<'
     end
     % output to screen
     y= arduino_get_array(1); % 1 == show the array while loading
-    figure
-    plot(y(:,end)-y(1,end),y(:,2:end-2), '.-')
-    drawnow
+    %figure
+    %plot(y(:,end)-y(1,end),y(:,2:end-2), '.-')
+    %drawnow
     save('output','y');
     return
 end

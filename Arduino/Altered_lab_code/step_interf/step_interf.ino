@@ -15,10 +15,11 @@ int analogOutPin = 9; // Analog output pin that the LED is attached to
 int sensorValue = 0;        // value read from the pot
 int outputValue = 0;        // value output to the PWM (analog out)
 
-#define SENSORBUF 120
+#define SENSORBUF 150
 
 int sensorValuesArray[SENSORBUF*2];
-unsigned long t0, t1, timeArray[SENSORBUF*2];
+unsigned long t0, t1, aux;
+unsigned int timeArray[SENSORBUF*2];
 int n;
 
 int AnalogReadAvg(int pin,int n){
@@ -32,20 +33,17 @@ int AnalogReadAvg(int pin,int n){
 
 
 void serial_print_data_n() {
-  Serial.print("nLines=100 ti[us]="); // going to send 100 lines
+  Serial.print("nLines=240 ti[us]="); // going to send 100 lines
   Serial.print(t0);
-  Serial.println(" (n v1 v2 t1 t2):");
+  Serial.println(" (n v1 t1):");
 
-  for (n=0; n<SENSORBUF*2; n+=2) {
-    Serial.print(n>>1); // n=0,2,4,6,... divided by two displays 0,1,2,3,...
+  for (n=0; n<SENSORBUF*2; n++) {
+    Serial.print(n); // n=0,2,4,6,... divided by two displays 0,1,2,3,...
     Serial.print(" ");
     Serial.print(sensorValuesArray[n]);
     Serial.print(" ");
-    Serial.print(sensorValuesArray[n+1]);
-    Serial.print(" ");
-    Serial.print(timeArray[n]);
-    Serial.print(" ");
-    Serial.println(timeArray[n+1]);
+    Serial.println(timeArray[n]);
+
   }
 }
 
@@ -94,7 +92,7 @@ void pwm_config(int freqId) {
 // --------------------------------------------------
 
 int Ts= 1000; // 1 msec
-int tmpInt, loopMode= 0, loopOutputFlag= 1;
+int loopMode= 1, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
 
 #define BUFSZ 100
@@ -134,14 +132,15 @@ void step_response() {
         break;
       case 1:
         // just read analog channel 1 (not zero)
-        n++;
-        sensorValuesArray[n]= AnalogReadAvg(1,3);
-        timeArray[n]= micros();
+       // n++;
+        sensorValuesArray[n]= AnalogReadAvg(0,3);
+		aux= micros()/100;
+        timeArray[n]= (unsigned int)aux;
         n++;
         break;
       case 2:
         // just read analog channel 1, and consider it is digital
-        n++;
+        //n++;
         sensorValuesArray[n]= digitalRead(15);
         timeArray[n]= micros();
         n++;
@@ -229,18 +228,6 @@ void main_switch() {
         Serial.println(Ts);
         break;
 
-        
-      case 'm':
-        // select the loop mode
-        if (buf[1]=='c') {
-          config_mode(&buf[2]);
-          Serial.print(buf);
-          break;
-        }
-        loopMode= atoi(&buf[1]);
-        sprintf(buf, "loopMode=%d\n", loopMode);
-        Serial.print(buf);
-        break;
 
       case 's':
         // step response (use ctrl_ref value)
