@@ -53,15 +53,18 @@ while 1
 end
 
 
+% s is one single command. can be a string
 function parse_single_cmd(s)
 
+% if the only command is '<'
 if length(s)>0 && s(1)=='<'
+    % if 's' is not only a single char
     if length(s)>1
         % output to a file
         arduino_get_array(s(2:end));
         return
     end
-    % output to screen
+    % output to screen (1 is stdout)
     y= arduino_get_array(1); % 1 == show the array while loading
     %figure
     %plot(y(:,end)-y(1,end),y(:,2:end-2), '.-')

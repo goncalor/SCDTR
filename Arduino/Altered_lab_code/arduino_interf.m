@@ -91,6 +91,7 @@ return; % end of main function
 
 
 % -------------------------------------------------------------
+% fout is a filename
 function y= arduino_get_array_main(sp1, fout)
 
 if nargin<2
@@ -137,6 +138,7 @@ return
 
 
 % -------------------------------------------------------------
+% receives: serial port, string to send, ...
 function y= send_recv_str(sp1, str2send, estr)
 if isempty(str2send)
     y= '';
@@ -148,13 +150,17 @@ if nargin<3
 end
 
 % send command, and wait response
-%
 fwrite(sp1, str2send);
-y= fread_till_estr(sp1, estr); y= char(y);
+% y will contain numbers representing each byte of sp1
+y= fread_till_estr(sp1, estr);
+% convert all numbers in y to actual charactes
+y= char(y);
 
 % remove 'str2send' in the begining and 'estr' in the end
-%
-N1= length(str2send); N2= length(estr); N3= length(y);
+N1= length(str2send);
+N2= length(estr);
+N3= length(y);
+
 if N1+N2 > N3
     warning('string received is too small');
 else
@@ -163,21 +169,23 @@ else
     y= y(N1+3:end); % remove also the CR+LF
     y= y(1:end-N2);
     
-    % remove end of lines
-    ind= find(y~=10); y= y(ind); % Line Feed
+    % find positions of all characters that are not newlines
+    ind= find(y~=10);
+    y= y(ind); % remove newlines
     %ind= find(y~=13); y= y(ind); % Carriage Return
 end
 
 return
 
 
+% read untir 'estr' is found
 function buff= fread_till_estr(sp1, estr)
 done= 0;
 buff= [];
 N= length(estr);
 while ~done
-    [y, ylen]= fread(sp1,1);
-    buff= [buff, y];
+    [y, ylen]= fread(sp1,1); % read one byte at a time
+    buff= [buff, y];    % concatenate y to buff
     if length(buff) >= N && strcmp(estr, char(buff(end-N+1:end)))
         done= 1;
     end
