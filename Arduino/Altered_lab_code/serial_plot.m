@@ -13,6 +13,7 @@ pause(1)
 ser_port.RecordName = 'myfile.txt';
 record(ser_port)
 fprintf(ser_port, 'L\n');
+get(ser_port)
 data = plot_real_time(ser_port, 499,5000)
 
 
