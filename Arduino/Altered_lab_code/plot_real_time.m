@@ -1,17 +1,22 @@
-samples_to_display = 100;
+
+function data = plot_real_time(ser_port, samples_to_display, ...
+    total_samples)
+%ser_port = serial('/dev/ttyACM0', 'BaudRate', 115200);
 
 figure;
-xlim([0 100])
-data =zeros(1, 500);
-for i=1:500
+
+
+for i=1:total_samples
+    data(i,:) = rand(1,3);%acquire_sample(ser_port);
     
- data(i) = rand();
- 
- 
- 
- if i > samples_to_display
-     plot(data(i-samples_to_display:i));
- end
- drawnow
- 
+    if i > samples_to_display
+        plot(i-samples_to_display:i, ...
+            data(i-samples_to_display:i,2:end));
+    else
+        plot(1:i,data(1:i,2:end));
+    end
+    drawnow
+end
+
+%fclose(ser)
 end
