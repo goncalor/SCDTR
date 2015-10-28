@@ -6,62 +6,67 @@
  
 */
 
-#define SENSORBUF 100
+#define SENSORBUF 1
 #define BUFSZ 100
 #define BUFSZ2 10
+#define BAUDRATE 115200
+#define SAMPLE_TIME 5000
+#define INTEGRAL_TIME 0.001
+#define GAIN_K 2.0	
+#define GAIN_D 0
 
-// These constants won't change.  They're used to give names
-// to the pins used:
-const int analogInPin = 0;  // Analog input pin that the potentiometer is attached to
+const int analogInPin = 0;  // Analog input pin that ldr
 //const int analogOutPin = 9; // Analog output pin that the LED is attached to
 int analogOutPin = 9; // Analog output pin that the LED is attached to
-
-int sensorValue = 0;        // value read from the pot
-int outputValue = 0;        // value output to the PWM (analog out)
 
 char buf[BUFSZ];
 char buf2[BUFSZ2];
 
+byte ctrl_uArray[SENSORBUF];
 int sensorValuesArray[SENSORBUF];
 unsigned long t0, t1, timeArray[SENSORBUF];
 int n;
 
 int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y;
-int ctrl_u_eq=0, ctrl_y_eq=0;
-int ctrl_e1, ctrl_e2, ctrl_u1, ctrl_u2;
-double a0=2.0, a1=0.0, a2=0.0, b1=0.0, b2=0.0;
-int Ts= 1000; // 1 msec
-int tmpInt, loopMode= 0, loopOutputFlag= 1;
+//int ctrl_e1, ctrl_e2, ctrl_u1, ctrl_u2;
+//double a0=2.0, a1=0.0, a2=0.0, b1=0.0, b2=0.0;
+unsigned int Ts= SAMPLE_TIME; // 1 msec
+double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D;
+int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
 
+int AnalogReadAvg(int pin,int n){
+	int i;
+	int ReadAvg=0;
+	for(i=0;i<n;i++)
+		ReadAvg+=analogRead(pin);
+	
+	return ReadAvg/n;
+}
 
-
-void serial_print_data_n() {
-  Serial.print("nLines=100 ti[us]="); // going to send 100 lines
-  Serial.print(t0);
-  Serial.println(" (n v1 v2 t1 t2):");
-
-  for (n=0; n<200; n+=2) {
-    Serial.print(n>>1); // n=0,2,4,6,... divided by two displays 0,1,2,3,...
-    Serial.print(" ");
+void serial_print_ctrl_data() {
+  for (n=0; n<SENSORBUF; n++) {
     Serial.print(sensorValuesArray[n]);
     Serial.print(" ");
-    Serial.print(sensorValuesArray[n+1]);
+    Serial.print(ctrl_uArray[n]);
     Serial.print(" ");
-    Serial.print(timeArray[n]);
-    Serial.print(" ");
-    Serial.println(timeArray[n+1]);
+    Serial.println(timeArray[n]);
   }
 }
 
 
 int serial_read_str(char *buf, int buflen){
-/* read till the end of the buffer or a terminating chr
-*/
+/* read till the end of the buffer or a terminating chr*/
   int i, c;
   if (Serial.available() <= 0) {
     return 0;
   }
+  				pinMode(13,OUTPUT);
+				digitalWrite(13,HIGH);
+				delay(1000);
+				digitalWrite(13,LOW);
+				delay(1000);
+				digitalWrite(13,HIGH);
   for (i=0; i<buflen-1; i++) {
     c= Serial.read();
     if (c==0 || c==0x0A || c==0x0D) break;
@@ -69,7 +74,7 @@ int serial_read_str(char *buf, int buflen){
     *buf++= c;
     //Serial.print((char)c);
     if (Serial.available() <= 0) {
-      delay(10); // 10milliseconds = 96bits / 9600bits/sec
+      delay(10); // 10milliseconds = BAUDRATEbits / BAUDRATEbits/sec
       if (Serial.available() <= 0) break;
     }
   }
@@ -94,7 +99,7 @@ void pwm_config(int freqId) {
   TCCR1B |= prescalerVal;
 }
 
-
+/*
 void ctrl_finite_loop() {
 //  ctrl_ref= 127;
 
@@ -213,56 +218,91 @@ void ctrl_infinite_loop() {
   // stop the motor
   analogWrite(analogOutPin, 0);
 }
-
+*/
 void ctrl_loop() {
+	double full_ctrl_u,c;
+	unsigned long write_time, end_time,start_time,t0,ctrl_ui=0,ctrl_ui_before=0;
+	long delay_time;
+	
+	//Serial.println("[write_t,\t ctrl_u,\t ctrl_y,\t ctrl_e,\t ctrl_ui,\t ctrl_ref,\t sample_time]");
+	t0=micros();
+	while(1){
+		start_time = micros();
+		ctrl_y = AnalogReadAvg(analogInPin,3);
+		ctrl_e = map(ctrl_ref, 0, 254, 0, 1023) - ctrl_y;
+		//Proportional
+		//full_ctrl_u = gain_k*ctrl_e;
+		/*Proportinal-Integral*/
+		ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * ctrl_e;
+		ctrl_ui_before = ctrl_ui;
+		full_ctrl_u = gain_k * ctrl_e + gain_k*integral_time * (ctrl_ui + ctrl_e);
 
+		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
+		ctrl_u = constrain(full_ctrl_u, 0, 255);
+
+		write_time = micros();
+		analogWrite(analogOutPin, ctrl_u);
+
+		Serial.print(write_time-t0);
+		Serial.print(",\t");
+		Serial.print(full_ctrl_u);
+		Serial.print(",\t ");
+		Serial.print(ctrl_y);
+		Serial.print(",\t ");
+		Serial.print(ctrl_e);
+		Serial.print(",\t ");
+		//Serial.print(ctrl_ui);
+		//Serial.print(",\t ");
+		Serial.println(map(ctrl_ref, 0, 254, 0, 1023));
+		//Serial.print(",\t");
+
+
+		if (Serial.available() > 0) {
+		  c= Serial.read();
+		  buf2[0]= c;
+		  buf2[1]= '\0';
+		  Serial.print(buf2);
+		  analogWrite(analogOutPin, 0); //turn LED off
+		  break; // break the loop
+		}
+		
+		end_time = micros();
+		delay_time = Ts - (end_time - start_time);
+		delayMicroseconds(delay_time);
+/*		if(delay_time > 0)
+			Serial.println("OK");
+		else
+			Serial.println("NOT OK");*/
+	}
+
+/*
   int c;
   pwm_config(1); // set PWM at max freq
 
   // ctrl loop:
   t0= micros(); t1= t0+Ts; // 1 msec
-
-  for (n=0; n<200; n+=2, t1= t1+Ts) {
-    if (n>=198)
-      n= 0; // make an infinite loop
-    
+  Serial.println("[Sensor CTRL_U TIME(us)]");
+  for (n=0; n<SENSORBUF; n++, t1= t1+Ts) {
     // while 1, if time
     while (micros()<t1)
       // do nothing
       ;
 
     //   read sensors
-    switch (loopMode) {
 
-      case 0:
-        // the default control mode has a fixed ref
-        // just read analog channel 1 (not zero)
-        //sensorValuesArray[n]= analogRead(0);
-        timeArray[n]= micros();
+	// the default control mode has a fixed ref
+	// just read analog channel 1 (not zero)
+	//sensorValuesArray[n]= analogRead(0);
+	timeArray[n]= micros();
+	ctrl_y= analogRead(analogInPin);
+	sensorValuesArray[n]= ctrl_y;
 
-        ctrl_y= analogRead(1);
-        sensorValuesArray[n+1]= ctrl_y;
-        timeArray[n+1]= micros();
-        break;
-
-      case 9:
-        // read two channels, 0=ref, 1=sensor
-        // the extra analogRead makes the loop slower
-        ctrl_ref= analogRead(0);
-        sensorValuesArray[n]= ctrl_ref;
-        timeArray[n]= micros();
-
-        ctrl_y= analogRead(1);
-        sensorValuesArray[n+1]= ctrl_y;
-        timeArray[n+1]= micros();
-        break;
-    }
 
     //   calc ctrl
     ctrl_e= ctrl_ref - ctrl_y;
     ctrl_u= a0*ctrl_e +a1*ctrl_e1 +a2*ctrl_e2
                       -b1*ctrl_u1 -b2*ctrl_u2;
-    sensorValuesArray[n]= ctrl_u; // save values before truncation
+    ctrl_uArray[n]= ctrl_u; // save values before truncation
     if (ctrl_u > 255) ctrl_u=255;
     if (ctrl_u < 0) ctrl_u=0;
     analogWrite(analogOutPin, ctrl_u);
@@ -282,10 +322,15 @@ void ctrl_loop() {
       Serial.print(buf2);
       break; // break the loop
     }
+	
+	if (n==SENSORBUF-1){
+		serial_print_ctrl_data();
+		n= 0; // make an infinite loop
+    }
   }
 
-  // stop the motor
-  analogWrite(analogOutPin, 0);
+ // Turn the LED off
+  analogWrite(analogOutPin, 0);*/
 }
 
 // --------------------------------------------------
@@ -335,13 +380,19 @@ void main_switch() {
 // read cmd and execute it
   if (serial_read_str(&buf[0], BUFSZ)) {
     //Serial.print("-- Got cmd: ");
-    Serial.println(buf); // echo the command just received
+    //Serial.println(buf); // echo the command just received
 
     // switch cmd
     switch (buf[0]) {
       case '\0':
           break;
 
+		  
+		case 'L':
+				//Start our controler 
+				//that starts a flow of data to the serial port
+				ctrl_loop();
+        break;
       case '?':
         Serial.println("ver 8.10.2015");
         break;
@@ -363,7 +414,7 @@ void main_switch() {
         Serial.print(buf);
         break;
         
-      case 'm':
+      /*case 'm':
         // select the loop mode
         if (buf[1]=='c') {
           config_mode(&buf[2]);
@@ -373,8 +424,29 @@ void main_switch() {
         loopMode= atoi(&buf[1]);
         sprintf(buf, "loopMode=%d\n", loopMode);
         Serial.print(buf);
+        break;*/
+			
+      case 'c':
+        // config the controller
+        switch (buf[1]) {
+          case '0': x= atof(&buf[2]); gain_k= x; break;
+          case '1': x= atof(&buf[2]); integral_time= x; break;
+          case '2': x= atof(&buf[2]); gain_d= x; break;
+          default: x=0.0; Serial.print('E');
+        }
+        Serial.print("x="); Serial.println(x);
         break;
+		
+      case 'C':
+        // get the current controller
+        Serial.print("Proportional gain: ");Serial.println(gain_k);
+		Serial.print("Integral time: ");Serial.println(integral_time);
+		Serial.print("Differential gain: "); Serial.println(gain_d);
 
+        break;
+		
+		
+		/* PROF CONTROLER
       case 'c':
         // config the controller
         switch (buf[1]) {
@@ -387,17 +459,9 @@ void main_switch() {
         }
         Serial.print("x="); Serial.println(x);
         break;
-
+		
       case 'C':
         // get the current controller
-        /*
-        Serial.print("par=[");
-        Serial.print(a0); Serial.print(' ');
-        Serial.print(a1); Serial.print(' ');
-        Serial.print(a2); Serial.print(' ');
-        Serial.print(b1); Serial.print(' ');
-        Serial.print(b2); Serial.println("]");
-        */
         Serial.print("Cz= (");
         Serial.print(a0); Serial.print(" + ");
         Serial.print(a1); Serial.print(" Z^-1 + ");
@@ -405,7 +469,7 @@ void main_switch() {
         Serial.print(b1); Serial.print(" Z^-1 + ");
         Serial.print(b2); Serial.println(" Z^-2)");
         break;
-
+		*/
       case 'i':
         // read sensor
         {
@@ -440,7 +504,7 @@ void main_switch() {
         Serial.print(buf);
         break;
 
-      case 'x':
+      /*case 'x':
         // run the (finite time) control loop
         ctrl_finite_loop();
         if (ctrl_verbose_flag)
@@ -461,7 +525,7 @@ void main_switch() {
       case '<':
         // get the data buffers
         serial_print_data_n();
-        break;
+        break;*/
 
       case 'd':
         // digital input/output
@@ -520,8 +584,8 @@ void main_switch() {
 
 // --------------------------------------------------
 void setup() {
-  // start serial port at 9600 bps:
-  Serial.begin(9600);
+  // start serial port at BAUDRATE bps:
+  Serial.begin(BAUDRATE);
 }
 
 void loop() {
