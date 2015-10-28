@@ -1,4 +1,4 @@
-%% Arduino Step Response Scritp
+%% Arduino Step Response Script
 clear
 clc
 

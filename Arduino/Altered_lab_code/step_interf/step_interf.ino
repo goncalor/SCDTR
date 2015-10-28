@@ -56,13 +56,12 @@ void serial_print_steady_state() {
   for (n=0; n<=255; n++) {
     Serial.print(n);
     Serial.print(" ");
-    Serial.print(sensorValuesArray[n]);
+    Serial.println(sensorValuesArray[n]);
   }
 }
 
 
-int serial_read_str(char *buf, int buflen)
-{
+int serial_read_str(char *buf, int buflen){
 /* read till the end of the buffer or a terminating chr
 */
   int i, c;
@@ -101,18 +100,17 @@ void pwm_config(int freqId) {
   TCCR1B |= prescalerVal;
 }
 
-void steady_state_response()
-{
+void steady_state_response(){
 	int ref;
 	unsigned long aux;
 
 	for(ref=0; ref<=255; ref++)
 	{
-        sensorValuesArray[ref]= AnalogReadAvg(0,3);
-        timeArray[ref]= ref;
+		analogWrite(analogOutPin, ref);
 		delay(STEADY_STATE_DELAY);
+        sensorValuesArray[ref]= AnalogReadAvg(0,3);
 	}
-
+	analogWrite(analogOutPin, 0);
 }
 
 // --------------------------------------------------
@@ -268,8 +266,7 @@ void main_switch() {
 		case 'r':
 			// steady state response
 			steady_state_response();
-			if (ctrl_verbose_flag)
-				serial_print_steady_state();
+			serial_print_steady_state();
 			break;
 
       case 'i':

@@ -6,6 +6,10 @@
  
 */
 
+#define SENSORBUF 100
+#define BUFSZ 100
+#define BUFSZ2 10
+
 // These constants won't change.  They're used to give names
 // to the pins used:
 const int analogInPin = 0;  // Analog input pin that the potentiometer is attached to
@@ -15,9 +19,22 @@ int analogOutPin = 9; // Analog output pin that the LED is attached to
 int sensorValue = 0;        // value read from the pot
 int outputValue = 0;        // value output to the PWM (analog out)
 
-int sensorValuesArray[200];
-unsigned long t0, t1, timeArray[200];
+char buf[BUFSZ];
+char buf2[BUFSZ2];
+
+int sensorValuesArray[SENSORBUF];
+unsigned long t0, t1, timeArray[SENSORBUF];
 int n;
+
+int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y;
+int ctrl_u_eq=0, ctrl_y_eq=0;
+int ctrl_e1, ctrl_e2, ctrl_u1, ctrl_u2;
+double a0=2.0, a1=0.0, a2=0.0, b1=0.0, b2=0.0;
+int Ts= 1000; // 1 msec
+int tmpInt, loopMode= 0, loopOutputFlag= 1;
+int ctrl_verbose_flag= 0; //1;
+
+
 
 void serial_print_data_n() {
   Serial.print("nLines=100 ti[us]="); // going to send 100 lines
@@ -38,8 +55,7 @@ void serial_print_data_n() {
 }
 
 
-int serial_read_str(char *buf, int buflen)
-{
+int serial_read_str(char *buf, int buflen){
 /* read till the end of the buffer or a terminating chr
 */
   int i, c;
@@ -76,82 +92,6 @@ void pwm_config(int freqId) {
   TCCR1B &= ~prescalerVal; // configuring pins 9 and 10
   prescalerVal= freqId;
   TCCR1B |= prescalerVal;
-}
-
-
-// --------------------------------------------------
-
-int ctrl_ref=123, ctrl_e, ctrl_u, ctrl_y;
-int ctrl_u_eq=0, ctrl_y_eq=0;
-int ctrl_e1, ctrl_e2, ctrl_u1, ctrl_u2;
-double a0=2.0, a1=0.0, a2=0.0, b1=0.0, b2=0.0;
-int Ts= 1000; // 1 msec
-int tmpInt, loopMode= 0, loopOutputFlag= 1;
-int ctrl_verbose_flag= 0; //1;
-
-#define BUFSZ 100
-char buf[BUFSZ];
-#define BUFSZ2 10
-char buf2[BUFSZ2];
-
-void step_response() {
-  // get a step response
-  //  ctrl_ref= 127;
-  
-  //Serial.println("-- Entering the open loop acq.");
-  pwm_config(1);
-
-  //   set DAC
-  if (loopOutputFlag)
-    analogWrite(analogOutPin, ctrl_ref);
-
-  // timed loop:
-  t0= micros(); t1= t0+Ts; // 1 msec
-
-  for (n=0; n<200; t1= t1+Ts) {
-    // while 1, if time
-    while (micros()<t1)
-      // loop timing, do nothing
-      ;
-
-    //   read sensors
-    switch (loopMode) {
-      case 0:
-        // read two channels
-        sensorValuesArray[n]= analogRead(0);
-        timeArray[n]= micros();
-        sensorValuesArray[n+1]= analogRead(1);
-        timeArray[n+1]= micros();
-        n+=2;
-        break;
-      case 1:
-        // just read analog channel 1 (not zero)
-        n++;
-        sensorValuesArray[n]= analogRead(1);
-        timeArray[n]= micros();
-        n++;
-        break;
-      case 2:
-        // just read analog channel 1, and consider it is digital
-        n++;
-        sensorValuesArray[n]= digitalRead(15);
-        timeArray[n]= micros();
-        n++;
-        break;
-      default:
-        // invalid mode
-        n+=2;
-        Serial.println("err inv loopMode");
-      
-    }
-    
-  }
-
-  // stop the motor
-  if (loopOutputFlag)
-    analogWrite(analogOutPin, 0);
-
-  //Serial.println("-- Open loop acq done.");
 }
 
 
@@ -274,6 +214,79 @@ void ctrl_infinite_loop() {
   analogWrite(analogOutPin, 0);
 }
 
+void ctrl_loop() {
+
+  int c;
+  pwm_config(1); // set PWM at max freq
+
+  // ctrl loop:
+  t0= micros(); t1= t0+Ts; // 1 msec
+
+  for (n=0; n<200; n+=2, t1= t1+Ts) {
+    if (n>=198)
+      n= 0; // make an infinite loop
+    
+    // while 1, if time
+    while (micros()<t1)
+      // do nothing
+      ;
+
+    //   read sensors
+    switch (loopMode) {
+
+      case 0:
+        // the default control mode has a fixed ref
+        // just read analog channel 1 (not zero)
+        //sensorValuesArray[n]= analogRead(0);
+        timeArray[n]= micros();
+
+        ctrl_y= analogRead(1);
+        sensorValuesArray[n+1]= ctrl_y;
+        timeArray[n+1]= micros();
+        break;
+
+      case 9:
+        // read two channels, 0=ref, 1=sensor
+        // the extra analogRead makes the loop slower
+        ctrl_ref= analogRead(0);
+        sensorValuesArray[n]= ctrl_ref;
+        timeArray[n]= micros();
+
+        ctrl_y= analogRead(1);
+        sensorValuesArray[n+1]= ctrl_y;
+        timeArray[n+1]= micros();
+        break;
+    }
+
+    //   calc ctrl
+    ctrl_e= ctrl_ref - ctrl_y;
+    ctrl_u= a0*ctrl_e +a1*ctrl_e1 +a2*ctrl_e2
+                      -b1*ctrl_u1 -b2*ctrl_u2;
+    sensorValuesArray[n]= ctrl_u; // save values before truncation
+    if (ctrl_u > 255) ctrl_u=255;
+    if (ctrl_u < 0) ctrl_u=0;
+    analogWrite(analogOutPin, ctrl_u);
+
+    ctrl_u2= ctrl_u1;
+    ctrl_u1= ctrl_u;
+    ctrl_e2= ctrl_e1;
+    ctrl_e1= ctrl_e;
+    
+    //   read cmd, and write ans cmd
+    //   if break loop then break
+    
+    if (Serial.available() > 0) {
+	  c= Serial.read();
+      buf2[0]= c;
+      buf2[1]= '\0';
+      Serial.print(buf2);
+      break; // break the loop
+    }
+  }
+
+  // stop the motor
+  analogWrite(analogOutPin, 0);
+}
 
 // --------------------------------------------------
 void config_mode(char *buf) {
@@ -360,16 +373,6 @@ void main_switch() {
         loopMode= atoi(&buf[1]);
         sprintf(buf, "loopMode=%d\n", loopMode);
         Serial.print(buf);
-        break;
-
-      case 's':
-        // step response (use ctrl_ref value)
-        //Serial.println("-- Going to enter the open loop acq.");
-        step_response();
-        if (ctrl_verbose_flag)
-          serial_print_data_n();
-        //sprintf(buf, "step\n");
-        //Serial.print(buf);
         break;
 
       case 'c':
