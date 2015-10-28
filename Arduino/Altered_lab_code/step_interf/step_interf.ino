@@ -16,6 +16,7 @@ int sensorValue = 0;        // value read from the pot
 int outputValue = 0;        // value output to the PWM (analog out)
 
 #define SENSORBUF 150
+#define STEADY_STATE_DELAY 150
 
 int sensorValuesArray[SENSORBUF*2];
 unsigned long t0, t1, aux;
@@ -44,6 +45,18 @@ void serial_print_data_n() {
     Serial.print(" ");
     Serial.println(timeArray[n]);
 
+  }
+}
+
+
+void serial_print_steady_state() {
+  //Serial.print("nLines=255 ti[us]=");
+  Serial.println("(pwm LDR_value):");
+
+  for (n=0; n<=255; n++) {
+    Serial.print(n);
+    Serial.print(" ");
+    Serial.print(sensorValuesArray[n]);
   }
 }
 
@@ -88,6 +101,19 @@ void pwm_config(int freqId) {
   TCCR1B |= prescalerVal;
 }
 
+void steady_state_response()
+{
+	int ref;
+	unsigned long aux;
+
+	for(ref=0; ref<=255; ref++)
+	{
+        sensorValuesArray[ref]= AnalogReadAvg(0,3);
+        timeArray[ref]= ref;
+		delay(STEADY_STATE_DELAY);
+	}
+
+}
 
 // --------------------------------------------------
 
@@ -239,9 +265,12 @@ void main_switch() {
         //Serial.print(buf);
         break;
 
-     
-
-      
+		case 'r':
+			// steady state response
+			steady_state_response();
+			if (ctrl_verbose_flag)
+				serial_print_steady_state();
+			break;
 
       case 'i':
         // read sensor
