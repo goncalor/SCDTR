@@ -7,8 +7,8 @@ figure;
 
 
 for i=1:total_samples
-    data(i,:) = rand(1,3);%acquire_sample(ser_port);
-    
+    data(i,:) = acquire_sample(ser_port);
+    disp(data(i,:))
     if i > samples_to_display
         plot(i-samples_to_display:i, ...
             data(i-samples_to_display:i,2:end));

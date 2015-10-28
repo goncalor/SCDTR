@@ -32,7 +32,7 @@ switch cmd
         end
         if isempty(sp1) || ~isvalid(sp1)
             sp1 = serial(spAddress);
-            set(sp1, 'BaudRate', 9600);
+            set(sp1, 'BaudRate', 115200);
             fopen(sp1);
             %get(sp1) % show the properties of the object
             pause(1); % give some time to garantee work done ok
@@ -183,14 +183,19 @@ function buff= fread_till_estr(sp1, estr)
 done= 0;
 buff= [];
 N= length(estr);
-while ~done
-    [y, ylen]= fread(sp1,1); % read one byte at a time
-    buff= [buff, y];    % concatenate y to buff
-    if length(buff) >= N && strcmp(estr, char(buff(end-N+1:end)))
-        done= 1;
-    end
-    % PUT here a timeout...
-end
+data = plot_real_time(sp1, 499,5000)
+% tic
+% while ~done
+%     [y, ylen]= fread(sp1,1); % read one byte at a time
+%     buff= [buff, y];    % concatenate y to buff
+%     if length(buff) >= N && strcmp(estr, char(buff(end-N+1:end)))
+%         done= 1;
+%     end
+%     % PUT here a timeout...
+%     if toc>5
+%         done=1;
+%     end
+% end
 return
 
 
