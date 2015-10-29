@@ -31,7 +31,7 @@ int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y;
 //int ctrl_e1, ctrl_e2, ctrl_u1, ctrl_u2;
 //double a0=2.0, a1=0.0, a2=0.0, b1=0.0, b2=0.0;
 unsigned int Ts= SAMPLE_TIME; // 1 msec
-double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D;
+double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D, ctrl_wind_gain=1/INTEGRAL_TIME;
 int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
 
@@ -220,11 +220,11 @@ void ctrl_infinite_loop() {
 }
 */
 void ctrl_loop() {
-	double full_ctrl_u,c;
+	double full_ctrl_u,c,ctrl_e_sat=0;
 	unsigned long write_time, end_time,start_time,t0,ctrl_ui=0,ctrl_ui_before=0;
 	long delay_time;
 	
-	//Serial.println("[write_t,\t ctrl_u,\t ctrl_y,\t ctrl_e,\t ctrl_ui,\t ctrl_ref,\t sample_time]");
+	Serial.println("[write_t,\t ctrl_u,\t ctrl_y,\t ctrl_e,\t ctrl_ui,\t ctrl_e_sat,\t ctrl_ref,\t sample_time]");
 	t0=micros();
 	while(1){
 		start_time = micros();
@@ -233,12 +233,22 @@ void ctrl_loop() {
 		//Proportional
 		//full_ctrl_u = gain_k*ctrl_e;
 		/*Proportinal-Integral*/
-		ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * ctrl_e;
+		/*ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * ctrl_e;
 		ctrl_ui_before = ctrl_ui;
 		full_ctrl_u = gain_k * ctrl_e + gain_k*integral_time * (ctrl_ui + ctrl_e);
-
+		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
+		ctrl_u = constrain(full_ctrl_u, 0, 255);*/
+		
+		/*Proportinal-Integral with Anti Windup*/ // Page307 chapter 10
+		ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e+ctrl_e_sat*ctrl_wind_gain);
+		ctrl_ui_before = ctrl_ui;
+		full_ctrl_u = gain_k * ctrl_e + gain_k*integral_time * ctrl_ui ;
 		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
+		ctrl_e_sat = full_ctrl_u-ctrl_u;
+		
+		
+		
 
 		write_time = micros();
 		analogWrite(analogOutPin, ctrl_u);
@@ -251,8 +261,10 @@ void ctrl_loop() {
 		Serial.print(",\t ");
 		Serial.print(ctrl_e);
 		Serial.print(",\t ");
-		//Serial.print(ctrl_ui);
-		//Serial.print(",\t ");
+		Serial.print(ctrl_ui);
+		Serial.print(",\t ");
+		Serial.print(ctrl_e_sat);
+		Serial.print(",\t ");
 		Serial.println(map(ctrl_ref, 0, 254, 0, 1023));
 		//Serial.print(",\t");
 
