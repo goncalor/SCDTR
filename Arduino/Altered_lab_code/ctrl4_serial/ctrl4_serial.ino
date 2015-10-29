@@ -14,7 +14,7 @@
 #define INTEGRAL_TIME 0.001
 #define GAIN_K 2.0	
 #define GAIN_D 0
-#define FEEDFOWARD_U 50
+#define FEEDFORWARD_GAIN 0.1
 
 const int analogInPin = 0;  // Analog input pin that ldr
 //const int analogOutPin = 9; // Analog output pin that the LED is attached to
@@ -31,9 +31,9 @@ int n;
 int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y;
 //int ctrl_e1, ctrl_e2, ctrl_u1, ctrl_u2;
 //double a0=2.0, a1=0.0, a2=0.0, b1=0.0, b2=0.0;
-unsigned int Ts= SAMPLE_TIME; // 1 msec
-double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D, ctrl_wind_gain=1/INTEGRAL_TIME;
-double feedfoward_u = FEEDFOWARD_U;
+unsigned int Ts= SAMPLE_TIME;
+double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D, ctrl_wind_gain=1./INTEGRAL_TIME;
+double feedforward_gain = FEEDFORWARD_GAIN;
 int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
 
@@ -63,12 +63,6 @@ int serial_read_str(char *buf, int buflen){
   if (Serial.available() <= 0) {
     return 0;
   }
-  				pinMode(13,OUTPUT);
-				digitalWrite(13,HIGH);
-				delay(1000);
-				digitalWrite(13,LOW);
-				delay(1000);
-				digitalWrite(13,HIGH);
   for (i=0; i<buflen-1; i++) {
     c= Serial.read();
     if (c==0 || c==0x0A || c==0x0D) break;
@@ -222,16 +216,23 @@ void ctrl_infinite_loop() {
 }
 */
 void ctrl_loop() {
-	double full_ctrl_u,c,ctrl_e_sat=0;
-	unsigned long write_time, end_time,start_time,t0,ctrl_ui=0,ctrl_ui_before=0;
+	double full_ctrl_u, c, ctrl_e_sat = 0;
+	unsigned long write_time;
+	unsigned long end_time;
+	unsigned long start_time;
+	unsigned long t0;
+	unsigned long ctrl_ui=0;
+	unsigned long ctrl_ui_before=0;
+	unsigned int ctrl_mapped_ref;
 	long delay_time;
 	
 	Serial.println("write_t ctrl_u ctrl_y ctrl_e ctrl_ui ctrl_e_sat ctrl_ref");
+	ctrl_mapped_ref = map(ctrl_ref, 0, 254, 0, 1023);
 	t0=micros();
 	while(1){
 		start_time = micros();
 		ctrl_y = AnalogReadAvg(analogInPin,3);
-		ctrl_e = map(ctrl_ref, 0, 254, 0, 1023) - ctrl_y;
+		ctrl_e = ctrl_mapped_ref - ctrl_y;
 		//Proportional
 		//full_ctrl_u = gain_k*ctrl_e;
 		/*Proportinal-Integral*/
@@ -249,16 +250,13 @@ void ctrl_loop() {
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
 		ctrl_e_sat = full_ctrl_u-ctrl_u;*/
 		
-		/*Proportinal-Integral with Anti Windup and feedfoward*/ // Page307 chapter 10
-		ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e+ctrl_e_sat*ctrl_wind_gain);
+		/*Proportinal-Integral with Anti Windup and feedforward*/ // Page307 chapter 10
+		ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
 		ctrl_ui_before = ctrl_ui;
-		full_ctrl_u = gain_k * ctrl_e + gain_k*integral_time * ctrl_ui + feedfoward_u ;// now add feedfoward
+		full_ctrl_u = (gain_k * ctrl_e) + (gain_k * integral_time * ctrl_ui) + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
 		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
 		ctrl_e_sat = full_ctrl_u-ctrl_u;
-		
-		
-		
 		
 
 		write_time = micros();	
@@ -455,6 +453,9 @@ void main_switch() {
           case '0': x= atof(&buf[2]); gain_k= x; break;
           case '1': x= atof(&buf[2]); integral_time= x; break;
           case '2': x= atof(&buf[2]); gain_d= x; break;
+          case '3': x= atof(&buf[2]); feedforward_gain = x; break;
+          case '4': x= atof(&buf[2]); ctrl_wind_gain = x; break;
+ 
           default: x=0.0; Serial.print('E');
         }
         Serial.print("x="); Serial.println(x);
@@ -465,6 +466,8 @@ void main_switch() {
         Serial.print("Proportional gain: ");Serial.println(gain_k);
 		Serial.print("Integral time: ");Serial.println(integral_time);
 		Serial.print("Differential gain: "); Serial.println(gain_d);
+		Serial.print("Feedforward gain: "); Serial.println(feedforward_gain);
+		Serial.print("AntiWindup gain: "); Serial.println(ctrl_wind_gain);
 
         break;
 		
