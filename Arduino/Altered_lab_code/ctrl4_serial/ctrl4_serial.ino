@@ -17,6 +17,7 @@
 #define GAIN_K 2.0	
 #define GAIN_D 0
 #define FEEDFORWARD_GAIN 0.1
+#define PID_A 10
 
 const int analogInPin = 0;  // Analog input pin that LDR
 //const int analogOutPin = 9; // Analog output pin that the LED is attached to
@@ -30,12 +31,10 @@ int sensorValuesArray[SENSORBUF];
 unsigned long t0, t1, timeArray[SENSORBUF];
 int n;
 
-int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y;
-//int ctrl_e1, ctrl_e2, ctrl_u1, ctrl_u2;
-//double a0=2.0, a1=0.0, a2=0.0, b1=0.0, b2=0.0;
+int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y;	
 unsigned int Ts= SAMPLE_TIME;
 double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D, ctrl_wind_gain=1./INTEGRAL_TIME;
-double feedforward_gain = FEEDFORWARD_GAIN;
+double feedforward_gain = FEEDFORWARD_GAIN, a=PID_A ;
 int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
 
@@ -219,14 +218,17 @@ void ctrl_infinite_loop() {
 */
 void ctrl_loop() {
 	double full_ctrl_u, c, ctrl_e_sat = 0;
+	double ctrl_e_before=0,d_before=0;
 	unsigned long write_time;
 	unsigned long end_time;
 	unsigned long start_time;
 	unsigned long t0;
 	unsigned long ctrl_ui=0;
 	unsigned long ctrl_ui_before=0;
-	unsigned int ctrl_mapped_ref;
+	unsigned int ctrl_mapped_ref , ctrl_y_before=0;
 	long delay_time;
+
+	long p,d,i;
 	
 	Serial.println("write_t ctrl_u ctrl_y ctrl_e ctrl_ui ctrl_e_sat ctrl_ref");
 	ctrl_mapped_ref = map(ctrl_ref, 0, 254, 0, 1023);
@@ -252,14 +254,36 @@ void ctrl_loop() {
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
 		ctrl_e_sat = full_ctrl_u-ctrl_u;*/
 		
-		/*Proportinal-Integral with Anti Windup and feedforward*/ // Page307 chapter 10
-		ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
+		/*Proportinal-Integral with Anti Windup and feedforward*/ // 
+		/*ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
 		ctrl_ui_before = ctrl_ui;
 		full_ctrl_u = (gain_k * ctrl_e) + (gain_k * integral_time * ctrl_ui) + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
 		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
-		ctrl_e_sat = full_ctrl_u-ctrl_u;
+		ctrl_e_sat = full_ctrl_u-ctrl_u;*/
 		
+		/*Proportinal-Integral with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
+		/*p =  (gain_k * ctrl_e);
+		i =  ctrl_ui_before + Ts/1000000 * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * 	gain_k * 1 / integral_time ;
+		ctrl_ui_before = i;
+		full_ctrl_u = p + i + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
+		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
+		ctrl_u = constrain(full_ctrl_u, 0, 255);
+		ctrl_e_sat = full_ctrl_u-ctrl_u;
+		ctrl_e_before = ctrl_e;*/	
+
+		/*PID with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
+		p =  (gain_k * ctrl_e);
+		i =  ctrl_ui_before + Ts/1000000 * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * 	gain_k * 1 / integral_time ;
+		ctrl_ui_before = i;
+		
+		d = gain_d /(gain_d + a*Ts/1000000) * (d_before - gain_k*a * (ctrl_y-ctrl_y_before));
+		d_before=d;
+		full_ctrl_u = p + i + d +(ctrl_mapped_ref * feedforward_gain);	// now add feedforward
+		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
+		ctrl_u = constrain(full_ctrl_u, 0, 255);
+		ctrl_e_sat = full_ctrl_u-ctrl_u;
+		ctrl_e_before = ctrl_e;				
 
 		write_time = micros();	
 		analogWrite(analogOutPin, ctrl_u);
