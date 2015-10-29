@@ -265,7 +265,7 @@ void ctrl_loop() {
 		
 		/*Proportinal-Integral with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
 		p =  (gain_k * ctrl_e);
-		i =  ctrl_ui_before + Ts/1000000 * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) *gain_k * integral_time ;
+		i =  ctrl_ui_before + Ts/1000000 * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * gain_k * 1 / integral_time ;
 		ctrl_ui_before = i;
 		full_ctrl_u = p + i + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
 		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
