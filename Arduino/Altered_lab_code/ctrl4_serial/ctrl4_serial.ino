@@ -6,6 +6,8 @@
  
 */
 
+#include <avr/interrupt.h>
+
 #define SENSORBUF 1
 #define BUFSZ 100
 #define BUFSZ2 10
@@ -16,9 +18,9 @@
 #define GAIN_D 0
 #define FEEDFORWARD_GAIN 0.1
 
-const int analogInPin = 0;  // Analog input pin that ldr
+const int analogInPin = 0;  // Analog input pin that LDR
 //const int analogOutPin = 9; // Analog output pin that the LED is attached to
-int analogOutPin = 9; // Analog output pin that the LED is attached to
+int analogOutPin = 5; // Analog output pin that the LED is attached to
 
 char buf[BUFSZ];
 char buf2[BUFSZ2];
