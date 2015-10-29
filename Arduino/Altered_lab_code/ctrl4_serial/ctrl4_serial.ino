@@ -219,6 +219,7 @@ void ctrl_infinite_loop() {
 */
 void ctrl_loop() {
 	double full_ctrl_u, c, ctrl_e_sat = 0;
+	double ctrl_e_before=0;
 	unsigned long write_time;
 	unsigned long end_time;
 	unsigned long start_time;
@@ -227,6 +228,8 @@ void ctrl_loop() {
 	unsigned long ctrl_ui_before=0;
 	unsigned int ctrl_mapped_ref;
 	long delay_time;
+
+	long p,d,i;
 	
 	Serial.println("write_t ctrl_u ctrl_y ctrl_e ctrl_ui ctrl_e_sat ctrl_ref");
 	ctrl_mapped_ref = map(ctrl_ref, 0, 254, 0, 1023);
@@ -252,14 +255,23 @@ void ctrl_loop() {
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
 		ctrl_e_sat = full_ctrl_u-ctrl_u;*/
 		
-		/*Proportinal-Integral with Anti Windup and feedforward*/ // Page307 chapter 10
-		ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
+		/*Proportinal-Integral with Anti Windup and feedforward*/ // 
+		/*ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
 		ctrl_ui_before = ctrl_ui;
 		full_ctrl_u = (gain_k * ctrl_e) + (gain_k * integral_time * ctrl_ui) + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
 		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
-		ctrl_e_sat = full_ctrl_u-ctrl_u;
+		ctrl_e_sat = full_ctrl_u-ctrl_u;*/
 		
+		/*Proportinal-Integral with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
+		p =  (gain_k * ctrl_e);
+		i =  ctrl_ui_before + Ts/1000000 * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) *gain_k * integral_time ;
+		ctrl_ui_before = i;
+		full_ctrl_u = p + i + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
+		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
+		ctrl_u = constrain(full_ctrl_u, 0, 255);
+		ctrl_e_sat = full_ctrl_u-ctrl_u;
+		ctrl_e_before = ctrl_e;		
 
 		write_time = micros();	
 		analogWrite(analogOutPin, ctrl_u);
