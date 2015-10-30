@@ -13,11 +13,11 @@
 #define BUFSZ2 10
 #define BAUDRATE 115200
 #define SAMPLE_TIME 5000
-#define INTEGRAL_TIME 0.001
-#define GAIN_K 2.0	
+#define INTEGRAL_TIME 0.1
+#define GAIN_K 1	
 #define GAIN_D 0
-#define FEEDFORWARD_GAIN 0.1
-#define PID_A 10
+#define FEEDFORWARD_GAIN 0
+#define PID_A 0
 
 const int analogInPin = 0;  // Analog input pin that LDR
 //const int analogOutPin = 9; // Analog output pin that the LED is attached to
@@ -31,9 +31,9 @@ int sensorValuesArray[SENSORBUF];
 unsigned long t0, t1, timeArray[SENSORBUF];
 int n;
 
-int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y;	
+int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y=0;	
 unsigned int Ts= SAMPLE_TIME;
-double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D, ctrl_wind_gain=1./INTEGRAL_TIME;
+double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D, ctrl_wind_gain=0.5/INTEGRAL_TIME;
 double feedforward_gain = FEEDFORWARD_GAIN, a=PID_A ;
 int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
@@ -96,199 +96,81 @@ void pwm_config(int freqId) {
   TCCR1B |= prescalerVal;
 }
 
-/*
-void ctrl_finite_loop() {
-//  ctrl_ref= 127;
 
-  pwm_config(1);
-
-  // ctrl loop:
-  t0= micros(); t1= t0+Ts; // 1 msec
-
-  for (n=0; n<200; n+=2, t1= t1+Ts) {
-    // while 1, if time
-    while (micros()<t1)
-      // do nothing
-      ;
-
-    //   read sensors
-    //sensorValuesArray[n]= analogRead(0);
-    timeArray[n]= micros();
-    ctrl_y= analogRead(1);
-    sensorValuesArray[n+1]= ctrl_y;
-    timeArray[n+1]= micros();
-
-    //   calc ctrl
-    ctrl_e= ctrl_ref - ctrl_y;
-    ctrl_u= a0*ctrl_e +a1*ctrl_e1 +a2*ctrl_e2
-                      -b1*ctrl_u1 -b2*ctrl_u2;
-    sensorValuesArray[n]= ctrl_u; // save values before truncation
-    if (ctrl_u > 255) ctrl_u=255;
-    if (ctrl_u < 0) ctrl_u=0;
-    analogWrite(analogOutPin, ctrl_u);
-
-    ctrl_u2= ctrl_u1;
-    ctrl_u1= ctrl_u;
-    ctrl_e2= ctrl_e1;
-    ctrl_e1= ctrl_e;
-    
-    //   read cmd
-    //   write cmd
-    //   if break loop then break
-  }
-
-  // stop the motor
-  analogWrite(analogOutPin, 0);
-}
-
-
-void ctrl_infinite_loop() {
-
-  int c;
-  pwm_config(1);
-
-  // ctrl loop:
-  t0= micros(); t1= t0+Ts; // 1 msec
-
-  for (n=0; n<200; n+=2, t1= t1+Ts) {
-    if (n>=198)
-      n= 0; // make an infinite loop
-    
-    // while 1, if time
-    while (micros()<t1)
-      // do nothing
-      ;
-
-    //   read sensors
-    switch (loopMode) {
-
-      case 0:
-        // the default control mode has a fixed ref
-        // just read analog channel 1 (not zero)
-        //sensorValuesArray[n]= analogRead(0);
-        timeArray[n]= micros();
-
-        ctrl_y= analogRead(1);
-        sensorValuesArray[n+1]= ctrl_y;
-        timeArray[n+1]= micros();
-        break;
-
-      case 9:
-        // read two channels, 0=ref, 1=sensor
-        // the extra analogRead makes the loop slower
-        ctrl_ref= analogRead(0);
-        sensorValuesArray[n]= ctrl_ref;
-        timeArray[n]= micros();
-
-        ctrl_y= analogRead(1);
-        sensorValuesArray[n+1]= ctrl_y;
-        timeArray[n+1]= micros();
-        break;
-    }
-
-    //   calc ctrl
-    ctrl_e= ctrl_ref - ctrl_y;
-    ctrl_u= a0*ctrl_e +a1*ctrl_e1 +a2*ctrl_e2
-                      -b1*ctrl_u1 -b2*ctrl_u2;
-    sensorValuesArray[n]= ctrl_u; // save values before truncation
-    if (ctrl_u > 255) ctrl_u=255;
-    if (ctrl_u < 0) ctrl_u=0;
-    analogWrite(analogOutPin, ctrl_u);
-
-    ctrl_u2= ctrl_u1;
-    ctrl_u1= ctrl_u;
-    ctrl_e2= ctrl_e1;
-    ctrl_e1= ctrl_e;
-    
-    //   read cmd, and write ans cmd
-    //   if break loop then break
-    
-    if (Serial.available() > 0) {
-	  c= Serial.read();
-      buf2[0]= c;
-      buf2[1]= '\0';
-      Serial.print(buf2);
-      break; // break the loop
-    }
-  }
-
-  // stop the motor
-  analogWrite(analogOutPin, 0);
-}
-*/
 void ctrl_loop() {
-	double full_ctrl_u, c, ctrl_e_sat = 0;
-	double ctrl_e_before=0,d_before=0;
-	unsigned long write_time;
-	unsigned long end_time;
-	unsigned long start_time;
-	unsigned long t0;
-	unsigned long ctrl_ui=0;
-	unsigned long ctrl_ui_before=0;
-	unsigned int ctrl_mapped_ref , ctrl_y_before=0;
+	
+	analogWrite(analogOutPin, 0); //turn LED off
+	
+	// Global vars
+	/*
+	gain_d
+	gain_k
+	integral_time
+	ctrl_wind_gain
+	feedforward_gain
+	a	
+	ctrl_ref
+	ctrl_y
+	
+	*/
+	
+	
+	// control signals
+	long  p,d,i, full_ctrl_u, ctrl_e_sat=0;
+
+	// previous vars
+	long i_before =0 , d_before=0,ctrl_e_before=0;
+	unsigned int y_before=0;
+
+	// Time vars
+	unsigned long end_time, start_time,t0;
 	long delay_time;
 
-	long p,d,i;
+	// Precalculated vars
+	unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
+	double Ts_sec = Ts/1000000.0;
+	double gain_i=1./integral_time;
+	double derivative_const = gain_d /(gain_d + a*Ts_sec);
+	double gain_k_i = gain_i*gain_k;
+	double gain_k_a = gain_k * a;
+	double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
 	
-	Serial.println("write_t ctrl_u ctrl_y ctrl_e ctrl_ui ctrl_e_sat ctrl_ref");
-	ctrl_mapped_ref = map(ctrl_ref, 0, 254, 0, 1023);
+	
+	// other
+	double c;
+	
+	
+	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d ctrl_e_sat ctrl_mapped_ref");
 	t0=micros();
+		
 	while(1){
 		start_time = micros();
 		ctrl_y = AnalogReadAvg(analogInPin,3);
 		ctrl_e = ctrl_mapped_ref - ctrl_y;
-		//Proportional
-		//full_ctrl_u = gain_k*ctrl_e;
-		/*Proportinal-Integral*/
-		/*ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * ctrl_e;
-		ctrl_ui_before = ctrl_ui;
-		full_ctrl_u = gain_k * ctrl_e + gain_k*integral_time * ctrl_ui;
-		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-		ctrl_u = constrain(full_ctrl_u, 0, 255);*/
-		
-		/*Proportinal-Integral with Anti Windup*/ // Page307 chapter 10
-		/*ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e+ctrl_e_sat*ctrl_wind_gain);
-		ctrl_ui_before = ctrl_ui;
-		full_ctrl_u = gain_k * ctrl_e + gain_k*integral_time * ctrl_ui ;
-		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-		ctrl_u = constrain(full_ctrl_u, 0, 255);
-		ctrl_e_sat = full_ctrl_u-ctrl_u;*/
-		
-		/*Proportinal-Integral with Anti Windup and feedforward*/ // 
-		/*ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
-		ctrl_ui_before = ctrl_ui;
-		full_ctrl_u = (gain_k * ctrl_e) + (gain_k * integral_time * ctrl_ui) + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
-		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-		ctrl_u = constrain(full_ctrl_u, 0, 255);
-		ctrl_e_sat = full_ctrl_u-ctrl_u;*/
-		
-		/*Proportinal-Integral with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
-		/*p =  (gain_k * ctrl_e);
-		i =  ctrl_ui_before + Ts/1000000 * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * 	gain_k * 1 / integral_time ;
-		ctrl_ui_before = i;
-		full_ctrl_u = p + i + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
-		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-		ctrl_u = constrain(full_ctrl_u, 0, 255);
-		ctrl_e_sat = full_ctrl_u-ctrl_u;
-		ctrl_e_before = ctrl_e;*/	
-
 		/*PID with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
 		p =  (gain_k * ctrl_e);
-		i =  ctrl_ui_before + Ts/1000000 * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * 	gain_k * 1 / integral_time ;
-		ctrl_ui_before = i;
-		
-		d = gain_d /(gain_d + a*Ts/1000000) * (d_before - gain_k*a * (ctrl_y-ctrl_y_before));
-		d_before=d;
-		full_ctrl_u = p + i + d +(ctrl_mapped_ref * feedforward_gain);	// now add feedforward
-		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-		ctrl_u = constrain(full_ctrl_u, 0, 255);
-		ctrl_e_sat = full_ctrl_u-ctrl_u;
-		ctrl_e_before = ctrl_e;				
+		i =  i_before + Ts_sec * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
+		//i =  i_before + Ts_sec * 	(ctrl_e + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
 
-		write_time = micros();	
+		d =  derivative_const * (d_before - gain_k_a * (ctrl_y-y_before));
+		full_ctrl_u = p + i + d + ref_feedfoward ;	// now add feedforward
+			
+		full_ctrl_u = map(full_ctrl_u, 0, 1024, 0, 255); // Doesn't constrain to within range
+		ctrl_u = constrain(full_ctrl_u, 0, 255);
+
+		//Serial.println(micros()-start_time);
+		
+		//Variable updates
+		i_before = i;
+		d_before = d;		
+		ctrl_e_before = ctrl_e;	
+		ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
+		
+		// Write Output
 		analogWrite(analogOutPin, ctrl_u);
 
-		Serial.print(write_time-t0);
+		// Prints 
+		Serial.print(start_time-t0);
 		Serial.print(" ");
 		Serial.print(full_ctrl_u);
 		Serial.print(" ");
@@ -296,11 +178,15 @@ void ctrl_loop() {
 		Serial.print(" ");
 		Serial.print(ctrl_e);
 		Serial.print(" ");
-		Serial.print(ctrl_ui);
+		Serial.print(p);
+		Serial.print(" ");
+		Serial.print(i);
+		Serial.print(" ");
+		Serial.print(d);
 		Serial.print(" ");
 		Serial.print(ctrl_e_sat);
 		Serial.print(" ");
-		Serial.println(map(ctrl_ref, 0, 254, 0, 1023));
+		Serial.println(ctrl_mapped_ref);
 		//Serial.print(",\t");
 
 
@@ -316,68 +202,11 @@ void ctrl_loop() {
 		end_time = micros();
 		delay_time = Ts - (end_time - start_time);
 		delayMicroseconds(delay_time);
-/*		if(delay_time > 0)
+	/*	if(delay_time > 0)
 			Serial.println("OK");
 		else
 			Serial.println("NOT OK");*/
 	}
-
-/*
-  int c;
-  pwm_config(1); // set PWM at max freq
-
-  // ctrl loop:
-  t0= micros(); t1= t0+Ts; // 1 msec
-  Serial.println("[Sensor CTRL_U TIME(us)]");
-  for (n=0; n<SENSORBUF; n++, t1= t1+Ts) {
-    // while 1, if time
-    while (micros()<t1)
-      // do nothing
-      ;
-
-    //   read sensors
-
-	// the default control mode has a fixed ref
-	// just read analog channel 1 (not zero)
-	//sensorValuesArray[n]= analogRead(0);
-	timeArray[n]= micros();
-	ctrl_y= analogRead(analogInPin);
-	sensorValuesArray[n]= ctrl_y;
-
-
-    //   calc ctrl
-    ctrl_e= ctrl_ref - ctrl_y;
-    ctrl_u= a0*ctrl_e +a1*ctrl_e1 +a2*ctrl_e2
-                      -b1*ctrl_u1 -b2*ctrl_u2;
-    ctrl_uArray[n]= ctrl_u; // save values before truncation
-    if (ctrl_u > 255) ctrl_u=255;
-    if (ctrl_u < 0) ctrl_u=0;
-    analogWrite(analogOutPin, ctrl_u);
-
-    ctrl_u2= ctrl_u1;
-    ctrl_u1= ctrl_u;
-    ctrl_e2= ctrl_e1;
-    ctrl_e1= ctrl_e;
-    
-    //   read cmd, and write ans cmd
-    //   if break loop then break
-    
-    if (Serial.available() > 0) {
-	  c= Serial.read();
-      buf2[0]= c;
-      buf2[1]= '\0';
-      Serial.print(buf2);
-      break; // break the loop
-    }
-	
-	if (n==SENSORBUF-1){
-		serial_print_ctrl_data();
-		n= 0; // make an infinite loop
-    }
-  }
-
- // Turn the LED off
-  analogWrite(analogOutPin, 0);*/
 }
 
 // --------------------------------------------------
@@ -460,19 +289,7 @@ void main_switch() {
         strcat(buf, buf2); strcat(buf, "\n");
         Serial.print(buf);
         break;
-        
-      /*case 'm':
-        // select the loop mode
-        if (buf[1]=='c') {
-          config_mode(&buf[2]);
-          Serial.print(buf);
-          break;
-        }
-        loopMode= atoi(&buf[1]);
-        sprintf(buf, "loopMode=%d\n", loopMode);
-        Serial.print(buf);
-        break;*/
-			
+        	
       case 'c':
         // config the controller
         switch (buf[1]) {
@@ -497,31 +314,7 @@ void main_switch() {
 
         break;
 		
-		
-		/* PROF CONTROLER
-      case 'c':
-        // config the controller
-        switch (buf[1]) {
-          case '0': x= atof(&buf[2]); a0= x; break;
-          case '1': x= atof(&buf[2]); a1= x; break;
-          case '2': x= atof(&buf[2]); a2= x; break;
-          case '3': x= atof(&buf[2]); b1= x; break;
-          case '4': x= atof(&buf[2]); b2= x; break;
-          default: x=0.0; Serial.print('E');
-        }
-        Serial.print("x="); Serial.println(x);
-        break;
-		
-      case 'C':
-        // get the current controller
-        Serial.print("Cz= (");
-        Serial.print(a0); Serial.print(" + ");
-        Serial.print(a1); Serial.print(" Z^-1 + ");
-        Serial.print(a2); Serial.print(" Z^-2) / (1 + ");
-        Serial.print(b1); Serial.print(" Z^-1 + ");
-        Serial.print(b2); Serial.println(" Z^-2)");
-        break;
-		*/
+
       case 'i':
         // read sensor
         {
@@ -556,30 +349,7 @@ void main_switch() {
         Serial.print(buf);
         break;
 
-      /*case 'x':
-        // run the (finite time) control loop
-        ctrl_finite_loop();
-        if (ctrl_verbose_flag)
-          serial_print_data_n();
-        //Serial.print(buf);
-        break;
-        
-      case 'X':
-        main_send_end_cmd(); // reply cmd received
-        // run the infinite control loop
-        //   end loop with a received message
-        ctrl_infinite_loop();
-        if (ctrl_verbose_flag)
-          serial_print_data_n();
-        //Serial.print(buf);
-        break;
-        
-      case '<':
-        // get the data buffers
-        serial_print_data_n();
-        break;*/
-
-      case 'd':
+	  case 'd':
         // digital input/output
         {
           // find the channel number
@@ -617,7 +387,7 @@ void main_switch() {
         
       case 'D':
         // delay in milisec
-        t0= millis() +(unsigned long)atoi(&buf[1]);
+        t0= millis() +(unsigned long)atoi(&buf[1]);	
         while (millis() < t0)
           /* do nothing */ ;
         Serial.print(buf);
@@ -638,6 +408,8 @@ void main_switch() {
 void setup() {
   // start serial port at BAUDRATE bps:
   Serial.begin(BAUDRATE);
+  pinMode(analogInPin,INPUT);
+  pinMode(analogOutPin,OUTPUT);
 }
 
 void loop() {
