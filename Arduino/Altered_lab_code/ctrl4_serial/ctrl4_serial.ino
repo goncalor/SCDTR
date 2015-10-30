@@ -159,6 +159,8 @@ void ctrl_loop() {
 	double gain_k_a = gain_k * a;
 	double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
 	
+	bool looping=true;
+	
 	
 	// other
 	double c;
@@ -167,7 +169,7 @@ void ctrl_loop() {
 	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d ctrl_e_sat lux ctrl_mapped_ref");
 	t0=micros();
 		
-	while(1){
+	while(looping){
 		
 		/*
 		
@@ -239,12 +241,37 @@ void ctrl_loop() {
 
 
 		if (Serial.available() > 0) {
-		  c= Serial.read();
-		  buf2[0]= c;
-		  buf2[1]= '\0';
-		  Serial.print(buf2);
-		  analogWrite(analogOutPin, 0); //turn LED off
-		  break; // break the loop
+			if (serial_read_str(&buf[0], BUFSZ)){
+				 switch (buf[0]) {
+					case 'l':
+						// set lux reference
+						c= atof(&buf[1]);
+						ctrl_ref= luxfunction(c);
+						sprintf(buf, "lux = ");
+						itoa(c, buf2, BUFSZ2);
+						strcat(buf, buf2); strcat(buf, "\n");
+						//Serial.print(buf);
+						//Serial.print("ref = ");
+						//Serial.println(ctrl_ref);
+						ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
+					break;
+					
+					case 'r':
+						// set reference
+						c= atof(&buf[1]);
+						ctrl_ref= c;
+						sprintf(buf, "ref=");
+						itoa(ctrl_ref, buf2, BUFSZ2);
+						strcat(buf, buf2); strcat(buf, "\n");
+						//Serial.print(buf);
+						ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
+					break;
+					default:
+						analogWrite(analogOutPin, 0); //turn LED off
+						looping=false;
+					break; // break the loop
+				 }
+			}
 		}
 		
 		end_time = micros();
@@ -319,7 +346,7 @@ void main_switch() {
         break;
 		
 	  case 'l':
-        // set reference
+        // set lux reference
         x= atof(&buf[1]);
         ctrl_ref= luxfunction(x);
         sprintf(buf, "lux = ");
