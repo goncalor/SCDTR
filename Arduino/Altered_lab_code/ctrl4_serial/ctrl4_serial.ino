@@ -14,10 +14,14 @@
 #define BAUDRATE 115200
 #define SAMPLE_TIME 5000
 #define INTEGRAL_TIME 0.1
-#define GAIN_K 1	
+#define GAIN_K 2
 #define GAIN_D 0
-#define FEEDFORWARD_GAIN 0
-#define PID_A 0
+#define FEEDFORWARD_GAIN 0.1
+#define PID_A 10
+#define RESISTENCIA 10000.0
+#define LDR_B 4.7782
+#define LDR_A -0.6901
+
 
 const int analogInPin = 0;  // Analog input pin that LDR
 //const int analogOutPin = 9; // Analog output pin that the LED is attached to
@@ -37,6 +41,27 @@ double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D, ctrl_wind_ga
 double feedforward_gain = FEEDFORWARD_GAIN, a=PID_A ;
 int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
+
+
+
+int luxfunction(double lux_dado){
+
+double ctrl_ref_novo=0,ldr=0, voltagem=0, resist=RESISTENCIA;
+ldr=pow(10.0,(LDR_A*log10(lux_dado)+LDR_B));
+voltagem=5/(1+ldr/resist);
+ctrl_ref_novo=voltagem*255/5;
+return ctrl_ref_novo;
+
+}
+
+int adc_to_lux(int adc_val){
+	double ldr_ohms, lux;
+	ldr_ohms = 1024 * RESISTENCIA / adc_val - RESISTENCIA;
+	lux= pow(10,(log10(ldr_ohms) - LDR_B)/LDR_A);
+	return lux;	
+}
+
+
 
 int AnalogReadAvg(int pin,int n){
 	int i;
@@ -99,7 +124,6 @@ void pwm_config(int freqId) {
 
 void ctrl_loop() {
 	
-	analogWrite(analogOutPin, 0); //turn LED off
 	
 	// Global vars
 	/*
@@ -140,10 +164,27 @@ void ctrl_loop() {
 	double c;
 	
 	
-	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d ctrl_e_sat ctrl_mapped_ref");
+	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d ctrl_e_sat lux ctrl_mapped_ref");
 	t0=micros();
 		
 	while(1){
+		
+		/*
+		
+		bi=ki*h
+		ad=Tf/(Tf+h)
+		bd=kd/(Tf+h)
+		br=h/Tt
+		
+		D=Tf/(Tf+h)*D-kd/(Tf+h)*(y-yold) % update derivative part
+		v=P+I+D % compute temporary output
+		u=sat(v,ulow,uhigh) % simulate actuator saturation
+		daout(ch1) % set analog output ch1
+		I=I+bi*(r-y)+br*(u-v) % update integral
+		yold=y % update old process output
+		
+		*/
+		
 		start_time = micros();
 		ctrl_y = AnalogReadAvg(analogInPin,3);
 		ctrl_e = ctrl_mapped_ref - ctrl_y;
@@ -152,8 +193,12 @@ void ctrl_loop() {
 		i =  i_before + Ts_sec * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
 		//i =  i_before + Ts_sec * 	(ctrl_e + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
 
-		d =  derivative_const * (d_before - gain_k_a * (ctrl_y-y_before));
-		full_ctrl_u = p + i + d + ref_feedfoward ;	// now add feedforward
+		//d =  derivative_const * (d_before - gain_k_a * (ctrl_y-y_before));
+		//d = gain_k * gain_d * (ctrl_y-y_before)/Ts_sec;
+		d=a/(a+Ts_sec)*d_before-gain_d/(a+Ts_sec)*(ctrl_y-y_before); // % update derivative part
+		
+		
+		full_ctrl_u = p + i - d + ref_feedfoward ;	// now add feedforward
 			
 		full_ctrl_u = map(full_ctrl_u, 0, 1024, 0, 255); // Doesn't constrain to within range
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
@@ -163,6 +208,7 @@ void ctrl_loop() {
 		//Variable updates
 		i_before = i;
 		d_before = d;		
+		y_before = ctrl_y;
 		ctrl_e_before = ctrl_e;	
 		ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
 		
@@ -185,6 +231,8 @@ void ctrl_loop() {
 		Serial.print(d);
 		Serial.print(" ");
 		Serial.print(ctrl_e_sat);
+		Serial.print(" ");
+		Serial.print(adc_to_lux(ctrl_y));		
 		Serial.print(" ");
 		Serial.println(ctrl_mapped_ref);
 		//Serial.print(",\t");
@@ -269,6 +317,21 @@ void main_switch() {
 				//that starts a flow of data to the serial port
 				ctrl_loop();
         break;
+		
+	  case 'l':
+        // set reference
+        x= atof(&buf[1]);
+        ctrl_ref= luxfunction(x);
+        sprintf(buf, "lux = ");
+        itoa(x, buf2, BUFSZ2);
+        strcat(buf, buf2); strcat(buf, "\n");
+        Serial.print(buf);
+		Serial.print("ref = ");
+		Serial.println(ctrl_ref);
+      break;
+		
+		
+		
       case '?':
         Serial.println("ver 8.10.2015");
         break;
@@ -321,10 +384,14 @@ void main_switch() {
         int ch= 0;
         if (buf[1]!='\0') ch= buf[1]-'0';
         int v= analogRead(ch);
-        buf[0]= 'i'; buf[1]= ch+'0'; buf[2]= '\0';
+        /*buf[0]= 'i'; buf[1]= ch+'0'; buf[2]= '\0';
         itoa(v, buf2, BUFSZ2); strcat(buf, buf2);
         strcat(buf, "\n");
-        Serial.print(buf);
+        Serial.print(buf);*/
+		Serial.print("i = ");
+		Serial.println(v);		
+		Serial.print("lux = ");
+		Serial.println(adc_to_lux(v));		
         }
         break;
 
@@ -337,6 +404,20 @@ void main_switch() {
         itoa(v, buf2, BUFSZ2); strcat(buf, buf2);
         strcat(buf, "\n");
         Serial.print(buf);
+        }
+        break;
+		
+	  case 'O':
+        // set actuation
+        {
+        int v= atoi(&buf[1]);
+        analogWrite(analogOutPin, luxfunction(v));
+        sprintf(buf, "o");
+        itoa(v, buf2, BUFSZ2); strcat(buf, buf2);
+        strcat(buf, "\n");
+        Serial.print(buf);
+		Serial.print("lux = ");
+		Serial.println(luxfunction(v));
         }
         break;
 
