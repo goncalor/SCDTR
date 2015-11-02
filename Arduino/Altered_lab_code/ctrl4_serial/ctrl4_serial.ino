@@ -12,7 +12,7 @@
 #define BUFSZ 100
 #define BUFSZ2 10
 #define BAUDRATE 115200
-#define SAMPLE_TIME 5000
+#define SAMPLE_TIME 3000
 #define INTEGRAL_TIME 0.1
 #define GAIN_K 2
 #define GAIN_D 0
@@ -21,6 +21,7 @@
 #define RESISTENCIA 10000.0
 #define LDR_B 4.7782
 #define LDR_A -0.6901
+#define INT_GAIN 10
 
 
 const int analogInPin = 0;  // Analog input pin that LDR
@@ -45,13 +46,11 @@ int ctrl_verbose_flag= 0; //1;
 
 
 int luxfunction(double lux_dado){
-
-double ctrl_ref_novo=0,ldr=0, voltagem=0, resist=RESISTENCIA;
-ldr=pow(10.0,(LDR_A*log10(lux_dado)+LDR_B));
-voltagem=5/(1+ldr/resist);
-ctrl_ref_novo=voltagem*255/5;
-return ctrl_ref_novo;
-
+  double ctrl_ref_novo=0,ldr=0, voltagem=0, resist=RESISTENCIA;
+  ldr=pow(10.0,(LDR_A*log10(lux_dado)+LDR_B));
+  voltagem=5/(1+ldr/resist);
+  ctrl_ref_novo=voltagem*255/5;
+  return ctrl_ref_novo;
 }
 
 int adc_to_lux(int adc_val){
@@ -72,19 +71,9 @@ int AnalogReadAvg(int pin,int n){
 	return ReadAvg/n;
 }
 
-void serial_print_ctrl_data() {
-  for (n=0; n<SENSORBUF; n++) {
-    Serial.print(sensorValuesArray[n]);
-    Serial.print(" ");
-    Serial.print(ctrl_uArray[n]);
-    Serial.print(" ");
-    Serial.println(timeArray[n]);
-  }
-}
-
 
 int serial_read_str(char *buf, int buflen){
-/* read till the end of the buffer or a terminating chr*/
+  /* read till the end of the buffer or a terminating chr*/
   int i, c;
   if (Serial.available() <= 0) {
     return 0;
@@ -123,8 +112,6 @@ void pwm_config(int freqId) {
 
 
 void ctrl_loop() {
-	
-	
 	// Global vars
 	/*
 	gain_d
@@ -137,10 +124,9 @@ void ctrl_loop() {
 	ctrl_y
 	
 	*/
-	
-	
+		
 	// control signals
-	long  p,d,i, full_ctrl_u, ctrl_e_sat=0;
+	long  p,d,i=0, full_ctrl_u, ctrl_e_sat=0;
 
 	// previous vars
 	long i_before =0 , d_before=0,ctrl_e_before=0;
@@ -153,19 +139,19 @@ void ctrl_loop() {
 	// Precalculated vars
 	unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
 	double Ts_sec = Ts/1000000.0;
-	double gain_i=1./integral_time;
+	//double gain_i=1./integral_time;
+  double gain_i=INT_GAIN;
 	double derivative_const = gain_d /(gain_d + a*Ts_sec);
 	double gain_k_i = gain_i*gain_k;
 	double gain_k_a = gain_k * a;
 	double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+  double Ts_gain_k_i = Ts_sec * gain_k_i;
 	
 	bool looping=true;
 	
-	
 	// other
 	double c;
-	
-	
+		
 	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d ctrl_e_sat lux ctrl_mapped_ref");
 	t0=micros();
 		
@@ -192,7 +178,6 @@ void ctrl_loop() {
 		ctrl_e = ctrl_mapped_ref - ctrl_y;
 		/*PID with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
 		p =  (gain_k * ctrl_e);
-		i =  i_before + Ts_sec * ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
 		//i =  i_before + Ts_sec * 	(ctrl_e + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
 
 		//d =  derivative_const * (d_before - gain_k_a * (ctrl_y-y_before));
@@ -207,16 +192,17 @@ void ctrl_loop() {
 
 		//Serial.println(micros()-start_time);
 		
+    // Write Output
+    analogWrite(analogOutPin, ctrl_u);
+
 		//Variable updates
-		i_before = i;
+    i_before = i;
 		d_before = d;		
 		y_before = ctrl_y;
 		ctrl_e_before = ctrl_e;	
 		ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
+    i =  i_before + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
 		
-		// Write Output
-		analogWrite(analogOutPin, ctrl_u);
-
 		// Prints 
 		Serial.print(start_time-t0);
 		Serial.print(" ");
@@ -236,7 +222,7 @@ void ctrl_loop() {
 		Serial.print(" ");
 		Serial.print(adc_to_lux(ctrl_y));		
 		Serial.print(" ");
-		Serial.println(ctrl_mapped_ref);
+		Serial.print(ctrl_mapped_ref);
 		//Serial.print(",\t");
 
 
@@ -275,6 +261,8 @@ void ctrl_loop() {
 		}
 		
 		end_time = micros();
+    Serial.print(" ");
+    Serial.println(end_time - start_time);   
 		delay_time = Ts - (end_time - start_time);
 		delayMicroseconds(delay_time);
 	/*	if(delay_time > 0)
@@ -282,6 +270,8 @@ void ctrl_loop() {
 		else
 			Serial.println("NOT OK");*/
 	}
+
+  
 }
 
 // --------------------------------------------------
@@ -327,8 +317,8 @@ void main_send_end_cmd() {
 
 void main_switch() {
   double x;
-  
-// read cmd and execute it
+    
+  // read cmd and execute it
   if (serial_read_str(&buf[0], BUFSZ)) {
     //Serial.print("-- Got cmd: ");
     //Serial.println(buf); // echo the command just received
