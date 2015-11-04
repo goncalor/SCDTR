@@ -12,16 +12,17 @@
 #define BUFSZ 100
 #define BUFSZ2 10
 #define BAUDRATE 115200
-#define SAMPLE_TIME 3000
-#define INTEGRAL_TIME 0.1
-#define GAIN_K 2
-#define GAIN_D 0
+#define SAMPLE_TIME 3800
+//#define INTEGRAL_TIME 0.1
+#define GAIN_K 10
+#define GAIN_D 0.01
 #define FEEDFORWARD_GAIN 0.1
 #define PID_A 10
 #define RESISTENCIA 10000.0
 #define LDR_B 4.7782
 #define LDR_A -0.6901
 #define INT_GAIN 10
+#define ANTIWINDUP_GAIN 0.05
 
 
 const int analogInPin = 0;  // Analog input pin that LDR
@@ -38,8 +39,8 @@ int n;
 
 int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y=0;	
 unsigned int Ts= SAMPLE_TIME;
-double gain_k = GAIN_K, integral_time=INTEGRAL_TIME, gain_d=GAIN_D, ctrl_wind_gain=0.5/INTEGRAL_TIME;
-double feedforward_gain = FEEDFORWARD_GAIN, a=PID_A ;
+double gain_k = GAIN_K, gain_d=GAIN_D, ctrl_wind_gain=ANTIWINDUP_GAIN;
+double feedforward_gain = FEEDFORWARD_GAIN, a=PID_A, gain_i=INT_GAIN;
 int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
 
@@ -126,21 +127,22 @@ void ctrl_loop() {
 	*/
 		
 	// control signals
-	long  p,d,i=0, full_ctrl_u, ctrl_e_sat=0;
+	long  p,i=0, full_ctrl_u, ctrl_e_sat=0;
+  double d=0;
 
 	// previous vars
 	long i_before =0 , d_before=0,ctrl_e_before=0;
-	unsigned int y_before=0;
+	int y_before=AnalogReadAvg(analogInPin,3);
 
 	// Time vars
-	unsigned long end_time, start_time,t0;
+	long end_time, start_time,t0;
 	long delay_time;
 
 	// Precalculated vars
 	unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
-	double Ts_sec = Ts/1000000.0;
+	double Ts_sec = (float)Ts/1000000.0;
 	//double gain_i=1./integral_time;
-  double gain_i=INT_GAIN;
+
 	double derivative_const = gain_d /(gain_d + a*Ts_sec);
 	double gain_k_i = gain_i*gain_k;
 	double gain_k_a = gain_k * a;
@@ -152,7 +154,7 @@ void ctrl_loop() {
 	// other
 	double c;
 		
-	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d ctrl_e_sat lux ctrl_mapped_ref");
+	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d lux ctrl_mapped_ref");
 	t0=micros();
 		
 	while(looping){
@@ -181,8 +183,8 @@ void ctrl_loop() {
 		//i =  i_before + Ts_sec * 	(ctrl_e + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
 
 		//d =  derivative_const * (d_before - gain_k_a * (ctrl_y-y_before));
-		//d = gain_k * gain_d * (ctrl_y-y_before)/Ts_sec;
-		d=a/(a+Ts_sec)*d_before-gain_d/(a+Ts_sec)*(ctrl_y-y_before); // % update derivative part
+		d = gain_d * (ctrl_y-y_before)/Ts_sec;
+		//d=a/(a+Ts_sec)*d-gain_d/(a+Ts_sec)*(ctrl_y-y_before); // % update derivative part
 		
 		
 		full_ctrl_u = p + i - d + ref_feedfoward ;	// now add feedforward
@@ -197,11 +199,11 @@ void ctrl_loop() {
 
 		//Variable updates
     i_before = i;
-		d_before = d;		
+		//d_before = d;		
 		y_before = ctrl_y;
-		ctrl_e_before = ctrl_e;	
 		ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
-    i =  i_before + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
+    i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
+    ctrl_e_before = ctrl_e; 
 		
 		// Prints 
 		Serial.print(start_time-t0);
@@ -214,15 +216,15 @@ void ctrl_loop() {
 		Serial.print(" ");
 		Serial.print(p);
 		Serial.print(" ");
-		Serial.print(i);
+		Serial.print(i_before);
 		Serial.print(" ");
 		Serial.print(d);
-		Serial.print(" ");
-		Serial.print(ctrl_e_sat);
+		//Serial.print(" ");
+		//Serial.print(ctrl_e_sat);
 		Serial.print(" ");
 		Serial.print(adc_to_lux(ctrl_y));		
 		Serial.print(" ");
-		Serial.print(ctrl_mapped_ref);
+		Serial.println(ctrl_mapped_ref);
 		//Serial.print(",\t");
 
 
@@ -261,14 +263,12 @@ void ctrl_loop() {
 		}
 		
 		end_time = micros();
-    Serial.print(" ");
-    Serial.println(end_time - start_time);   
 		delay_time = Ts - (end_time - start_time);
 		delayMicroseconds(delay_time);
-	/*	if(delay_time > 0)
-			Serial.println("OK");
+		/*if(delay_time > 0)
+			Serial.println(" OK");
 		else
-			Serial.println("NOT OK");*/
+			Serial.println(" NOT OK");*/
 	}
 
   
@@ -343,8 +343,8 @@ void main_switch() {
         itoa(x, buf2, BUFSZ2);
         strcat(buf, buf2); strcat(buf, "\n");
         Serial.print(buf);
-		Serial.print("ref = ");
-		Serial.println(ctrl_ref);
+    		Serial.print("ref = ");
+    		Serial.println(ctrl_ref);
       break;
 		
 		
@@ -374,10 +374,12 @@ void main_switch() {
         // config the controller
         switch (buf[1]) {
           case '0': x= atof(&buf[2]); gain_k= x; break;
-          case '1': x= atof(&buf[2]); integral_time= x; break;
+          case '1': x= atof(&buf[2]); gain_i= x; break;
           case '2': x= atof(&buf[2]); gain_d= x; break;
           case '3': x= atof(&buf[2]); feedforward_gain = x; break;
           case '4': x= atof(&buf[2]); ctrl_wind_gain = x; break;
+          case '5': x= atof(&buf[2]); a = x; break;
+
  
           default: x=0.0; Serial.print('E');
         }
@@ -387,10 +389,11 @@ void main_switch() {
       case 'C':
         // get the current controller
         Serial.print("Proportional gain: ");Serial.println(gain_k);
-		Serial.print("Integral time: ");Serial.println(integral_time);
-		Serial.print("Differential gain: "); Serial.println(gain_d);
-		Serial.print("Feedforward gain: "); Serial.println(feedforward_gain);
-		Serial.print("AntiWindup gain: "); Serial.println(ctrl_wind_gain);
+    		Serial.print("Integral gain: ");Serial.println(gain_i);
+    		Serial.print("Differential gain: "); Serial.println(gain_d);
+    		Serial.print("Feedforward gain: "); Serial.println(feedforward_gain);
+    		Serial.print("AntiWindup gain: "); Serial.println(ctrl_wind_gain);
+        Serial.print("Filter gain A: "); Serial.println(a);
 
         break;
 		
@@ -405,10 +408,10 @@ void main_switch() {
         itoa(v, buf2, BUFSZ2); strcat(buf, buf2);
         strcat(buf, "\n");
         Serial.print(buf);*/
-		Serial.print("i = ");
-		Serial.println(v);		
-		Serial.print("lux = ");
-		Serial.println(adc_to_lux(v));		
+    		Serial.print("i = ");
+    		Serial.println(v);		
+    		Serial.print("lux = ");
+    		Serial.println(adc_to_lux(v));		
         }
         break;
 
@@ -433,8 +436,8 @@ void main_switch() {
         itoa(v, buf2, BUFSZ2); strcat(buf, buf2);
         strcat(buf, "\n");
         Serial.print(buf);
-		Serial.print("lux = ");
-		Serial.println(luxfunction(v));
+    		Serial.print("lux = ");
+    		Serial.println(luxfunction(v));
         }
         break;
 
