@@ -12,55 +12,23 @@
 #define BUFSZ 100
 #define BUFSZ2 10
 #define BAUDRATE 115200
-#define SAMPLE_TIME 10000	// microseconds
-#define INTERRUPT_TIME 65536 - (16000000/8)*(SAMPLE_TIME/1000000.)
-#define INTEGRAL_TIME 0.001
-#define GAIN_K 2.0	
-#define GAIN_D 0
+#define SAMPLE_TIME 3800
+//#define INTEGRAL_TIME 0.1
+#define GAIN_K 10
+#define GAIN_D 0.01
 #define FEEDFORWARD_GAIN 0.1
+#define PID_A 10
+#define RESISTENCIA 10000.0
+#define LDR_B 4.7782
+#define LDR_A -0.6901
+#define INT_GAIN 10
+#define ANTIWINDUP_GAIN 0.05
+#define INTERRUPT_TIME 65536 - (16000000/8)*(SAMPLE_TIME/1000000.)
 
 
-int ctrl_ref=127;
 const int analogInPin = 0;  // Analog input pin that LDR
-unsigned int Ts= SAMPLE_TIME;
-double gain_k = GAIN_K;
-double integral_time = INTEGRAL_TIME;
-double gain_d=GAIN_D;
-double ctrl_wind_gain=1./INTEGRAL_TIME;
-double feedforward_gain = FEEDFORWARD_GAIN;
-int analogOutPin = 5; // Analog output pin that the LED is attached to
-
-// variables that are written during interrupts (use volatile)
-volatile int ctrl_y;
-volatile int ctrl_e;
-volatile int ctrl_u;
-volatile int print_flag;
-volatile double full_ctrl_u, ctrl_e_sat = 0;
-volatile unsigned long ctrl_ui=0;
-volatile unsigned long ctrl_ui_before=0;
-volatile unsigned int ctrl_mapped_ref;
-
-ISR(TIMER1_OVF_vect)
-{
-	TCNT1 = (unsigned int) INTERRUPT_TIME; // reload timer. don't move this
-
-	print_flag = 1;
-
-	ctrl_y = analogRead(analogInPin);
-	ctrl_e = ctrl_mapped_ref - ctrl_y;
-
-	ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
-	ctrl_ui_before = ctrl_ui;
-	full_ctrl_u = (gain_k * ctrl_e) + (gain_k * integral_time * ctrl_ui) + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
-	full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-	ctrl_u = constrain(full_ctrl_u, 0, 255);
-	ctrl_e_sat = full_ctrl_u-ctrl_u;
-
-	analogWrite(analogOutPin, ctrl_u);
-}
-
-
 //const int analogOutPin = 9; // Analog output pin that the LED is attached to
+int analogOutPin = 5; // Analog output pin that the LED is attached to
 
 char buf[BUFSZ];
 char buf2[BUFSZ2];
@@ -70,10 +38,31 @@ int sensorValuesArray[SENSORBUF];
 unsigned long t0, t1, timeArray[SENSORBUF];
 int n;
 
-//int ctrl_e1, ctrl_e2, ctrl_u1, ctrl_u2;
-//double a0=2.0, a1=0.0, a2=0.0, b1=0.0, b2=0.0;
+int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y=0;	
+unsigned int Ts= SAMPLE_TIME;
+double gain_k = GAIN_K, gain_d=GAIN_D, ctrl_wind_gain=ANTIWINDUP_GAIN;
+double feedforward_gain = FEEDFORWARD_GAIN, a=PID_A, gain_i=INT_GAIN;
 int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
+
+
+
+int luxfunction(double lux_dado){
+  double ctrl_ref_novo=0,ldr=0, voltagem=0, resist=RESISTENCIA;
+  ldr=pow(10.0,(LDR_A*log10(lux_dado)+LDR_B));
+  voltagem=5/(1+ldr/resist);
+  ctrl_ref_novo=voltagem*255/5;
+  return ctrl_ref_novo;
+}
+
+int adc_to_lux(int adc_val){
+	double ldr_ohms, lux;
+	ldr_ohms = 1024 * RESISTENCIA / adc_val - RESISTENCIA;
+	lux= pow(10,(log10(ldr_ohms) - LDR_B)/LDR_A);
+	return lux;	
+}
+
+
 
 int AnalogReadAvg(int pin,int n){
 	int i;
@@ -84,19 +73,9 @@ int AnalogReadAvg(int pin,int n){
 	return ReadAvg/n;
 }
 
-void serial_print_ctrl_data() {
-  for (n=0; n<SENSORBUF; n++) {
-    Serial.print(sensorValuesArray[n]);
-    Serial.print(" ");
-    Serial.print(ctrl_uArray[n]);
-    Serial.print(" ");
-    Serial.println(timeArray[n]);
-  }
-}
-
 
 int serial_read_str(char *buf, int buflen){
-/* read till the end of the buffer or a terminating chr*/
+  /* read till the end of the buffer or a terminating chr*/
   int i, c;
   if (Serial.available() <= 0) {
     return 0;
@@ -133,145 +112,235 @@ void pwm_config(int freqId) {
   TCCR1B |= prescalerVal;
 }
 
+volatile int print_flag;
+
+ISR(TIMER1_OVF_vect)
+{
+  TCNT1 = (unsigned int) INTERRUPT_TIME; // reload timer. don't move this
+  print_flag = 1;
+
+  //////start_time = micros();
+  ctrl_y = AnalogReadAvg(analogInPin, 3);
+  ctrl_e = ctrl_mapped_ref - ctrl_y;
+  /*PID with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
+  p =  (gain_k * ctrl_e);
+  //i =  i_before + Ts_sec * 	(ctrl_e + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
+
+  //d =  derivative_const * (d_before - gain_k_a * (ctrl_y-y_before));
+  d = gain_d * (ctrl_y-y_before)/Ts_sec;
+  //d=a/(a+Ts_sec)*d-gain_d/(a+Ts_sec)*(ctrl_y-y_before); // % update derivative part
+
+  full_ctrl_u = p + i - d + ref_feedfoward ;	// now add feedforward
+
+  full_ctrl_u = map(full_ctrl_u, 0, 1024, 0, 255); // Doesn't constrain to within range
+  ctrl_u = constrain(full_ctrl_u, 0, 255);
+
+  //Serial.println(micros()-start_time);
+
+  // Write Output
+  analogWrite(analogOutPin, ctrl_u);
+
+  //Variable updates
+  i_before = i;
+  //d_before = d;		
+  y_before = ctrl_y;
+  ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
+  i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
+  ctrl_e_before = ctrl_e; 
+
+ ////// // Prints 
+ ////// Serial.print(start_time-t0);
+ ////// Serial.print(" ");
+ ////// Serial.print(full_ctrl_u);
+ ////// Serial.print(" ");
+ ////// Serial.print(ctrl_y);
+ ////// Serial.print(" ");
+ ////// Serial.print(ctrl_e);
+ ////// Serial.print(" ");
+ ////// Serial.print(p);
+ ////// Serial.print(" ");
+ ////// Serial.print(i_before);
+ ////// Serial.print(" ");
+ ////// Serial.print(d);
+ ////// //Serial.print(" ");
+ ////// //Serial.print(ctrl_e_sat);
+ ////// Serial.print(" ");
+ ////// Serial.print(adc_to_lux(ctrl_y));		
+ ////// Serial.print(" ");
+ ////// Serial.println(ctrl_mapped_ref);
+ ////// //Serial.print(",\t");
+
+
+
+ ///// end_time = micros();
+ ///// delay_time = Ts - (end_time - start_time);
+ ///// delayMicroseconds(delay_time);
+  /*if(delay_time > 0)
+    Serial.println(" OK");
+    else
+    Serial.println(" NOT OK");*/
+
+
+}
+
 
 void ctrl_loop() {
-//	double full_ctrl_u, c, ctrl_e_sat = 0;
-//	unsigned long write_time;
-//	unsigned long end_time;
-//	unsigned long start_time;
-//	unsigned long t0;
-//	unsigned long ctrl_ui=0;
-//	unsigned long ctrl_ui_before=0;
-//	unsigned int ctrl_mapped_ref;
-//	long delay_time;
-//	
-//	Serial.println("write_t ctrl_u ctrl_y ctrl_e ctrl_ui ctrl_e_sat ctrl_ref");
-//	ctrl_mapped_ref = map(ctrl_ref, 0, 254, 0, 1023);
-//	t0=micros();
-//	while(1){
-//		start_time = micros();
-//		ctrl_y = AnalogReadAvg(analogInPin,3);
-//		ctrl_e = ctrl_mapped_ref - ctrl_y;
-//		//Proportional
-//		//full_ctrl_u = gain_k*ctrl_e;
-//		/*Proportinal-Integral*/
-//		/*ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * ctrl_e;
-//		ctrl_ui_before = ctrl_ui;
-//		full_ctrl_u = gain_k * ctrl_e + gain_k*integral_time * ctrl_ui;
-//		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-//		ctrl_u = constrain(full_ctrl_u, 0, 255);*/
-//		
-//		/*Proportinal-Integral with Anti Windup*/ // Page307 chapter 10
-//		/*ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e+ctrl_e_sat*ctrl_wind_gain);
-//		ctrl_ui_before = ctrl_ui;
-//		full_ctrl_u = gain_k * ctrl_e + gain_k*integral_time * ctrl_ui ;
-//		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-//		ctrl_u = constrain(full_ctrl_u, 0, 255);
-//		ctrl_e_sat = full_ctrl_u-ctrl_u;*/
-//		
-//		/*Proportinal-Integral with Anti Windup and feedforward*/ // Page307 chapter 10
-//		ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
-//		ctrl_ui_before = ctrl_ui;
-//		full_ctrl_u = (gain_k * ctrl_e) + (gain_k * integral_time * ctrl_ui) + (ctrl_mapped_ref * feedforward_gain);	// now add feedforward
-//		full_ctrl_u = map(full_ctrl_u, 0, 1023, 0, 255); // Doesn't constrain to within range
-//		ctrl_u = constrain(full_ctrl_u, 0, 255);
-//		ctrl_e_sat = full_ctrl_u-ctrl_u;
-//		
-//
-//		write_time = micros();	
-//		analogWrite(analogOutPin, ctrl_u);
-//
-//		Serial.print(write_time);
-//		Serial.print(" ");
-//		Serial.print(full_ctrl_u);
-//		Serial.print(" ");
-//		Serial.print(ctrl_y);
-//		Serial.print(" ");
-//		Serial.print(ctrl_e);
-//		Serial.print(" ");
-//		Serial.print(ctrl_ui);
-//		Serial.print(" ");
-//		Serial.print(ctrl_e_sat);
-//		Serial.print(" ");
-//		Serial.println(map(ctrl_ref, 0, 254, 0, 1023));
-//		//Serial.print(",\t");
-//
-//
-//		if (Serial.available() > 0) {
-//		  c= Serial.read();
-//		  buf2[0]= c;
-//		  buf2[1]= '\0';
-//		  Serial.print(buf2);
-//		  analogWrite(analogOutPin, 0); //turn LED off
-//		  break; // break the loop
-//		}
-//		
-//		end_time = micros();
-//		delay_time = Ts - (end_time - start_time);
-//		delayMicroseconds(delay_time);
-///*		if(delay_time > 0)
-//			Serial.println("OK");
-//		else
-//			Serial.println("NOT OK");*/
-//	}
-//
-///*
-//  int c;
-//  pwm_config(1); // set PWM at max freq
-//
-//  // ctrl loop:
-//  t0= micros(); t1= t0+Ts; // 1 msec
-//  Serial.println("[Sensor CTRL_U TIME(us)]");
-//  for (n=0; n<SENSORBUF; n++, t1= t1+Ts) {
-//    // while 1, if time
-//    while (micros()<t1)
-//      // do nothing
-//      ;
-//
-//    //   read sensors
-//
-//	// the default control mode has a fixed ref
-//	// just read analog channel 1 (not zero)
-//	//sensorValuesArray[n]= analogRead(0);
-//	timeArray[n]= micros();
-//	ctrl_y= analogRead(analogInPin);
-//	sensorValuesArray[n]= ctrl_y;
-//
-//
-//    //   calc ctrl
-//    ctrl_e= ctrl_ref - ctrl_y;
-//    ctrl_u= a0*ctrl_e +a1*ctrl_e1 +a2*ctrl_e2
-//                      -b1*ctrl_u1 -b2*ctrl_u2;
-//    ctrl_uArray[n]= ctrl_u; // save values before truncation
-//    if (ctrl_u > 255) ctrl_u=255;
-//    if (ctrl_u < 0) ctrl_u=0;
-//    analogWrite(analogOutPin, ctrl_u);
-//
-//    ctrl_u2= ctrl_u1;
-//    ctrl_u1= ctrl_u;
-//    ctrl_e2= ctrl_e1;
-//    ctrl_e1= ctrl_e;
-//    
-//    //   read cmd, and write ans cmd
-//    //   if break loop then break
-//    
-//    if (Serial.available() > 0) {
-//	  c= Serial.read();
-//      buf2[0]= c;
-//      buf2[1]= '\0';
-//      Serial.print(buf2);
-//      break; // break the loop
-//    }
-//	
-//	if (n==SENSORBUF-1){
-//		serial_print_ctrl_data();
-//		n= 0; // make an infinite loop
-//    }
-//  }
-//
-// // Turn the LED off
-//  analogWrite(analogOutPin, 0);*/
+	// Global vars
+	/*
+	gain_d
+	gain_k
+	integral_time
+	ctrl_wind_gain
+	feedforward_gain
+	a	
+	ctrl_ref
+	ctrl_y
+	
+	*/
+		
+	// control signals
+	long p, i=0, full_ctrl_u, ctrl_e_sat=0;
+        double d=0;
+
+	// previous vars
+	long i_before=0, d_before=0, ctrl_e_before=0;
+	int y_before = AnalogReadAvg(analogInPin,3);
+
+	// Time vars
+	long end_time, start_time, t0;
+	long delay_time;
+
+	// Precalculated vars
+	unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
+	double Ts_sec = (float) Ts/1000000.0;
+	//double gain_i=1./integral_time;
+
+	double derivative_const = gain_d /(gain_d + a*Ts_sec);
+	double gain_k_i = gain_i*gain_k;
+	double gain_k_a = gain_k * a;
+	double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+        double Ts_gain_k_i = Ts_sec * gain_k_i;
+	
+	bool looping=true;
+	
+	// other
+	double c;
+		
+	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d lux ctrl_mapped_ref");
+	t0 = micros();
+		
+	while(looping){
+		/*
+		bi=ki*h
+		ad=Tf/(Tf+h)
+		bd=kd/(Tf+h)
+		br=h/Tt
+		
+		D=Tf/(Tf+h)*D-kd/(Tf+h)*(y-yold) % update derivative part
+		v=P+I+D % compute temporary output
+		u=sat(v,ulow,uhigh) % simulate actuator saturation
+		daout(ch1) % set analog output ch1
+		I=I+bi*(r-y)+br*(u-v) % update integral
+		yold=y % update old process output
+		*/
+		
+		start_time = micros();
+		ctrl_y = AnalogReadAvg(analogInPin, 3);
+		ctrl_e = ctrl_mapped_ref - ctrl_y;
+		/*PID with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
+		p =  (gain_k * ctrl_e);
+		//i =  i_before + Ts_sec * 	(ctrl_e + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
+
+		//d =  derivative_const * (d_before - gain_k_a * (ctrl_y-y_before));
+		d = gain_d * (ctrl_y-y_before)/Ts_sec;
+		//d=a/(a+Ts_sec)*d-gain_d/(a+Ts_sec)*(ctrl_y-y_before); // % update derivative part
+		
+		
+		full_ctrl_u = p + i - d + ref_feedfoward ;	// now add feedforward
+			
+		full_ctrl_u = map(full_ctrl_u, 0, 1024, 0, 255); // Doesn't constrain to within range
+		ctrl_u = constrain(full_ctrl_u, 0, 255);
+
+                //Serial.println(micros()-start_time);
+
+                // Write Output
+                analogWrite(analogOutPin, ctrl_u);
+
+                //Variable updates
+                i_before = i;
+                //d_before = d;		
+                y_before = ctrl_y;
+                ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
+                i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
+                ctrl_e_before = ctrl_e; 
+
+                // Prints 
+                Serial.print(start_time-t0);
+                Serial.print(" ");
+		Serial.print(full_ctrl_u);
+		Serial.print(" ");
+		Serial.print(ctrl_y);
+		Serial.print(" ");
+		Serial.print(ctrl_e);
+		Serial.print(" ");
+		Serial.print(p);
+		Serial.print(" ");
+		Serial.print(i_before);
+		Serial.print(" ");
+		Serial.print(d);
+		//Serial.print(" ");
+		//Serial.print(ctrl_e_sat);
+		Serial.print(" ");
+		Serial.print(adc_to_lux(ctrl_y));		
+		Serial.print(" ");
+		Serial.println(ctrl_mapped_ref);
+		//Serial.print(",\t");
+
+
+		if (Serial.available() > 0) {
+			if (serial_read_str(&buf[0], BUFSZ)){
+				 switch (buf[0]) {
+					case 'l':
+						// set lux reference
+						c= atof(&buf[1]);
+						ctrl_ref= luxfunction(c);
+						sprintf(buf, "lux = ");
+						itoa(c, buf2, BUFSZ2);
+						strcat(buf, buf2); strcat(buf, "\n");
+						//Serial.print(buf);
+						//Serial.print("ref = ");
+						//Serial.println(ctrl_ref);
+						ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
+					break;
+					
+					case 'r':
+						// set reference
+						c= atof(&buf[1]);
+						ctrl_ref= c;
+						sprintf(buf, "ref=");
+						itoa(ctrl_ref, buf2, BUFSZ2);
+						strcat(buf, buf2); strcat(buf, "\n");
+						//Serial.print(buf);
+						ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
+					break;
+					default:
+						analogWrite(analogOutPin, 0); //turn LED off
+						looping=false;
+					break; // break the loop
+				 }
+			}
+		}
+		
+		end_time = micros();
+		delay_time = Ts - (end_time - start_time);
+		delayMicroseconds(delay_time);
+		/*if(delay_time > 0)
+			Serial.println(" OK");
+		else
+			Serial.println(" NOT OK");*/
+	}
 }
+
 
 // --------------------------------------------------
 void config_mode(char *buf) {
@@ -316,8 +385,8 @@ void main_send_end_cmd() {
 
 void main_switch() {
   double x;
-  
-// read cmd and execute it
+    
+  // read cmd and execute it
   if (serial_read_str(&buf[0], BUFSZ)) {
     //Serial.print("-- Got cmd: ");
     //Serial.println(buf); // echo the command just received
@@ -325,14 +394,27 @@ void main_switch() {
     // switch cmd
     switch (buf[0]) {
       case '\0':
-          break;
-
-		  
-		case 'L':
-				//Start our controler 
-				//that starts a flow of data to the serial port
-				ctrl_loop();
         break;
+
+
+      case 'L':
+        //Start our controler 
+        //that starts a flow of data to the serial port
+        ctrl_loop();
+        break;
+
+      case 'l':
+        // set lux reference
+        x= atof(&buf[1]);
+        ctrl_ref= luxfunction(x);
+        sprintf(buf, "lux = ");
+        itoa(x, buf2, BUFSZ2);
+        strcat(buf, buf2); strcat(buf, "\n");
+        Serial.print(buf);
+        Serial.print("ref = ");
+        Serial.println(ctrl_ref);
+        break;
+
       case '?':
         Serial.println("ver 8.10.2015");
         break;
@@ -352,30 +434,18 @@ void main_switch() {
         itoa(ctrl_ref, buf2, BUFSZ2);
         strcat(buf, buf2); strcat(buf, "\n");
         Serial.print(buf);
-
-		ctrl_mapped_ref = map(ctrl_ref, 0, 254, 0, 1023);
         break;
-        
-      /*case 'm':
-        // select the loop mode
-        if (buf[1]=='c') {
-          config_mode(&buf[2]);
-          Serial.print(buf);
-          break;
-        }
-        loopMode= atoi(&buf[1]);
-        sprintf(buf, "loopMode=%d\n", loopMode);
-        Serial.print(buf);
-        break;*/
-			
+        	
       case 'c':
         // config the controller
         switch (buf[1]) {
           case '0': x= atof(&buf[2]); gain_k= x; break;
-          case '1': x= atof(&buf[2]); integral_time= x; break;
+          case '1': x= atof(&buf[2]); gain_i= x; break;
           case '2': x= atof(&buf[2]); gain_d= x; break;
           case '3': x= atof(&buf[2]); feedforward_gain = x; break;
           case '4': x= atof(&buf[2]); ctrl_wind_gain = x; break;
+          case '5': x= atof(&buf[2]); a = x; break;
+
  
           default: x=0.0; Serial.print('E');
         }
@@ -385,48 +455,29 @@ void main_switch() {
       case 'C':
         // get the current controller
         Serial.print("Proportional gain: ");Serial.println(gain_k);
-		Serial.print("Integral time: ");Serial.println(integral_time);
-		Serial.print("Differential gain: "); Serial.println(gain_d);
-		Serial.print("Feedforward gain: "); Serial.println(feedforward_gain);
-		Serial.print("AntiWindup gain: "); Serial.println(ctrl_wind_gain);
+    		Serial.print("Integral gain: ");Serial.println(gain_i);
+    		Serial.print("Differential gain: "); Serial.println(gain_d);
+    		Serial.print("Feedforward gain: "); Serial.println(feedforward_gain);
+    		Serial.print("AntiWindup gain: "); Serial.println(ctrl_wind_gain);
+        Serial.print("Filter gain A: "); Serial.println(a);
 
         break;
 		
-		
-		/* PROF CONTROLER
-      case 'c':
-        // config the controller
-        switch (buf[1]) {
-          case '0': x= atof(&buf[2]); a0= x; break;
-          case '1': x= atof(&buf[2]); a1= x; break;
-          case '2': x= atof(&buf[2]); a2= x; break;
-          case '3': x= atof(&buf[2]); b1= x; break;
-          case '4': x= atof(&buf[2]); b2= x; break;
-          default: x=0.0; Serial.print('E');
-        }
-        Serial.print("x="); Serial.println(x);
-        break;
-		
-      case 'C':
-        // get the current controller
-        Serial.print("Cz= (");
-        Serial.print(a0); Serial.print(" + ");
-        Serial.print(a1); Serial.print(" Z^-1 + ");
-        Serial.print(a2); Serial.print(" Z^-2) / (1 + ");
-        Serial.print(b1); Serial.print(" Z^-1 + ");
-        Serial.print(b2); Serial.println(" Z^-2)");
-        break;
-		*/
+
       case 'i':
         // read sensor
         {
         int ch= 0;
         if (buf[1]!='\0') ch= buf[1]-'0';
         int v= analogRead(ch);
-        buf[0]= 'i'; buf[1]= ch+'0'; buf[2]= '\0';
+        /*buf[0]= 'i'; buf[1]= ch+'0'; buf[2]= '\0';
         itoa(v, buf2, BUFSZ2); strcat(buf, buf2);
         strcat(buf, "\n");
-        Serial.print(buf);
+        Serial.print(buf);*/
+    		Serial.print("i = ");
+    		Serial.println(v);		
+    		Serial.print("lux = ");
+    		Serial.println(adc_to_lux(v));		
         }
         break;
 
@@ -441,6 +492,20 @@ void main_switch() {
         Serial.print(buf);
         }
         break;
+		
+	  case 'O':
+        // set actuation
+        {
+        int v= atoi(&buf[1]);
+        analogWrite(analogOutPin, luxfunction(v));
+        sprintf(buf, "o");
+        itoa(v, buf2, BUFSZ2); strcat(buf, buf2);
+        strcat(buf, "\n");
+        Serial.print(buf);
+    		Serial.print("lux = ");
+    		Serial.println(luxfunction(v));
+        }
+        break;
 
       case 'p':
         // pwm config
@@ -451,30 +516,7 @@ void main_switch() {
         Serial.print(buf);
         break;
 
-      /*case 'x':
-        // run the (finite time) control loop
-        ctrl_finite_loop();
-        if (ctrl_verbose_flag)
-          serial_print_data_n();
-        //Serial.print(buf);
-        break;
-        
-      case 'X':
-        main_send_end_cmd(); // reply cmd received
-        // run the infinite control loop
-        //   end loop with a received message
-        ctrl_infinite_loop();
-        if (ctrl_verbose_flag)
-          serial_print_data_n();
-        //Serial.print(buf);
-        break;
-        
-      case '<':
-        // get the data buffers
-        serial_print_data_n();
-        break;*/
-
-      case 'd':
+	  case 'd':
         // digital input/output
         {
           // find the channel number
@@ -512,7 +554,7 @@ void main_switch() {
         
       case 'D':
         // delay in milisec
-        t0= millis() +(unsigned long)atoi(&buf[1]);
+        t0= millis() +(unsigned long)atoi(&buf[1]);	
         while (millis() < t0)
           /* do nothing */ ;
         Serial.print(buf);
@@ -533,25 +575,40 @@ void main_switch() {
 void setup() {
   // start serial port at BAUDRATE bps:
   Serial.begin(BAUDRATE);
+  pinMode(analogInPin,INPUT);
+  pinMode(analogOutPin,OUTPUT);
 
-  print_flag = 0;
-  ctrl_mapped_ref = map(ctrl_ref, 0, 254, 0, 1023);
+  // control signals
+  long p, i=0, full_ctrl_u, ctrl_e_sat=0;
+  double d=0;
 
-  Serial.print("time");
-  Serial.print(" ");
-  Serial.print("full_ctrl_u");
-  Serial.print(" ");
-  Serial.print("ctrl_y");
-  Serial.print(" ");
-  Serial.print("ctrl_e");
-  Serial.print(" ");
-  Serial.print("ctrl_ui");
-  Serial.print(" ");
-  Serial.print("ctrl_e_sat");
-  Serial.print(" ");
-  Serial.println("ctrl_mapped_ref");
+  // previous vars
+  long i_before=0, d_before=0, ctrl_e_before=0;
+  int y_before = AnalogReadAvg(analogInPin,3);
 
-	
+  // Time vars
+  long end_time, start_time, t0;
+  long delay_time;
+
+  // Precalculated vars
+  unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
+  double Ts_sec = (float) Ts/1000000.0;
+  //double gain_i=1./integral_time;
+
+  double derivative_const = gain_d /(gain_d + a*Ts_sec);
+  double gain_k_i = gain_i*gain_k;
+  double gain_k_a = gain_k * a;
+  double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+  double Ts_gain_k_i = Ts_sec * gain_k_i;
+
+  bool looping=true;
+
+  // other
+  double c;
+
+  Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d lux ctrl_mapped_ref");
+  t0 = micros();
+
   // setup interrupts
   noInterrupts();
   TCCR1A = 0;
@@ -561,35 +618,35 @@ void setup() {
   TCNT1 = INTERRUPT_TIME; // preload timer 65536-16MHz/8
   TIMSK1 |= (1 << TOIE1); // enable timer overflow interrupt
   interrupts(); // enable all interrupts
-
-
 }
 
 void loop() {
   main_switch();
 
-  //delay(500);
-  //Serial.println(tmpbuf[tmp]);
-  //Serial.println(tmp);
-  //Serial.println(INTERRUPT_TIME);
-
   if(print_flag)
   {
-	  print_flag = 0;	// disable printing
-	  
-	  Serial.print(micros());
-	  Serial.print(" ");
-	  Serial.print(full_ctrl_u);
-	  Serial.print(" ");
-	  Serial.print(ctrl_y);
-	  Serial.print(" ");
-	  Serial.print(ctrl_e);
-	  Serial.print(" ");
-	  Serial.print(ctrl_ui);
-	  Serial.print(" ");
-	  Serial.print(ctrl_e_sat);
-	  Serial.print(" ");
-	  Serial.println(ctrl_mapped_ref);
+    print_flag = 0;
+    // Prints 
+    Serial.print(micros());
+    Serial.print(" ");
+    Serial.print(full_ctrl_u);
+    Serial.print(" ");
+    Serial.print(ctrl_y);
+    Serial.print(" ");
+    Serial.print(ctrl_e);
+    Serial.print(" ");
+    Serial.print(p);
+    Serial.print(" ");
+    Serial.print(i_before);
+    Serial.print(" ");
+    Serial.print(d);
+    //Serial.print(" ");
+    //Serial.print(ctrl_e_sat);
+    Serial.print(" ");
+    Serial.print(adc_to_lux(ctrl_y));		
+    Serial.print(" ");
+    Serial.println(ctrl_mapped_ref);
+    //Serial.print(",\t");
   }
 }
 
