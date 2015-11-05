@@ -12,7 +12,7 @@
 #define BUFSZ 100
 #define BUFSZ2 10
 #define BAUDRATE 115200
-#define SAMPLE_TIME 5000	// microseconds
+#define SAMPLE_TIME 10000	// microseconds
 #define INTERRUPT_TIME 65536 - (16000000/8)*(SAMPLE_TIME/1000000.)
 #define INTEGRAL_TIME 0.001
 #define GAIN_K 2.0	
@@ -46,7 +46,7 @@ ISR(TIMER1_OVF_vect)
 
 	print_flag = 1;
 
-	ctrl_y = AnalogReadAvg(analogInPin, 3);
+	ctrl_y = analogRead(analogInPin);
 	ctrl_e = ctrl_mapped_ref - ctrl_y;
 
 	ctrl_ui = ctrl_ui_before + Ts/(integral_time*1000000) * (ctrl_e + ctrl_e_sat * ctrl_wind_gain);
@@ -536,6 +536,21 @@ void setup() {
 
   print_flag = 0;
   ctrl_mapped_ref = map(ctrl_ref, 0, 254, 0, 1023);
+
+  Serial.print("time");
+  Serial.print(" ");
+  Serial.print("full_ctrl_u");
+  Serial.print(" ");
+  Serial.print("ctrl_y");
+  Serial.print(" ");
+  Serial.print("ctrl_e");
+  Serial.print(" ");
+  Serial.print("ctrl_ui");
+  Serial.print(" ");
+  Serial.print("ctrl_e_sat");
+  Serial.print(" ");
+  Serial.println("ctrl_mapped_ref");
+
 	
   // setup interrupts
   noInterrupts();
@@ -546,6 +561,8 @@ void setup() {
   TCNT1 = INTERRUPT_TIME; // preload timer 65536-16MHz/8
   TIMSK1 |= (1 << TOIE1); // enable timer overflow interrupt
   interrupts(); // enable all interrupts
+
+
 }
 
 void loop() {

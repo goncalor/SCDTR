@@ -127,27 +127,27 @@ void ctrl_loop() {
 	*/
 		
 	// control signals
-	long  p,i=0, full_ctrl_u, ctrl_e_sat=0;
-  double d=0;
+	long p, i=0, full_ctrl_u, ctrl_e_sat=0;
+        double d=0;
 
 	// previous vars
-	long i_before =0 , d_before=0,ctrl_e_before=0;
-	int y_before=AnalogReadAvg(analogInPin,3);
+	long i_before=0, d_before=0, ctrl_e_before=0;
+	int y_before = AnalogReadAvg(analogInPin,3);
 
 	// Time vars
-	long end_time, start_time,t0;
+	long end_time, start_time, t0;
 	long delay_time;
 
 	// Precalculated vars
 	unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
-	double Ts_sec = (float)Ts/1000000.0;
+	double Ts_sec = (float) Ts/1000000.0;
 	//double gain_i=1./integral_time;
 
 	double derivative_const = gain_d /(gain_d + a*Ts_sec);
 	double gain_k_i = gain_i*gain_k;
 	double gain_k_a = gain_k * a;
 	double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-  double Ts_gain_k_i = Ts_sec * gain_k_i;
+        double Ts_gain_k_i = Ts_sec * gain_k_i;
 	
 	bool looping=true;
 	
@@ -155,12 +155,10 @@ void ctrl_loop() {
 	double c;
 		
 	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d lux ctrl_mapped_ref");
-	t0=micros();
+	t0 = micros();
 		
 	while(looping){
-		
 		/*
-		
 		bi=ki*h
 		ad=Tf/(Tf+h)
 		bd=kd/(Tf+h)
@@ -172,11 +170,10 @@ void ctrl_loop() {
 		daout(ch1) % set analog output ch1
 		I=I+bi*(r-y)+br*(u-v) % update integral
 		yold=y % update old process output
-		
 		*/
 		
 		start_time = micros();
-		ctrl_y = AnalogReadAvg(analogInPin,3);
+		ctrl_y = AnalogReadAvg(analogInPin, 3);
 		ctrl_e = ctrl_mapped_ref - ctrl_y;
 		/*PID with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
 		p =  (gain_k * ctrl_e);
@@ -192,22 +189,22 @@ void ctrl_loop() {
 		full_ctrl_u = map(full_ctrl_u, 0, 1024, 0, 255); // Doesn't constrain to within range
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
 
-		//Serial.println(micros()-start_time);
-		
-    // Write Output
-    analogWrite(analogOutPin, ctrl_u);
+                //Serial.println(micros()-start_time);
 
-		//Variable updates
-    i_before = i;
-		//d_before = d;		
-		y_before = ctrl_y;
-		ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
-    i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
-    ctrl_e_before = ctrl_e; 
-		
-		// Prints 
-		Serial.print(start_time-t0);
-		Serial.print(" ");
+                // Write Output
+                analogWrite(analogOutPin, ctrl_u);
+
+                //Variable updates
+                i_before = i;
+                //d_before = d;		
+                y_before = ctrl_y;
+                ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
+                i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
+                ctrl_e_before = ctrl_e; 
+
+                // Prints 
+                Serial.print(start_time-t0);
+                Serial.print(" ");
 		Serial.print(full_ctrl_u);
 		Serial.print(" ");
 		Serial.print(ctrl_y);
@@ -270,9 +267,8 @@ void ctrl_loop() {
 		else
 			Serial.println(" NOT OK");*/
 	}
-
-  
 }
+
 
 // --------------------------------------------------
 void config_mode(char *buf) {
@@ -326,16 +322,16 @@ void main_switch() {
     // switch cmd
     switch (buf[0]) {
       case '\0':
-          break;
-
-		  
-		case 'L':
-				//Start our controler 
-				//that starts a flow of data to the serial port
-				ctrl_loop();
         break;
-		
-	  case 'l':
+
+
+      case 'L':
+        //Start our controler 
+        //that starts a flow of data to the serial port
+        ctrl_loop();
+        break;
+
+      case 'l':
         // set lux reference
         x= atof(&buf[1]);
         ctrl_ref= luxfunction(x);
@@ -343,12 +339,10 @@ void main_switch() {
         itoa(x, buf2, BUFSZ2);
         strcat(buf, buf2); strcat(buf, "\n");
         Serial.print(buf);
-    		Serial.print("ref = ");
-    		Serial.println(ctrl_ref);
-      break;
-		
-		
-		
+        Serial.print("ref = ");
+        Serial.println(ctrl_ref);
+        break;
+
       case '?':
         Serial.println("ver 8.10.2015");
         break;
