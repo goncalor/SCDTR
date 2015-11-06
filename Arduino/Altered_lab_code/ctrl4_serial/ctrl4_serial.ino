@@ -154,7 +154,7 @@ void ctrl_loop() {
 	// other
 	double c;
 		
-	Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d lux ctrl_mapped_ref");
+	Serial.println("time full_ctrl_u ctrl_y ctrl_e p i d lux ctrl_mapped_ref");
 	t0 = micros();
 		
 	while(looping){

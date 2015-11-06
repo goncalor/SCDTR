@@ -23,7 +23,7 @@
 #define LDR_A -0.6901
 #define INT_GAIN 10
 #define ANTIWINDUP_GAIN 0.05
-#define INTERRUPT_TIME 65536 - (16000000/8)*(SAMPLE_TIME/1000000.)
+#define INTERRUPT_TIME (65536 - (16000000./8)*(SAMPLE_TIME/1000000.))
 
 
 const int analogInPin = 0;  // Analog input pin that LDR
@@ -35,7 +35,7 @@ char buf2[BUFSZ2];
 
 byte ctrl_uArray[SENSORBUF];
 int sensorValuesArray[SENSORBUF];
-unsigned long t0, t1, timeArray[SENSORBUF];
+unsigned long timeArray[SENSORBUF];
 int n;
 
 int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y=0;	
@@ -112,7 +112,32 @@ void pwm_config(int freqId) {
   TCCR1B |= prescalerVal;
 }
 
-volatile int print_flag;
+  // control signals
+  volatile long p, i=0, full_ctrl_u, ctrl_e_sat=0;
+  volatile double d=0;
+
+  // previous vars
+  volatile long i_before=0, d_before=0, ctrl_e_before=0;
+  volatile int y_before = AnalogReadAvg(analogInPin,3);
+
+  // Time vars
+  volatile long end_time, start_time, t0;
+  volatile long delay_time;
+
+  // Precalculated vars
+  volatile unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
+  volatile double Ts_sec = (float) Ts/1000000.0;
+  //double gain_i=1./integral_time;
+
+  volatile double derivative_const = gain_d /(gain_d + a*Ts_sec);
+  volatile double gain_k_i = gain_i*gain_k;
+  volatile double gain_k_a = gain_k * a;
+  volatile double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+  volatile double Ts_gain_k_i = Ts_sec * gain_k_i;
+
+  // other
+  volatile double c;
+  volatile short print_flag;
 
 ISR(TIMER1_OVF_vect)
 {
@@ -147,40 +172,6 @@ ISR(TIMER1_OVF_vect)
   ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
   i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
   ctrl_e_before = ctrl_e; 
-
- ////// // Prints 
- ////// Serial.print(start_time-t0);
- ////// Serial.print(" ");
- ////// Serial.print(full_ctrl_u);
- ////// Serial.print(" ");
- ////// Serial.print(ctrl_y);
- ////// Serial.print(" ");
- ////// Serial.print(ctrl_e);
- ////// Serial.print(" ");
- ////// Serial.print(p);
- ////// Serial.print(" ");
- ////// Serial.print(i_before);
- ////// Serial.print(" ");
- ////// Serial.print(d);
- ////// //Serial.print(" ");
- ////// //Serial.print(ctrl_e_sat);
- ////// Serial.print(" ");
- ////// Serial.print(adc_to_lux(ctrl_y));		
- ////// Serial.print(" ");
- ////// Serial.println(ctrl_mapped_ref);
- ////// //Serial.print(",\t");
-
-
-
- ///// end_time = micros();
- ///// delay_time = Ts - (end_time - start_time);
- ///// delayMicroseconds(delay_time);
-  /*if(delay_time > 0)
-    Serial.println(" OK");
-    else
-    Serial.println(" NOT OK");*/
-
-
 }
 
 
@@ -578,44 +569,20 @@ void setup() {
   pinMode(analogInPin,INPUT);
   pinMode(analogOutPin,OUTPUT);
 
-  // control signals
-  long p, i=0, full_ctrl_u, ctrl_e_sat=0;
-  double d=0;
 
-  // previous vars
-  long i_before=0, d_before=0, ctrl_e_before=0;
-  int y_before = AnalogReadAvg(analogInPin,3);
-
-  // Time vars
-  long end_time, start_time, t0;
-  long delay_time;
-
-  // Precalculated vars
-  unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1024);
-  double Ts_sec = (float) Ts/1000000.0;
-  //double gain_i=1./integral_time;
-
-  double derivative_const = gain_d /(gain_d + a*Ts_sec);
-  double gain_k_i = gain_i*gain_k;
-  double gain_k_a = gain_k * a;
-  double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-  double Ts_gain_k_i = Ts_sec * gain_k_i;
-
-  bool looping=true;
-
-  // other
-  double c;
-
-  Serial.println("time full_ctrl_u ctrl_y ctrl_e  p i d lux ctrl_mapped_ref");
+  Serial.println("\ntime full_ctrl_u ctrl_y ctrl_e p i d lux ctrl_mapped_ref");
   t0 = micros();
 
   // setup interrupts
   noInterrupts();
+  // reset timer control registers
   TCCR1A = 0;
   TCCR1B = 0;
 
   TCCR1B |= (1 << CS11); // 8 prescaler
-  TCNT1 = INTERRUPT_TIME; // preload timer 65536-16MHz/8
+  //TCCR1B |= (1 << CS11) | (1 << CS10); // 64 prescaler
+  //TCCR1B |= (1 << CS12) | (1 << CS10); // 1024 prescaler
+  TCNT1 = (unsigned int) INTERRUPT_TIME; // preload timer
   TIMSK1 |= (1 << TOIE1); // enable timer overflow interrupt
   interrupts(); // enable all interrupts
 }
