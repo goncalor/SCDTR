@@ -8,7 +8,6 @@
 
 #include <avr/interrupt.h>
 
-#define SENSORBUF 1
 #define BUFSZ 100
 #define BUFSZ2 10
 #define BAUDRATE 115200
@@ -32,9 +31,7 @@ int analogOutPin = 5; // Analog output pin that the LED is attached to
 char buf[BUFSZ];
 char buf2[BUFSZ2];
 
-byte ctrl_uArray[SENSORBUF];
-int sensorValuesArray[SENSORBUF];
-unsigned long t0, t1, timeArray[SENSORBUF];
+unsigned long t0;
 int n;
 
 int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y=0;	
@@ -54,7 +51,7 @@ int luxfunction(double lux_dado){
   return ctrl_ref_novo;
 }
 
-int adc_to_lux(int adc_val){
+double adc_to_lux(int adc_val){
 	double ldr_ohms, lux;
 	ldr_ohms = 1024 * RESISTENCIA / adc_val - RESISTENCIA;
 	lux= pow(10,(log10(ldr_ohms) - LDR_B)/LDR_A);
@@ -113,18 +110,7 @@ void pwm_config(int freqId) {
 
 
 void ctrl_loop() {
-	// Global vars
-	/*
-	gain_d
-	gain_k
-	integral_time
-	ctrl_wind_gain
-	feedforward_gain
-	a	
-	ctrl_ref
-	ctrl_y
 	
-	*/
 		
 	// control signals
 	long p, i=0, full_ctrl_u, ctrl_e_sat=0;
@@ -147,7 +133,7 @@ void ctrl_loop() {
 	double gain_k_i = gain_i*gain_k;
 	double gain_k_a = gain_k * a;
 	double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-        double Ts_gain_k_i = Ts_sec * gain_k_i;
+  double Ts_gain_k_i = Ts_sec * gain_k_i;
 	
 	bool looping=true;
 	
@@ -158,30 +144,17 @@ void ctrl_loop() {
 	t0 = micros();
 		
 	while(looping){
-		/*
-		bi=ki*h
-		ad=Tf/(Tf+h)
-		bd=kd/(Tf+h)
-		br=h/Tt
-		
-		D=Tf/(Tf+h)*D-kd/(Tf+h)*(y-yold) % update derivative part
-		v=P+I+D % compute temporary output
-		u=sat(v,ulow,uhigh) % simulate actuator saturation
-		daout(ch1) % set analog output ch1
-		I=I+bi*(r-y)+br*(u-v) % update integral
-		yold=y % update old process output
-		*/
+
 		
 		start_time = micros();
 		ctrl_y = AnalogReadAvg(analogInPin, 3);
 		ctrl_e = ctrl_mapped_ref - ctrl_y;
-		/*PID with Anti Windup and feedforward Improved Integral*/ //Lecture  6 pag 32
+		//PID with Anti Windup and feedforward Improved Integral 
 		p =  (gain_k * ctrl_e);
-		//i =  i_before + Ts_sec * 	(ctrl_e + ctrl_e_sat * ctrl_wind_gain) * gain_k_i ;
 
-		//d =  derivative_const * (d_before - gain_k_a * (ctrl_y-y_before));
+    // % update derivative part 
 		d = gain_d * (ctrl_y-y_before)/Ts_sec;
-		//d=a/(a+Ts_sec)*d-gain_d/(a+Ts_sec)*(ctrl_y-y_before); // % update derivative part
+		//d=a/(a+Ts_sec)*d-gain_d/(a+Ts_sec)*(ctrl_y-y_before); 
 		
 		
 		full_ctrl_u = p + i - d + ref_feedfoward ;	// now add feedforward
@@ -189,22 +162,20 @@ void ctrl_loop() {
 		full_ctrl_u = map(full_ctrl_u, 0, 1024, 0, 255); // Doesn't constrain to within range
 		ctrl_u = constrain(full_ctrl_u, 0, 255);
 
-                //Serial.println(micros()-start_time);
+    // Write Output
+    analogWrite(analogOutPin, ctrl_u);
 
-                // Write Output
-                analogWrite(analogOutPin, ctrl_u);
+    //Variable updates
+    i_before = i;
+    //d_before = d;		
+    y_before = ctrl_y;
+    ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
+    i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
+    ctrl_e_before = ctrl_e; 
 
-                //Variable updates
-                i_before = i;
-                //d_before = d;		
-                y_before = ctrl_y;
-                ctrl_e_sat = (ctrl_u-full_ctrl_u )*4;
-                i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
-                ctrl_e_before = ctrl_e; 
-
-                // Prints 
-                Serial.print(start_time-t0);
-                Serial.print(" ");
+    // Prints 
+    Serial.print(start_time-t0);
+    Serial.print(" ");
 		Serial.print(full_ctrl_u);
 		Serial.print(" ");
 		Serial.print(ctrl_y);
