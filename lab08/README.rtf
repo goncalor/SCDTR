@@ -1,0 +1,58 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1404\cocoasubrtf130
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Simulator of a basic illumination system written in Matlab.\
+\
+Creates a room with a specified background illuminance and to place luminaries with specified luminous flux and apertures at specified locations in space.\
+Allows setting the dimming level of the luminaries and read the illuminance at any point of the room.\
+Displays an illuminance map of the room.\
+\
+Sample: \
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 \
+lumisim_test.m - Example script. Run this for a quick start.\
+\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 Top level functions (the ones you are supposed to use):\
+\
+function room = create_room(E0,Ex,Ey,Exx,Exy,Eyy);\
+% Creates and empty room with a bilinear background illuminance pattern:\
+% E = E0 + x*Ex + y*Ey + x^2*Exx + y^2*Eyy + x*y*Exy\
+% To add luminaires to the room, use function add_luminaire\
+\
+\pard\tx529\pardeftab529\pardirnatural\partightenfactor0
+\cf0 function room = add_luminaire(room,x,y,h,max_flux,semi_ang_degrees);\
+% Adds a luminaire to a room, at position x,y,h, with a lamp of luminous\
+% flux max_flux and lens aperture semi_ang_degrees\
+\
+function room = actuate_luminaire(room, index, new_duty_cycle)\
+% Set the duty cycle of a luminiare in a room\
+\
+function l = read_luminaire(room,index)\
+% Reads the illuminance level at the location of a certain luminaire\
+\
+function view_room(room, x_min, x_max, y_min, y_max, img_num);\
+% Displays the illuminance map of a room in the are [x_min, x_max]x[y_min y_max]\
+% Writes the value of the illuminance measured by each light sensor, at its\
+% location.\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 \
+Low level functions (user internally)\
+\
+function lum = get_background_illuminance(room, x, y)\
+% Computes the illuminance due to background lighting at a certain point x, y in a room\
+\
+function lum = get_luminaire_illuminance(room, index, x, y)\
+% Computes the illuminance at a point x,y due to the light radiated by a certain luminaire\
+\
+function lum = get_global_illuminance(room, x, y)\
+% Computes the luminance at a certain point x, y in the room, both due to\
+% background illuminance and the irradiance of all luminaires.\
+\
+\
+Copyright Alexandre Bernardino, IST, 2015.\
+All rights reserved}
