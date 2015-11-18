@@ -15,13 +15,15 @@
 #define SAMPLE_TIME 3800
 #define GAIN_K 10
 #define GAIN_D 0.01
+#define GAIN_I 10
+#define GAIN_FEEDFORWARD 0.1
+#define GAIN_ANTIWINDUP 0.05
 #define FEEDFORWARD_GAIN 0.1
 #define PID_A 10
 #define RESISTENCIA 10000.0
 #define LDR_B 4.7782
 #define LDR_A -0.6901
 #define INT_GAIN 10
-#define ANTIWINDUP_GAIN 0.05
 #define INTERRUPT_TIME (65536 - (16000000./8)*(SAMPLE_TIME/1000000.))
 
 
@@ -35,8 +37,8 @@ int n;
 
 int ctrl_ref=127, ctrl_e, ctrl_u, ctrl_y=0;	
 unsigned int Ts= SAMPLE_TIME;
-double gain_k = GAIN_K, gain_d=GAIN_D, ctrl_wind_gain=ANTIWINDUP_GAIN;
-double feedforward_gain = FEEDFORWARD_GAIN, a=PID_A, gain_i=INT_GAIN;
+double gain_k = GAIN_K, gain_d=GAIN_D, ctrl_wind_gain=GAIN_ANTIWINDUP;
+double feedforward_gain = GAIN_FEEDFORWARD, a=PID_A, gain_i=GAIN_I;
 int loopMode= 0, loopOutputFlag= 1;
 int ctrl_verbose_flag= 0; //1;
 
