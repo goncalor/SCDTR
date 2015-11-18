@@ -25,18 +25,19 @@ for i = 1:length(r.luminaires);
 end;
 
 view_room(r,-1,5,-1,5,1);
-figure 
-plot(lux)
+
 
 %% Get O
 for i = 1:length(r.luminaires);
     r = actuate_luminaire(r,i,0);
 end;
+O = zeros(length(r.luminaires),1);
+
 for i = 1:length(r.luminaires);
     O(i) = read_luminaire(r,i);
 end;
-figure
-plot(O)
+%figure
+%plot(O)
 
 %% Get E
 for i = 1:length(r.luminaires);
@@ -46,19 +47,28 @@ for i = 1:length(r.luminaires);
     end;
     r = actuate_luminaire(r,i,0);
 end;
-figure
-mesh(E)
-
-%view_room(r,-1,5,-1,5,5);
+%figure
+%mesh(E)
 
 
-
-%get lux(i)
-%view room
-
-%% Exercise 2
-% Identificar matriz de transferência, correr programação linear para forçar sala a
+%% Linear programming 
+% Identificar matriz de transferência, correr 
+% programação linear para forçar sala a
 % ter a configuração anterior
 
-% find E, O, show: mesh(E) and plot(O)
+A = -E;
+b = -(lux-O);
+lb = zeros(length(r.luminaires),1);
+ub = ones(length(r.luminaires),1);
 
+f = ones(1,length(r.luminaires));
+
+d = linprog(f,A,b,[],[],lb,ub);
+    
+deq = linprog(f,[],[],A,b,lb,ub);  
+
+for i = 1:length(r.luminaires);
+    r = actuate_luminaire(r,i,d(i));
+end;
+
+view_room(r,-1,5,-1,5,5);
