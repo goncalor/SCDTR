@@ -18,12 +18,10 @@
 #define GAIN_I 10
 #define GAIN_FEEDFORWARD 0.1
 #define GAIN_ANTIWINDUP 0.05
-#define FEEDFORWARD_GAIN 0.1
 #define PID_A 10
 #define RESISTENCIA 10000.0
 #define LDR_B 4.7782
 #define LDR_A -0.6901
-#define INT_GAIN 10
 #define INTERRUPT_TIME (65536 - (16000000./8)*(SAMPLE_TIME/1000000.))
 
 
@@ -137,6 +135,16 @@ volatile double gain_d_Ts = gain_d/Ts_sec;
 volatile double c;
 volatile short print_flag;
 
+// Sammpling interrupt
+ISR(ADC_vect)
+{
+
+  PORTD = ADCL;         // Output ADCH to PortD
+  ADCSRA |= 1<<ADSC;      // Start Conversion
+}
+
+
+// Controller interrupt
 ISR(TIMER1_OVF_vect) {
   TCNT1 = (unsigned int) INTERRUPT_TIME; // reload timer. don't move this
   start_time = micros();
@@ -590,6 +598,21 @@ void setup() {
 
   // setup interrupts
   noInterrupts();
+
+  // Setup ADC's Free Running Mode
+  ADCSRA = 0x8F;            // Enable the ADC and its interrupt feature
+                            // and set the ACD clock pre-scalar to clk/128
+  ADMUX = 0xE0;         // Select internal 2.56V as Vref, left justify 
+  // data registers and select ADC0 as input channel 
+
+  sei();                // Enable Global Interrupts
+  ADCSRA |= 1<<ADSC;      // Start Conversion
+
+
+
+
+
+  // Setup Timer1 interrupts
   // reset timer control registers
   TCCR1A = 0;
   TCCR1B = 0;
