@@ -10,10 +10,23 @@ for i = 0:2:4,
         r = add_luminaire(r,i,j,1,50,85);
     end;
 end;
+    
+random_pwm = zeros(length(r.luminaires),1);
 
-%r = actuate_luminaire(r,i,rand*0.7);
+for i = 1:length(r.luminaires);
+    random_pwm(i)=rand*0.7;
+    r = actuate_luminaire(r,i,random_pwm(i));
+end;
 
+lux = zeros(length(r.luminaires),1);
 
+for i = 1:length(r.luminaires);
+    lux(i) = read_luminaire(r,i);
+end;
+
+view_room(r,-1,5,-1,5,1);
+figure 
+plot(lux)
 
 %% Get O
 for i = 1:length(r.luminaires);
