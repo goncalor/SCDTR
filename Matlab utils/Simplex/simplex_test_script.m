@@ -16,3 +16,16 @@ c = [3,1,2];
 
 % Expected Output:
 N = [8,4,0];
+
+%% Now test using lab08 example
+clc
+clear
+load('lab08_simplex_test')
+% add upper bounds as constrains
+A=[A;eye(9)];
+b=[b;ub];
+clear('ub')
+% transform minimization problem in maximization
+% min c'.x <=> max -c'.x
+c=-f;
+[ x] = simplex( A,b,c ) 

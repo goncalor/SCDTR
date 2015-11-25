@@ -21,7 +21,7 @@ if b(k)>0
     B=n+1:n+m;
     return
 else
-    disp('ERROR: Unfeasible!!')
+    error('ERROR: Basic solution Unfeasible!!')
 end
 end
 
