@@ -1,6 +1,6 @@
 %% Script to test pivot simplex
 
-% Test based on example 
+% Test based on example page 865
 
 
 N = [1,2,3];
