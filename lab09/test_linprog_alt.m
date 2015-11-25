@@ -1,63 +1,31 @@
-function [x] = linprog_alt(f, A,b)
-%
-% Alternative function to Matlab's linprog.m that can be used with simpler problem as:
-%
-% xopt= arg_x min f'*x
-%  s.t. A*x <= b
+clc
+clear
+load('linprog_example_problem.mat')
 
+ub = ones(9,1);
+lb = zeros(9,1);
+tic
+d = linprog(f,A,b,[],[],lb,ub); %testing
+toc
+A = [A;eye(9)];
+b=[b;ones(9,1)];
+tic
+d1 = linprog(f,A,b); %testing new A and b
+toc
 c= f;
 k= size(A,1);
 
-[x] = linprog_main(A,b,c,k);
 
-
-%LINPROG  This code uses the revised simplex method to solve the linear
-%       programming problem: Minimize the cost c'x subject to equations Ax=b
-%       and nonnegativity x >=0:
-%
-%                f =  Min { c'x; Ax = b, x >= 0 },
-%
-%       You must define an m by n matrix A , a column vector b with
-%       m components, and a column vector c with n components.
-%       You may define k to change the first k equations of Ax=b to
-%       inequalities: thus [A(1:k,:)]x <= b(1:k).
-%
-%       The output vector x gives the minimum cost, which is the output f.
-%
-%                [x,f,itn] = linprog(A,b,c,k,maxit,tol)
-%
-%       At most "maxit" iterations (default 10*length(b)) are applied
-%       and the actual number of iterations is returned in "itn".
-%
-%       If the optimal solution is unbounded or the constraints are
-%       inconsistent then a diagnostic is displayed.
-%       Bland's rule is used to resolve degeneracies.  In exact
-%       arithmetic cycling is not possible.  But in real life!!!
-%       If x has more than 20 components it is returned in the
-%       sparse format. Note that if A has many zeros it is worth
-%       passing it to linprog in sparse format.
-%
-%       Although written for teaching purposes this routine has
-%       successfully solved some problems with size(A) = [50,100000]!
-%
-%       Please report any difficulties to: idc@math.canterbury.ac.nz
-
-%       New version                  (c) I.D.Coope, 1988, 1993
-
-function [x,f,it,B] = linprog_main(A,b,c,k,maxit,tol)
 [m,n]=size(A); b=b(:); c=c(:); it=0;
-if (length(c)~=n | length(b)~=m),error('wrong dimensions'); end
-if (nargin<6), tol=1e-10; end
-if (nargin<5), maxit=10*m; end
-if (nargin<4), k=0; elseif isempty(k), k=0; end
 
-% D is the sign of b, when b(i)=0, D(i)=1
-D=sign(sign(b)+.5);
+tol=1e-10;
+maxit=10*m;
 
+D=sign(sign(b)+.5); 
 
 if k
   D(1:k)=ones(k,1);
-end   
+end
 
 D = diag(D);                    % initial (inverse) basis matrix
 A = [A D];                      % incorporate slack/artificial variables
@@ -87,17 +55,17 @@ while phase<3,
       if maxit==inf,
         disp(['LINPROG(',int2str(it),'): warning! degenerate vertex']);
       end
-      J=find(r<0); Nq=min(N(J)); q=find(N==Nq);
-    end
+      J=find(r<0); Nq=min(N(J)); q=find(N==Nq); 
+    end 
     d = D*A(:,N(q));
     I=find(d>tol); %    I=find(d>0);
     if isempty(I), disp('Solution is unbounded'); it=-it; break; end
     xbd=xb(I)./d(I); [r,p]=min(xbd); p=I(p);
     if df>=0,                     % apply Bland's rule to avoid cycling
-      J=find(xbd==r); Bp=min(B(I(J))); p=find(B==Bp);
-    end
+      J=find(xbd==r); Bp=min(B(I(J))); p=find(B==Bp); 
+    end 
     xb= xb - r*d; xb(p)=r;        % update x
-    df=r*rmin;                    % change in f
+    df=r*rmin;                    % change in f 
     v = D(p,:)/d(p);              % row vector
     yb= yb + v'*( s(N(q)) - d'*s(B) );
     d(p)=d(p)-1;
