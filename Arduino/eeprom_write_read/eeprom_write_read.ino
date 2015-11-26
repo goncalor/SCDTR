@@ -8,28 +8,39 @@
 #define BAUDRATE 115200
 #define ADDRESS  0
 
-/** the current address in the EEPROM (i.e. which byte we're going to write to next) **/
-int addr = 0; 
-
 void setup(){
 
     Serial.begin(BAUDRATE);
     Serial.print("baud rate: ");
     Serial.println(BAUDRATE);
+
+    delay(1000);
 }
 
 void loop()
 {
-    char val;
-    int intread;
+    byte val;
 
+    delay(1000);
+
+    val = EEPROM.read(ADDRESS);
     Serial.print("value read: ");
-    Serial.println(EEPROM.read(ADDRESS));
+    Serial.println(val);
 
     while(!Serial.available())
         delay(100);
 
-    intread = Serial.parseInt();
+    val = Serial.parseInt();
 
-    EEPROM.write(ADDRESS, intread);
+    if(val!=0)
+    {
+        Serial.print("val: ");
+        Serial.println(val);
+        EEPROM.write((int) ADDRESS, val);
+    }
+    else
+    {
+        Serial.println("Ia escrever 0... Mas nao escrevi :)");
+    }
+
 }
