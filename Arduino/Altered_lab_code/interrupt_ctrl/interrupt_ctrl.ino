@@ -486,7 +486,8 @@ void setup() {
     pinMode(analogOutPin,OUTPUT);
 
     // initialise wire (I2C)
-    wire_my_address = Serial.println(EEPROM.read(EEPROM_ID_ADDRESS));
+    Serial.println(EEPROM.read(EEPROM_ID_ADDRESS));
+    wire_my_address = EEPROM.read(EEPROM_ID_ADDRESS);
     Wire.begin(wire_my_address);
     Wire.onReceive(wireReceiveEvent);
 
