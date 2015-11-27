@@ -1,8 +1,12 @@
 #include <avr/interrupt.h>
+#include <EEPROM.h>
+#include <Wire.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#define SENSORBUF 1
-#define BUFSZ 100
-#define BUFSZ2 10
+//#define SENSORBUF 1
+#define BUF_LEN 100
+#define BUF_LEN_2 10
 #define BAUDRATE 115200
 #define SAMPLE_TIME 1500
 #define GAIN_K 10
@@ -17,25 +21,30 @@
 #define LDR_A -0.6901
 #define INT_GAIN 10
 #define INTERRUPT_TIME (65536 - (16000000./8)*(SAMPLE_TIME/1000000.))
+#define EEPROM_ID_ADDRESS 0   // the address for this Arduino's ID
 
 
-const int analogInPin = 0;  // Analog input pin that LDR
+const int analogInPin = 0;  // Analog input pin that the LDR is attached to
 int analogOutPin = 5; // Analog output pin that the LED is attached to
 
-char buf[BUFSZ];
-char buf2[BUFSZ2];
+char buf[BUF_LEN];
+char buf2[BUF_LEN_2];
 
 int n;
 
+bool enable_print = true;
+bool i_am_master = false;
 int ctrl_ref=127;	
+int loopOutputFlag= 1;
+int ctrl_verbose_flag= 0;
+
+int wire_my_address;
+bool wire_data_available = false;
+
+// PID variables
 unsigned int Ts= SAMPLE_TIME;
 double gain_k = GAIN_K, gain_d=GAIN_D, ctrl_wind_gain=GAIN_ANTIWINDUP;
 double feedforward_gain = GAIN_FEEDFORWARD, a=PID_A, gain_i=GAIN_I;
-int loopMode= 0, loopOutputFlag= 1;
-int ctrl_verbose_flag= 0; //1;
-
-bool enable_print = true;
-
 
 
 int luxfunction(double lux_dado) {
@@ -65,24 +74,30 @@ int AnalogReadAvg(int pin,int n) {
 }
 
 
+/* read serial into 'buf' until 'buflen' bytes are read or 
+   a terminating character is read (NULL, \n, \r) */
 int serial_read_str(char *buf, int buflen) {
-    /* read till the end of the buffer or a terminating chr*/
     int i_local, c;
     if (Serial.available() <= 0) {
         return 0;
     }
-    for (i_local=0; i_local<buflen-1; i_local++) {
-        c= Serial.read();
-        if (c==0 || c==0x0A || c==0x0D) break;
-        //buf[i_local]= c;
-        *buf++= c;
-        //Serial.print((char)c);
+
+    for(i_local=0; i_local<buflen-1; i_local++) {
+        c = Serial.read();
+
+        // if a null, \n or \r is found exit
+        if (c==0 || c=='\n' || c=='\r')
+            break;
+
+        *(buf++) = c;
+
         if (Serial.available() <= 0) {
-            delay(10); // 10milliseconds = BAUDRATEbits / BAUDRATEbits/sec
-            if (Serial.available() <= 0) break;
+            delay(20); // 10milliseconds = BAUDRATEbits / BAUDRATEbits/sec
+            if (Serial.available() <= 0)
+                break;
         }
     }
-    //buf[i_local]= '\0';
+
     *buf='\0';
     return 1;
 }
@@ -210,35 +225,62 @@ void main_send_end_cmd() {
 
 void main_switch() {
     double x;
+    short dev_id;
+    bool serial_data_available;
 
-    // read cmd and execute it
-    if (serial_read_str(&buf[0], BUFSZ)) {
-        //Serial.print("-- Got cmd: ");
-        //Serial.println(buf); // echo the command just received
+    if(!wire_data_available)
+        serial_data_available = serial_read_str(buf, BUF_LEN);
+    else
+        serial_data_available = false;
 
-        // switch cmd
+
+    if(wire_data_available || serial_data_available) {
+        if(wire_data_available)
+            wire_data_available = false;
+
         switch (buf[0]) {
-            case '\0':
+            case 'm':
+                i_am_master = true;
                 break;
+
+            //case '\0':
+            //    break;
 
             case 'l':
                 // set lux reference
+
+                Serial.println(buf);
+                Serial.println(sscanf(buf, "l %d %d", &x, &dev_id));
+                if(sscanf(buf, "l %d %d", &x, &dev_id) == 2)
+                {
+                    Serial.print("command for other Arduino.\nID:");
+                    Serial.println(dev_id);
+                    x= atof(&buf[1]);
+                    Serial.println(x);
+                    Wire.beginTransmission(dev_id);
+                    Wire.write("l ");
+                    // TODO: send float and not int?
+                    Wire.write(itoa((int) x, buf, 10));
+                    Wire.write(0);
+                    Wire.endTransmission();
+                }
+                else
+                {
+                Serial.println("command for me");
                 x= atof(&buf[1]);
                 noInterrupts();
                 ctrl_ref = luxfunction(x);
                 ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
                 ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
                 interrupts();   
-                sprintf(buf, "lux = ");
-                itoa(x, buf2, BUFSZ2);
-                strcat(buf, buf2); strcat(buf, "\n");
+                //sprintf(buf, "lux = ");
+                //itoa(x, buf2, BUF_LEN_2);
+                //strcat(buf, buf2);
+                //strcat(buf, "\n");
                 //Serial.print(buf);
                 //Serial.print("ref = ");
                 //Serial.println(ctrl_ref);
-                break;
-
-            case '?':
-                Serial.println("ver 8.10.2015");
+                }
                 break;
 
             case 'T':
@@ -258,7 +300,7 @@ void main_switch() {
                 ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
                 interrupts();
                 sprintf(buf, "ref=");
-                itoa(ctrl_ref, buf2, BUFSZ2);
+                itoa(ctrl_ref, buf2, BUF_LEN_2);
                 strcat(buf, buf2); strcat(buf, "\n");
                 //Serial.print(buf);
                 break;
@@ -338,7 +380,7 @@ void main_switch() {
                     if (buf[1]!='\0') ch= buf[1]-'0';
                     int v= analogRead(ch);
                     /*buf[0]= 'i'; buf[1]= ch+'0'; buf[2]= '\0';
-                      itoa(v, buf2, BUFSZ2); strcat(buf, buf2);
+                      itoa(v, buf2, BUF_LEN_2); strcat(buf, buf2);
                       strcat(buf, "\n");
                       Serial.print(buf);*/
                     Serial.print("i = ");
@@ -357,41 +399,41 @@ void main_switch() {
                 Serial.print(buf);
                 break;
 
-            case 'd':
-                // digital input/output
-                {
-                    // find the channel number
-                    int ch= 0;
-                    if (buf[1]>='0' & buf[1]<='9')
-                        ch= buf[1]-'0';
-                    else if (buf[1]>='a' & buf[1]<='d') // d=> dig output 13 (LED)
-                        ch= buf[1]-'a'+10;
-                    else if (buf[1]>='A' & buf[1]<='D')
-                        ch= buf[1]-'A'+10;
+            //case 'd':
+            //    // digital input/output
+            //    {
+            //        // find the channel number
+            //        int ch= 0;
+            //        if (buf[1]>='0' & buf[1]<='9')
+            //            ch= buf[1]-'0';
+            //        else if (buf[1]>='a' & buf[1]<='d') // d=> dig output 13 (LED)
+            //            ch= buf[1]-'a'+10;
+            //        else if (buf[1]>='A' & buf[1]<='D')
+            //            ch= buf[1]-'A'+10;
 
-                    if (buf[2]=='i') {
-                        // input the digital bit
-                        pinMode(ch, INPUT);
-                        if (digitalRead(ch))
-                            buf[3]= '1';
-                        else
-                            buf[3]= '0';
-                        buf[4]= '\0';
-                    }
-                    else if (buf[2]=='o') {
-                        // output the digital bit
-                        pinMode(ch, OUTPUT);
-                        if (buf[3]=='1')
-                            digitalWrite(ch, HIGH);
-                        else
-                            digitalWrite(ch, LOW);
-                    }
-                    else
-                        // do nothing
-                        buf[0]='E';
-                }
-                Serial.print(buf);
-                break;
+            //        if (buf[2]=='i') {
+            //            // input the digital bit
+            //            pinMode(ch, INPUT);
+            //            if (digitalRead(ch))
+            //                buf[3]= '1';
+            //            else
+            //                buf[3]= '0';
+            //            buf[4]= '\0';
+            //        }
+            //        else if (buf[2]=='o') {
+            //            // output the digital bit
+            //            pinMode(ch, OUTPUT);
+            //            if (buf[3]=='1')
+            //                digitalWrite(ch, HIGH);
+            //            else
+            //                digitalWrite(ch, LOW);
+            //        }
+            //        else
+            //            // do nothing
+            //            buf[0]='E';
+            //    }
+            //    Serial.print(buf);
+            //    break;
 
             case 'D':
                 // delay in milisec
@@ -416,12 +458,37 @@ void main_switch() {
 }
 
 
+void wireReceiveEvent(int nbytes) {
+    int i=0;
+    char c;
+
+    digitalWrite(13, HIGH);
+
+    delay(1000);
+
+
+    while (Wire.available() && i<nbytes) {
+        c = Wire.read();
+        buf[i++] = c;
+        if(c = '\0')
+            break;
+    }
+    wire_data_available = true;
+    digitalWrite(13, LOW);
+}
+
+
 // --------------------------------------------------
 void setup() {
     // start serial port at BAUDRATE bps:
     Serial.begin(BAUDRATE);
     pinMode(analogInPin,INPUT);
     pinMode(analogOutPin,OUTPUT);
+
+    // initialise wire (I2C)
+    wire_my_address = Serial.println(EEPROM.read(EEPROM_ID_ADDRESS));
+    Wire.begin(wire_my_address);
+    Wire.onReceive(wireReceiveEvent);
 
 
     //Serial.println("\ntime ctrl_u ctrl_y ctrl_e lux");
@@ -441,6 +508,12 @@ void setup() {
     TCNT1 = (unsigned int) INTERRUPT_TIME; // preload timer
     TIMSK1 |= (1 << TOIE1); // enable timer overflow interrupt
     interrupts(); // enable all interrupts
+
+
+
+    pinMode(13, OUTPUT);
+    digitalWrite(13, LOW);
+
 }
 
 void loop() {
@@ -450,9 +523,11 @@ void loop() {
         print_flag = 0;
 
         // Prints   
-        Serial.print(micros()-t0);
-        Serial.print(" ");
-        Serial.println(ctrl_e);
+//        Serial.print(micros()-t0);
+//        Serial.print(" ");
+//        Serial.print(ctrl_mapped_ref);
+//        Serial.print(" ");
+//        Serial.println(ctrl_e);
 
         /*
         // Prints 
@@ -479,7 +554,8 @@ void loop() {
         //Serial.print(" ");
         //end_time = micros();
         //Serial.println(end_time-start_time);
-        //Serial.print(",\t");*/
+        //Serial.print(",\t");
+        */
     }
 }
 
