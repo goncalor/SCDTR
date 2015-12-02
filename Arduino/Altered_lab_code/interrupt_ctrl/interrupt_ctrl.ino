@@ -7,7 +7,7 @@
 //#define SENSORBUF 1
 #define BUF_LEN 100
 #define BUF_LEN_2 10
-#define BAUDRATE 115200
+#define BAUDRATE 38400
 #define SAMPLE_TIME 1500
 #define GAIN_K 10
 #define GAIN_D 0.01
@@ -92,7 +92,7 @@ int serial_read_str(char *buf, int buflen) {
         *(buf++) = c;
 
         if (Serial.available() <= 0) {
-            delay(20); // 10milliseconds = BAUDRATEbits / BAUDRATEbits/sec
+            delay(1); // depends of the baudrate
             if (Serial.available() <= 0)
                 break;
         }
@@ -233,6 +233,12 @@ void main_switch() {
     else
         serial_data_available = false;
 
+    if(serial_data_available)
+    {
+        Serial.println("serial data available");
+        Serial.println(buf);
+    }
+
 
     if(wire_data_available || serial_data_available) {
         if(wire_data_available)
@@ -249,7 +255,6 @@ void main_switch() {
             case 'l':
                 // set lux reference
 
-                Serial.println(buf);
                 Serial.println(sscanf(buf, "l %d %d", &x, &dev_id));
                 if(sscanf(buf, "l %d %d", &x, &dev_id) == 2)
                 {
@@ -260,12 +265,11 @@ void main_switch() {
                     Wire.beginTransmission(dev_id);
                     Wire.write("l ");
                     // TODO: send float and not int?
-                    Wire.write(itoa((int) x, buf, 10));
-                    Wire.write(0);
+                    Wire.write(itoa((int) x, buf2, 10));
                     Wire.endTransmission();
+                    break;
                 }
-                else
-                {
+
                 Serial.println("command for me");
                 x= atof(&buf[1]);
                 noInterrupts();
@@ -280,7 +284,6 @@ void main_switch() {
                 //Serial.print(buf);
                 //Serial.print("ref = ");
                 //Serial.println(ctrl_ref);
-                }
                 break;
 
             case 'T':
@@ -300,7 +303,7 @@ void main_switch() {
                 ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
                 interrupts();
                 sprintf(buf, "ref=");
-                itoa(ctrl_ref, buf2, BUF_LEN_2);
+                itoa(ctrl_ref, buf2, 10);
                 strcat(buf, buf2); strcat(buf, "\n");
                 //Serial.print(buf);
                 break;
@@ -461,12 +464,7 @@ void main_switch() {
 void wireReceiveEvent(int nbytes) {
     int i=0;
     char c;
-
     digitalWrite(13, HIGH);
-
-    delay(1000);
-
-
     while (Wire.available() && i<nbytes) {
         c = Wire.read();
         buf[i++] = c;
