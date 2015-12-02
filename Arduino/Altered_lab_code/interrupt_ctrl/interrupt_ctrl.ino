@@ -1,12 +1,16 @@
+#include "utils.h"
 #include <avr/interrupt.h>
 #include <EEPROM.h>
 #include <Wire.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEBUG
+
 //#define SENSORBUF 1
 #define BUF_LEN 100
 #define BUF_LEN_2 10
+#define BUF_SPLIT_LEN   20
 #define BAUDRATE 38400
 #define SAMPLE_TIME 1500
 #define GAIN_K 10
@@ -32,7 +36,7 @@ char buf2[BUF_LEN_2];
 
 int n;
 
-bool enable_print = true;
+bool enable_print = false;
 bool i_am_master = false;
 int ctrl_ref=127;	
 int loopOutputFlag= 1;
@@ -227,6 +231,8 @@ void main_switch() {
     double x;
     short dev_id;
     bool serial_data_available;
+    char *lst[BUF_SPLIT_LEN];
+    short numwords;
 
     if(!wire_data_available)
         serial_data_available = serial_read_str(buf, BUF_LEN);
@@ -244,51 +250,61 @@ void main_switch() {
         if(wire_data_available)
             wire_data_available = false;
 
+        // ignore the firts byte (command)
+        numwords = split(buf+1, lst, BUF_SPLIT_LEN);
+
+        #ifdef DEBUG
+        Serial.print("numwords ");
+        Serial.println(numwords);
+        Serial.print("lst ");
+        for(i=0; i < numwords; i++)
+        {
+            Serial.print(lst[i]);
+            Serial.print(" ");
+        }
+        Serial.println("");
+        #endif
+
         switch (buf[0]) {
+
             case 'm':
                 i_am_master = true;
                 break;
 
-            //case '\0':
-            //    break;
-
             case 'l':
                 // set lux reference
+                // 'l lux [dev_id]'
 
-                Serial.println(sscanf(buf, "l %d %d", &x, &dev_id));
-                if(sscanf(buf, "l %d %d", &x, &dev_id) == 2)
+                if(numwords == 2)
                 {
-                    Serial.print("command for other Arduino.\nID:");
-                    Serial.println(dev_id);
-                    x= atof(&buf[1]);
-                    Serial.println(x);
+                    x = atof(lst[0]);
+                    dev_id = atoi(lst[1]);
                     Wire.beginTransmission(dev_id);
                     Wire.write("l ");
-                    // TODO: send float and not int?
-                    Wire.write(itoa((int) x, buf2, 10));
+                    Wire.write(lst[0]);
+                    //Wire.write(0);
                     Wire.endTransmission();
+                    #ifdef DEBUG
+                    Serial.print("command for other Arduino.\nID:");
+                    Serial.println(dev_id);
+                    Serial.println(x);
+                    #endif
                     break;
                 }
 
                 Serial.println("command for me");
-                x= atof(&buf[1]);
+                x= atof(lst[0]);
                 noInterrupts();
                 ctrl_ref = luxfunction(x);
                 ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
                 ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
                 interrupts();   
-                //sprintf(buf, "lux = ");
-                //itoa(x, buf2, BUF_LEN_2);
-                //strcat(buf, buf2);
-                //strcat(buf, "\n");
-                //Serial.print(buf);
-                //Serial.print("ref = ");
-                //Serial.println(ctrl_ref);
                 break;
 
             case 'T':
                 // define the sampling period
-                Ts= atoi(&buf[1]);
+                // 'T sampleperiod'
+                Ts= atoi(lst[0]);
                 Ts_sec = (float) Ts/1000000.0;
                 Serial.print("Ts[us]=");
                 Serial.println(Ts);
@@ -296,7 +312,8 @@ void main_switch() {
 
             case 'r':
                 // set reference
-                x= atof(&buf[1]);
+                // 'r pwmref'
+                x= atof(lst[0]);
                 noInterrupts();
                 ctrl_ref= x;
                 ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
@@ -310,9 +327,10 @@ void main_switch() {
 
             case 'c':
                 // config the controller
-                switch (buf[1]) {
+                // 'c x parameter'
+                switch (buf[2]) {
                     case '0': 
-                        x= atof(&buf[2]); 
+                        x= atof(lst[1]); 
                         noInterrupts();
                         gain_k= x;
                         gain_k_i = gain_i*gain_k;
@@ -323,7 +341,7 @@ void main_switch() {
                         break;
                     case '1': 
                         noInterrupts();
-                        x= atof(&buf[2]); 
+                        x= atof(lst[1]); 
                         gain_i= x; 
                         gain_k_i = gain_i*gain_k;
                         Ts_gain_k_i = Ts_sec * gain_k_i;
@@ -331,27 +349,27 @@ void main_switch() {
                         break;
                     case '2': 
                         noInterrupts();
-                        x= atof(&buf[2]); 
+                        x= atof(lst[1]); 
                         gain_d= x; 
                         derivative_const = gain_d /(gain_d + a*Ts_sec);
                         gain_d_Ts = gain_d/Ts_sec;
                         interrupts();
                         break;
                     case '3': 
-                        x= atof(&buf[2]); 
+                        x= atof(lst[1]); 
                         noInterrupts();
                         feedforward_gain = x;
                         ref_feedfoward = ctrl_mapped_ref * feedforward_gain; 
                         interrupts();
                         break;
                     case '4': 
-                        x= atof(&buf[2]);
+                        x= atof(lst[1]);
                         noInterrupts();
                         ctrl_wind_gain = x; 
                         interrupts();
                         break;
                     case '5': 
-                        x= atof(&buf[2]); 
+                        x= atof(lst[1]); 
                         noInterrupts();
                         a = x; 
                         gain_k_a = gain_k * a;
@@ -359,8 +377,9 @@ void main_switch() {
                         interrupts();
                         break;
 
-
-                    default: x=0.0; Serial.print('E');
+                    default:
+                        x=0.0;
+                        Serial.print('E');
                 }
                 Serial.print("x="); Serial.println(x);
                 break;
@@ -380,12 +399,10 @@ void main_switch() {
                 // read sensor
                 {
                     int ch= 0;
-                    if (buf[1]!='\0') ch= buf[1]-'0';
-                    int v= analogRead(ch);
-                    /*buf[0]= 'i'; buf[1]= ch+'0'; buf[2]= '\0';
-                      itoa(v, buf2, BUF_LEN_2); strcat(buf, buf2);
-                      strcat(buf, "\n");
-                      Serial.print(buf);*/
+                    if (buf[1]!='\0')
+                        ch= buf[1]-'0';
+                    int v = analogRead(ch);
+
                     Serial.print("i = ");
                     Serial.println(v);		
                     Serial.print("lux = ");
@@ -402,47 +419,11 @@ void main_switch() {
                 Serial.print(buf);
                 break;
 
-            //case 'd':
-            //    // digital input/output
-            //    {
-            //        // find the channel number
-            //        int ch= 0;
-            //        if (buf[1]>='0' & buf[1]<='9')
-            //            ch= buf[1]-'0';
-            //        else if (buf[1]>='a' & buf[1]<='d') // d=> dig output 13 (LED)
-            //            ch= buf[1]-'a'+10;
-            //        else if (buf[1]>='A' & buf[1]<='D')
-            //            ch= buf[1]-'A'+10;
-
-            //        if (buf[2]=='i') {
-            //            // input the digital bit
-            //            pinMode(ch, INPUT);
-            //            if (digitalRead(ch))
-            //                buf[3]= '1';
-            //            else
-            //                buf[3]= '0';
-            //            buf[4]= '\0';
-            //        }
-            //        else if (buf[2]=='o') {
-            //            // output the digital bit
-            //            pinMode(ch, OUTPUT);
-            //            if (buf[3]=='1')
-            //                digitalWrite(ch, HIGH);
-            //            else
-            //                digitalWrite(ch, LOW);
-            //        }
-            //        else
-            //            // do nothing
-            //            buf[0]='E';
-            //    }
-            //    Serial.print(buf);
-            //    break;
-
             case 'D':
                 // delay in milisec
-                t0= millis() +(unsigned long)atoi(&buf[1]);	
+                t0= millis() + (unsigned long)atoi(&buf[2]);	
                 while (millis() < t0)
-                    /* do nothing */ ;
+                    ; /* do nothing */
                 Serial.print(buf);
                 break;
 
@@ -450,6 +431,7 @@ void main_switch() {
                 // Toggle Print
                 enable_print = !enable_print;
                 break;
+
             default:
                 strcat(buf, " <inv cmd\n");
                 Serial.print(buf);
@@ -480,8 +462,8 @@ void wireReceiveEvent(int nbytes) {
 void setup() {
     // start serial port at BAUDRATE bps:
     Serial.begin(BAUDRATE);
-    pinMode(analogInPin,INPUT);
-    pinMode(analogOutPin,OUTPUT);
+    pinMode(analogInPin, INPUT);
+    pinMode(analogOutPin, OUTPUT);
 
     // initialise wire (I2C)
     Serial.println(EEPROM.read(EEPROM_ID_ADDRESS));
@@ -509,10 +491,8 @@ void setup() {
     interrupts(); // enable all interrupts
 
 
-
     pinMode(13, OUTPUT);
     digitalWrite(13, LOW);
-
 }
 
 void loop() {
@@ -522,11 +502,11 @@ void loop() {
         print_flag = 0;
 
         // Prints   
-//        Serial.print(micros()-t0);
-//        Serial.print(" ");
-//        Serial.print(ctrl_mapped_ref);
-//        Serial.print(" ");
-//        Serial.println(ctrl_e);
+        Serial.print(micros()-t0);
+        Serial.print(" ");
+        Serial.print(ctrl_mapped_ref);
+        Serial.print(" ");
+        Serial.println(ctrl_e);
 
         /*
         // Prints 
