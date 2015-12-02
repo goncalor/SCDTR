@@ -51,7 +51,7 @@ end;
 %mesh(E)
 
 
-%% Linear programming 
+%% Linear programming
 % Identificar matriz de transferência, correr 
 % programação linear para forçar sala a
 % ter a configuração anterior

@@ -23,9 +23,10 @@ clear
 load('lab08_simplex_test')
 % add upper bounds as constrains
 A=[A;eye(9)];
-b=[b;ub];
+b=[b;ub];   
 clear('ub')
 % transform minimization problem in maximization
 % min c'.x <=> max -c'.x
 c=-f;
+clear('f')
 [ x] = simplex( A,b,c ) 
