@@ -6,8 +6,11 @@ pivot_struct pivot(pivot_struct in, int e, int l){
     pivot_struct out(in);
 
     out.b[e]=in.b[l]/in.A[l][e];
+    for (auto j : in.B) {
+        if (j != e)
+            out.A[e][j] = in.A[l][j]/in.A[l][e];
+    }
 
-    
     return out;
 }
 
