@@ -1,98 +1,94 @@
 #include "simplex.hpp"
+#include <iostream>
 
 
-
+//Pivot method used by the simplex algorithm based on the pseudo code present
+// in "Introduction to Alorithms" 3rd Edition by Cormen, page 869.
 pivot_struct pivot(pivot_struct in, int e, int l){
     pivot_struct out(in);
 
+
+    out.N.erase(e);
+    out.N.insert(l);
+    out.B.erase(l);
+    out.B.insert(e);
+
     out.b[e]=in.b[l]/in.A[l][e];
-    for (auto j : in.B) {
+    for (auto j : in.N) {
         if (j != e)
-            out.A[e][j] = in.A[l][j]/in.A[l][e];
+        out.A[e][j] = in.A[l][j]/in.A[l][e];
     }
+
+
+
+    out.A[e][l]=1/in.A[l][e];
+
+    std::cout << "Updated A line " << e <<std::endl;
+    print_pivot_struct(out);
+
+
+    for (auto i : in.B) {
+        if (i != l){
+            out.b[i] = in.b[i]-in.A[i][e]*out.b[e];
+            for (auto j : in.N) {
+                if (j != e)
+                out.A[i][j] = in.A[i][j]-in.A[i][e]*out.A[e][j];
+            }
+            out.A[i][l] = -in.A[i][e]*out.A[e][l];
+        }
+    }
+
+    print_pivot_struct(out);
+
+
+    out.v = in.v+in.c[e]*out.b[e];
+
+    for (auto j : in.N) {
+        if (j != e)
+        out.c[j] = in.c[j]- in.c[e]*out.A[e][j];
+    }
+
+    out.c[l]=-in.c[e]*out.A[e][l];
+
 
     return out;
 }
 
-/*
+void print_pivot_struct(pivot_struct to_print){
+    std::cout << "N = {";
+    for (auto j : to_print.N) {
+        std::cout << j << ",";
+    }
+    std::cout << "}" <<std::endl;
 
-function [N,B,A,b,c,v] = pivot(N,B,A,b,c,v,l,e)
-[N,B,A,b,c,v] = PIVOT(N,B,A,b,c,v,l,e)
-Pivot method used by the simplex algorithm based on the pseudo code present in "Introduction to Alorithms" 3rd Edition by Cormen, page 869.
-*/
+    std::cout << "B = {" ;
+    for (auto j : to_print.B) {
+        std::cout << j << ",";
+    }
+    std::cout << "}" <<std::endl;
 
+    std::cout << "A = {" << std::endl;
+    for (auto i : to_print.B) {
+        for (auto j : to_print.N) {
+            std::cout << to_print.A[i][j] << ",";
+            //std::cout <<"A_"<< i << j <<" = " << to_print.A[i][j] << std::endl;
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "}" <<std::endl;
 
-// on the new matrices i_e becomes i_l and vice versa
+    std::cout << "b = {" ;
+    for (auto j : to_print.B) {
+        std::cout << to_print.b[j] << ",";
+    }
+    std::cout << "}" <<std::endl;
 
+    std::cout << "c = {" ;
+    for (auto j : to_print.N) {
+        std::cout << to_print.c[j] << ",";
+    }
+    std::cout << "}" <<std::endl;
 
-//Compute the coefficients of the equation for the new  basic variable x(e)
+    std::cout << "c = " << to_print.v << std::endl << std::endl;
 
-/*
-% Get index of e
-for i = 1:length(N)
-if N(i) == e
-i_e = i;
-end
-end
-
-% Get index of l
-for i = 1:length(B)
-if B(i) == l
-i_l = i;
-end
-end
-
-b(i_l) = b(i_l)/A(i_l,i_e);
-for i = 1:length(N)
-if N(i) ~= e
-A(i_l,i) = A(i_l,i)/A(i_l,i_e);
-end
-end
-
-A(i_l,i_e) = 1/A(i_l,i_e);
-
-% Compute the coefficients of the remaining constrains
-
-for i = 1:length(B)
-if B(i) ~= l
-b(i) = b(i) - A(i,i_e)*b(i_l);
-for j = 1 : length(N)
-if N(j) ~= e
-A(i,j) = A(i,j) - A(i,i_e)*A(i_l,j);
-end
-end
-A(i,i_e) = - A(i,i_e) * A(i_l,i_e);
-end
-end
-
-% Compute the objective function
-
-v=v+c(e)*b(i_l);
-for j = 1 : length(N)
-if N(j) ~= e
-c(j) = c(j) - c(e)*A(i_l,j);
-end
-end
-
-c(i_e) = -c(i_e)*A(i_l,i_e);
-
-% Compute new sets of basic and nonbasic variables
-
-
-N(i_e)=l;
-B(i_l)=e;
-%  for j = 1 : length(N)
-%      if N(j) == e
-%         N(j) = l;
-%      end
-%  end
-%
-%   for j = 1 : length(B)
-%      if N(j) == l
-%         N(j) = e;
-%      end
-%  end
-%
-
-end
-*/
+}

@@ -15,3 +15,5 @@ typedef struct pivot_struct{
 
 
 pivot_struct pivot(pivot_struct in, int e, int l);
+
+void print_pivot_struct(pivot_struct to_print);
