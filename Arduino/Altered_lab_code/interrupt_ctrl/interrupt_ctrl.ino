@@ -26,6 +26,8 @@
 #define INT_GAIN 10
 #define INTERRUPT_TIME (65536 - (16000000./8)*(SAMPLE_TIME/1000000.))
 #define EEPROM_ID_ADDRESS 0   // the address for this Arduino's ID
+#define NUM_SAMPLES 3   // number of samples used for average of analogRead
+#define MASTER_ID 1  // the ID of the master TODO
 
 
 const int analogInPin = 0;  // Analog input pin that the LDR is attached to
@@ -130,7 +132,7 @@ volatile double d=0;
 
 // previous vars
 volatile long i_before=0, d_before=0, ctrl_e_before=0;
-volatile int y_before = AnalogReadAvg(analogInPin,3);
+volatile int y_before = AnalogReadAvg(analogInPin, NUM_SAMPLES);
 
 // Time vars
 volatile long end_time, start_time, t0;
@@ -157,7 +159,7 @@ ISR(TIMER1_OVF_vect) {
     //start_time = micros();
     print_flag = 1;
 
-    ctrl_y = AnalogReadAvg(analogInPin, 3);
+    ctrl_y = AnalogReadAvg(analogInPin, NUM_SAMPLES);
     ctrl_e = ctrl_mapped_ref - ctrl_y;
     //PID with Anti Windup and feedforward Improved Integral //Lecture  6 pag 32
     p =  (gain_k * ctrl_e);
@@ -468,6 +470,12 @@ void setup() {
      * ignore the general call address. */
     TWAR = (wire_my_address << 1) | 1;  // enable broadcasts to be received
     Wire.onReceive(wireReceiveEvent);
+
+    if(wire_my_address == MASTER_ID)
+    {
+        i_am_master = true;
+        calibrate();
+    }
 
 
     // save the starting time, to be used in graphs

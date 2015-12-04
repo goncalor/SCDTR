@@ -8,6 +8,12 @@ void wire_process_incoming(char *str)
     char *lst[BUF_SPLIT_LEN];
     short numwords;
     float fl;
+    char itoabuf[10];
+
+    #ifdef DEBUG
+    Serial.print("incoming wire str: ");
+    Serial.println(str);
+    #endif
 
     numwords = split(str+1, lst, BUF_SPLIT_LEN);
 
@@ -22,9 +28,24 @@ void wire_process_incoming(char *str)
             interrupts();   
             break;
 
+        case 'a':
+            // reply to master with the value on the LDR
+            itoa(AnalogReadAvg(analogInPin, NUM_SAMPLES), itoabuf, 10);
+            Wire.beginTransmission(MASTER_ID);
+            Wire.write(itoabuf);
+            Wire.endTransmission();
+            break;
+
         default:
             break;
     }
+}
 
+
+void calibrate()
+{
+    Wire.beginTransmission(2);
+    Wire.write('a');
+    Wire.endTransmission();
 }
 
