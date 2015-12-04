@@ -44,8 +44,17 @@ void wire_process_incoming(char *str)
 
 void calibrate()
 {
-    Wire.beginTransmission(2);
-    Wire.write('a');
-    Wire.endTransmission();
+    short i;
+
+    for(i=1; i<=3; i++)
+    {
+        if(i == MASTER_ID)
+           continue;
+        Wire.beginTransmission(i);
+        Wire.write('a');
+        Wire.endTransmission();
+
+        delay(1);
+    }
 }
 
