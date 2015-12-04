@@ -1,0 +1,3 @@
+g++ -std=c++11 serialread.cpp -lboost_system -o serialread
+g++ -std=c++11 serialwrite.cpp -lboost_system -o serialwrite
+
