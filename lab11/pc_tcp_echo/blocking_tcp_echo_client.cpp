@@ -1,4 +1,4 @@
-//Compile as: g++ -std=c++11 blocking_tcp_echo_client.cpp -lpthread -lboost_system -o client
+//Compile as: g++ -std=c++11 blocking_tcp_echo_client.cpp -lpthread -lboost_system -o client.out
 //Run in a separate terminal after starting server: ./client 127.0.0.1 17000
 
 

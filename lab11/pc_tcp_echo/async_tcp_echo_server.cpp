@@ -1,4 +1,4 @@
-//Compile as:  g++ -std=c++11 async_tcp_echo_server.cpp -lpthread -lboost_system -o server
+//Compile as:  g++ -std=c++11 async_tcp_echo_server.cpp -lpthread -lboost_system -o server.out
 //Run in a separate terminal, before starting client : ./server 17000
 
 //
