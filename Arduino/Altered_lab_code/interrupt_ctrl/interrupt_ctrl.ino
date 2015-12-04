@@ -7,9 +7,9 @@
 
 #define DEBUG
 
-//#define SENSORBUF 1
 #define BUF_LEN 100
 #define BUF_LEN_2 10
+#define BUF_WIRE_LEN    40
 #define BUF_SPLIT_LEN   20
 #define BAUDRATE 38400
 #define SAMPLE_TIME 1500
@@ -33,6 +33,7 @@ int analogOutPin = 5; // Analog output pin that the LED is attached to
 
 char buf[BUF_LEN];
 char buf2[BUF_LEN_2];
+char wire_buf[BUF_WIRE_LEN];
 
 int n;
 
@@ -230,25 +231,11 @@ void main_send_end_cmd() {
 void main_switch() {
     double x;
     short dev_id;
-    bool serial_data_available;
     char *lst[BUF_SPLIT_LEN];
     short numwords;
 
-    if(!wire_data_available)
-        serial_data_available = serial_read_str(buf, BUF_LEN);
-    else
-        serial_data_available = false;
-
-    if(serial_data_available)
-    {
-        Serial.println("serial data available");
-        Serial.println(buf);
-    }
-
-
-    if(wire_data_available || serial_data_available) {
-        if(wire_data_available)
-            wire_data_available = false;
+    //TODO: take out this if
+    if(true) {
 
         // ignore the firts byte (command)
         numwords = split(buf+1, lst, BUF_SPLIT_LEN);
@@ -293,7 +280,7 @@ void main_switch() {
                 }
 
                 Serial.println("command for me");
-                x= atof(lst[0]);
+                x = atof(lst[0]);
                 noInterrupts();
                 ctrl_ref = luxfunction(x);
                 ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
@@ -313,15 +300,16 @@ void main_switch() {
             case 'r':
                 // set reference
                 // 'r pwmref'
-                x= atof(lst[0]);
+                x = atof(lst[0]);
                 noInterrupts();
-                ctrl_ref= x;
+                ctrl_ref = x;
                 ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
                 ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
                 interrupts();
                 sprintf(buf, "ref=");
                 itoa(ctrl_ref, buf2, 10);
-                strcat(buf, buf2); strcat(buf, "\n");
+                strcat(buf, buf2);
+                strcat(buf, "\n");
                 //Serial.print(buf);
                 break;
 
@@ -399,7 +387,7 @@ void main_switch() {
                 // read sensor
                 {
                     int ch= 0;
-                    if (buf[1]!='\0')
+                    if(buf[1]!='\0')
                         ch= buf[1]-'0';
                     int v = analogRead(ch);
 
@@ -429,6 +417,8 @@ void main_switch() {
 
             case 'P':
                 // Toggle Print
+                //Serial.println("\ntime ctrl_u ctrl_y ctrl_e lux");
+                Serial.println("\ntime ctrl_e");
                 enable_print = !enable_print;
                 break;
 
@@ -449,7 +439,7 @@ void wireReceiveEvent(int nbytes) {
     digitalWrite(13, HIGH);
     while (Wire.available() && i<nbytes) {
         c = Wire.read();
-        buf[i++] = c;
+        wire_buf[i++] = c;
         if(c = '\0')
             break;
     }
@@ -466,15 +456,21 @@ void setup() {
     pinMode(analogOutPin, OUTPUT);
 
     // initialise wire (I2C)
+    #ifdef DEBUG
+    Serial.print("wire_my_address ");
     Serial.println(EEPROM.read(EEPROM_ID_ADDRESS));
+    #endif
     wire_my_address = EEPROM.read(EEPROM_ID_ADDRESS);
     Wire.begin(wire_my_address);
+    /* The upper 7 bits are the address to which the 2-wire Serial Interface
+     * will respond when addressed by a Master.  If the LSB is set, the TWI
+     * will respond to the general call address (0x00), otherwise it will
+     * ignore the general call address. */
+    TWAR = (wire_my_address << 1) | 1;  // enable broadcasts to be received
     Wire.onReceive(wireReceiveEvent);
 
 
-    //Serial.println("\ntime ctrl_u ctrl_y ctrl_e lux");
-    Serial.println("\ntime ctrl_e");
-
+    // save the starting time, to be used in graphs
     t0 = micros();
 
     // setup interrupts
@@ -496,7 +492,23 @@ void setup() {
 }
 
 void loop() {
-    main_switch();
+    bool serial_data_available;
+    
+    if(wire_data_available)
+    {
+        wire_data_available = false;
+        wire_process_incoming(wire_buf);
+    }
+
+    serial_data_available = serial_read_str(buf, BUF_LEN);
+    if(serial_data_available)
+    {
+        main_switch();
+        #ifdef DEBUG
+        Serial.println("serial data available");
+        Serial.println(buf);
+        #endif
+    }
 
     if(print_flag and enable_print) {
         print_flag = 0;
@@ -534,7 +546,7 @@ void loop() {
         //end_time = micros();
         //Serial.println(end_time-start_time);
         //Serial.print(",\t");
-        */
+         */
     }
 }
 
