@@ -2,6 +2,7 @@
 
 #include "simplex.hpp"
 #include <iostream>
+#include <vector>
 
 
 /* INPUT
@@ -44,8 +45,8 @@ v = 27;
 
 int main() {
 
-    pivot_struct test_struct;
-    pivot_struct out_struct;
+    simplex::pivot_struct test_struct;
+    simplex::pivot_struct out_struct;
 
     test_struct.v=0;
     test_struct.N.insert(1);
@@ -86,15 +87,33 @@ int main() {
 
     std::cout << "Before Pivot" <<std::endl;
 
-    print_pivot_struct(test_struct);
+    simplex::print_pivot_struct(test_struct);
 
-    out_struct = pivot(test_struct,e,l);
+    out_struct = simplex::pivot(test_struct,e,l);
 
     std::cout << "After Pivot" <<std::endl;
 
-    print_pivot_struct(out_struct);
+    simplex::print_pivot_struct(out_struct);
+/*
+
+    float A[3][3] = {
+        {1,1,3},
+        {2,2,5},
+        {4,1,2}
+    };
 
 
 
-    return 0;
+
+    float b[] = {30,24,36};
+
+    float c[] = {3,1,2};
+
+
+
+    pivot_struct init_simplex(A,b,c);
+
+    
+
+*/
 }
