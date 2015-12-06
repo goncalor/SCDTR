@@ -82,16 +82,9 @@ void calibrate()
     ref_feedfoward = 0;
     interrupts();   
     // the others
-    for(i=1; i<=3; i++)
-    {
-        if(i == MASTER_ID)
-            continue;
-        Wire.beginTransmission(i);
-        Wire.write("p 0");
-        Wire.endTransmission();
-
-        delay(2);
-    }
+    Wire.beginTransmission(0);
+    Wire.write("p 0");
+    Wire.endTransmission();
 
     delay(1000);    // wait for others to turn off and stabilize
 
@@ -104,9 +97,7 @@ void calibrate()
         Wire.endTransmission();
 
         while(!wire_data_available)
-        {
-            Serial.println("dam");
-        }
+            ;   // wait
         wire_data_available = false;
 
         numwords = split(wire_buf, lst, BUF_SPLIT_LEN);
