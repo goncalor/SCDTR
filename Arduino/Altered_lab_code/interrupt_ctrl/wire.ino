@@ -97,13 +97,12 @@ void calibrate()
         Wire.endTransmission();
 
         while(!wire_data_available)
-            ;   // wait
+            ;   // wait for data
         wire_data_available = false;
 
         numwords = split(wire_buf, lst, BUF_SPLIT_LEN);
         if(numwords==3 && wire_buf[0]=='b')
         {
-            Serial.println("preencher O_vals");
             dev_id = atoi(lst[1]);
             O_vals[dev_id-1] = atoi(lst[2]);
         }
@@ -111,6 +110,7 @@ void calibrate()
 
     O_vals[MASTER_ID-1] = AnalogReadAvg(analogInPin, NUM_SAMPLES);
 
+    #ifdef DEBUG
     Serial.print("O_vals: ");
     for(i=0; i<3; i++)
     {
@@ -118,5 +118,6 @@ void calibrate()
         Serial.print(" ");
     }
     Serial.print("");
+    #endif
 }
 

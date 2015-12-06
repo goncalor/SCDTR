@@ -46,7 +46,7 @@ int loopOutputFlag= 1;
 int ctrl_verbose_flag= 0;
 
 int wire_my_address;
-bool wire_data_available = false;
+volatile bool wire_data_available = false;
 
 // PID variables
 unsigned int Ts= SAMPLE_TIME;
@@ -439,11 +439,10 @@ void wireReceiveEvent(int nbytes) {
     int i=0;
     char c;
     digitalWrite(13, HIGH);
-    Serial.println("hi");
+    Serial.print("hi nbytes ");
     Serial.println(nbytes);
     while (Wire.available() && i<nbytes) {
         c = Wire.read();
-        Serial.print(c);
         wire_buf[i++] = c;
         if(c = '\0')
             Serial.println("0!");
@@ -451,7 +450,6 @@ void wireReceiveEvent(int nbytes) {
     }
     wire_data_available = true;
     digitalWrite(13, LOW);
-    Serial.println("bazei");
 }
 
 
