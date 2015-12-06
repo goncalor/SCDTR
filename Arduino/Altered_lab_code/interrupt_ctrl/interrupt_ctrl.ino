@@ -12,7 +12,7 @@
 #define BUF_WIRE_LEN    40
 #define BUF_SPLIT_LEN   20
 #define BAUDRATE 38400
-#define SAMPLE_TIME 1500
+#define SAMPLE_TIME 5000    // microseconds
 #define GAIN_K 10
 #define GAIN_D 0.01
 #define GAIN_I 10
@@ -439,14 +439,19 @@ void wireReceiveEvent(int nbytes) {
     int i=0;
     char c;
     digitalWrite(13, HIGH);
+    Serial.println("hi");
+    Serial.println(nbytes);
     while (Wire.available() && i<nbytes) {
         c = Wire.read();
+        Serial.print(c);
         wire_buf[i++] = c;
         if(c = '\0')
-            break;
+            Serial.println("0!");
+        //    break;
     }
     wire_data_available = true;
     digitalWrite(13, LOW);
+    Serial.println("bazei");
 }
 
 
@@ -456,6 +461,9 @@ void setup() {
     Serial.begin(BAUDRATE);
     pinMode(analogInPin, INPUT);
     pinMode(analogOutPin, OUTPUT);
+
+    pinMode(13, OUTPUT);
+    digitalWrite(13, LOW);
 
     // initialise wire (I2C)
     #ifdef DEBUG
@@ -495,16 +503,13 @@ void setup() {
     interrupts(); // enable all interrupts
 
 
-    pinMode(13, OUTPUT);
-    digitalWrite(13, LOW);
 }
 
 void loop() {
     bool serial_data_available;
-    
+
     if(wire_data_available)
     {
-        wire_data_available = false;
         wire_process_incoming(wire_buf);
     }
 

@@ -8,7 +8,10 @@ void wire_process_incoming(char *str)
     char *lst[BUF_SPLIT_LEN];
     short numwords;
     float fl;
+    int in;
     char itoabuf[10];
+
+    wire_data_available = false;
 
     #ifdef DEBUG
     Serial.print("incoming wire str: ");
@@ -20,6 +23,8 @@ void wire_process_incoming(char *str)
     switch(str[0])
     {
         case 'l':
+            // set reference in lux
+            // 'l lux'
             fl = atof(lst[0]);
             noInterrupts();
             ctrl_ref = luxfunction(fl);
@@ -30,10 +35,29 @@ void wire_process_incoming(char *str)
 
         case 'a':
             // reply to master with the value on the LDR
-            itoa(AnalogReadAvg(analogInPin, NUM_SAMPLES), itoabuf, 10);
+            // reply to send 'b my_address ldr'
             Wire.beginTransmission(MASTER_ID);
-            Wire.write(itoabuf);
+            Wire.write("b ");
+            itoa(wire_my_address, itoabuf, 10);
+            Wire.write(itoabuf);    // send my address
+            Wire.write(' ');
+            itoa(AnalogReadAvg(analogInPin, NUM_SAMPLES), itoabuf, 10);
+            Wire.write(itoabuf);    // send my LDR reading
             Wire.endTransmission();
+            break;
+
+        case 'b':
+            // reserved
+            break;
+
+        case 'p':
+            // set the reference in pwm value
+            // 'l pwm'
+            in = atoi(lst[0]);
+            noInterrupts();
+            ctrl_mapped_ref = map(in, 0, 255, 0, 1023);
+            ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+            interrupts();   
             break;
 
         default:
@@ -42,19 +66,66 @@ void wire_process_incoming(char *str)
 }
 
 
+int O_vals[3];
+
 void calibrate()
 {
     short i;
+    char *lst[BUF_SPLIT_LEN];
+    short dev_id;
+    short numwords;
+
+    // turn the lights off
+    // my own
+    noInterrupts();
+    ctrl_mapped_ref = 0;
+    ref_feedfoward = 0;
+    interrupts();   
+    // the others
+    for(i=1; i<=3; i++)
+    {
+        if(i == MASTER_ID)
+            continue;
+        Wire.beginTransmission(i);
+        Wire.write("p 0");
+        Wire.endTransmission();
+
+        delay(2);
+    }
+
+    delay(1000);    // wait for others to turn off and stabilize
 
     for(i=1; i<=3; i++)
     {
         if(i == MASTER_ID)
-           continue;
+            continue;
         Wire.beginTransmission(i);
-        Wire.write('a');
+        Wire.write("a");
         Wire.endTransmission();
 
-        delay(1);
+        while(!wire_data_available)
+        {
+            Serial.println("dam");
+        }
+        wire_data_available = false;
+
+        numwords = split(wire_buf, lst, BUF_SPLIT_LEN);
+        if(numwords==3 && wire_buf[0]=='b')
+        {
+            Serial.println("preencher O_vals");
+            dev_id = atoi(lst[1]);
+            O_vals[dev_id-1] = atoi(lst[2]);
+        }
     }
+
+    O_vals[MASTER_ID-1] = AnalogReadAvg(analogInPin, NUM_SAMPLES);
+
+    Serial.print("O_vals: ");
+    for(i=0; i<3; i++)
+    {
+        Serial.print(O_vals[i]);
+        Serial.print(" ");
+    }
+    Serial.print("");
 }
 
