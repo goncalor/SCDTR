@@ -2,7 +2,9 @@
 #include <iostream>
 
 
-simplex::simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::vector<float> c){
+Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::vector<float> c){
+
+
 
     for(unsigned int i=1;i<=c.size();i++){
         internal_struct.N.insert(i);
@@ -20,7 +22,7 @@ simplex::simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::v
     }
     auto iter_l = A.begin();
     for (auto i : internal_struct.B) {
-        auto iter_c=A[i].begin();
+        auto iter_c = (*iter_l).begin();
         for (auto j : internal_struct.N) {
             internal_struct.A[i][j]=(*iter_l)[*iter_c];
             iter_c++;
@@ -41,9 +43,9 @@ simplex::simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::v
 
 }
 
-//Pivot method used by the simplex algorithm based on the pseudo code present
+//Pivot method used by the Simplex algorithm based on the pseudo code present
 // in "Introduction to Alorithms" 3rd Edition by Cormen, page 869.
-simplex::pivot_struct simplex::pivot(pivot_struct in, int e, int l){
+Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
     pivot_struct out(in);
 
 
@@ -91,7 +93,7 @@ simplex::pivot_struct simplex::pivot(pivot_struct in, int e, int l){
     return out;
 }
 
-void simplex::print_pivot_struct(pivot_struct to_print){
+void Simplex::print_pivot_struct(pivot_struct to_print){
     std::cout << "N = {";
     for (auto j : to_print.N) {
         std::cout << j << ",";
@@ -131,8 +133,13 @@ void simplex::print_pivot_struct(pivot_struct to_print){
 }
 
 
-void simplex::init_simplex(){
+void Simplex::init_Simplex(){
 
 }
 
-std::vector<float> solve();
+std::vector<float> Simplex::solve(){
+    std::vector<float> d;
+    init_Simplex();
+
+    return d;
+}

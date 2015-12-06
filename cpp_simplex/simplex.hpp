@@ -6,7 +6,7 @@
 
 
 
-class simplex {
+class Simplex {
 
 
 public:
@@ -20,7 +20,7 @@ public:
         int v;
     };
 
-    simplex(std::vector<std::vector<float>>,std::vector<float>,std::vector<float>);
+    Simplex(std::vector<std::vector<float>>,std::vector<float>,std::vector<float>);
 
     std::vector<float> solve();
 
@@ -28,7 +28,11 @@ public:
 
     static void print_pivot_struct(pivot_struct to_print);
 
-    void init_simplex();
+    void init_Simplex();
+
+    void print_internal_struct(){
+        print_pivot_struct(internal_struct);
+    }
 
 private:
     pivot_struct internal_struct;

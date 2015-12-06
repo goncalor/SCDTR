@@ -1,4 +1,4 @@
-// g++ -Wall -Wextra -pedantic -std=c++11 simplex.cpp main.cpp
+// g++ -Wall -Wextra -pedantic -std=c++11 Simplex.cpp main.cpp
 
 #include "simplex.hpp"
 #include <iostream>
@@ -45,8 +45,8 @@ v = 27;
 
 int main() {
 
-    simplex::pivot_struct test_struct;
-    simplex::pivot_struct out_struct;
+    Simplex::pivot_struct test_struct;
+    Simplex::pivot_struct out_struct;
 
     test_struct.v=0;
     test_struct.N.insert(1);
@@ -87,33 +87,43 @@ int main() {
 
     std::cout << "Before Pivot" <<std::endl;
 
-    simplex::print_pivot_struct(test_struct);
+    Simplex::print_pivot_struct(test_struct);
 
-    out_struct = simplex::pivot(test_struct,e,l);
+    out_struct = Simplex::pivot(test_struct,e,l);
 
     std::cout << "After Pivot" <<std::endl;
 
-    simplex::print_pivot_struct(out_struct);
-/*
+    Simplex::print_pivot_struct(out_struct);
 
-    float A[3][3] = {
-        {1,1,3},
-        {2,2,5},
-        {4,1,2}
-    };
+    std::vector<float> b;
+    b.push_back(30);
+    b.push_back(24);
+    b.push_back(36);
+    std::vector<float> c;
+    c.push_back(3);
+    c.push_back(1);
+    c.push_back(2);
+    std::vector<std::vector<float>> A;
+    A.push_back(std::vector<float> ());
+    A.push_back(std::vector<float> ());
+    A.push_back(std::vector<float> ());
+    A[0].push_back(1);
+    A[0].push_back(1);
+    A[0].push_back(3);
+    A[1].push_back(2);
+    A[1].push_back(2);
+    A[1].push_back(5);
+    A[2].push_back(4);
+    A[2].push_back(1);
+    A[2].push_back(2);
+
+    std::cout << "Create Simplex" <<std::endl;
+
+    Simplex teste = Simplex(A,b,c);
+
+    std::cout << "Print" <<std::endl;
 
 
+    teste.print_internal_struct();
 
-
-    float b[] = {30,24,36};
-
-    float c[] = {3,1,2};
-
-
-
-    pivot_struct init_simplex(A,b,c);
-
-    
-
-*/
 }
