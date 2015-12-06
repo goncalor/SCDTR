@@ -439,8 +439,10 @@ void wireReceiveEvent(int nbytes) {
     int i=0;
     char c;
     digitalWrite(13, HIGH);
+    #ifdef DEBUG
     Serial.print("hi nbytes ");
     Serial.println(nbytes);
+    #endif
     while (Wire.available() && i<nbytes) {
         c = Wire.read();
         wire_buf[i++] = c;
@@ -499,9 +501,21 @@ void setup() {
     TCNT1 = (unsigned int) INTERRUPT_TIME; // preload timer
     TIMSK1 |= (1 << TOIE1); // enable timer overflow interrupt
     interrupts(); // enable all interrupts
-
-
 }
+
+
+void enable_controller()
+{
+    TCNT1 = (unsigned int) INTERRUPT_TIME; // preload timer
+    TIMSK1 |= (1 << TOIE1); // enable timer overflow interrupt
+}
+
+
+void disable_controller()
+{
+    TIMSK1 &= ~(1 << TOIE1); // enable timer overflow interrupt
+}
+
 
 void loop() {
     bool serial_data_available;

@@ -65,10 +65,19 @@ void wire_process_incoming(char *str)
     }
 }
 
+// TODO: turn off controller while calibrating
+// TODO: distribute O
+// TODO: distribute E
 
 int O_vals[3];
+int E_vals[3][3];
 
 void calibrate()
+{
+    get_O();
+}
+
+void get_O()
 {
     short i;
     char *lst[BUF_SPLIT_LEN];
@@ -77,10 +86,10 @@ void calibrate()
 
     // turn the lights off
     // my own
-    noInterrupts();
+    disable_controller();
     ctrl_mapped_ref = 0;
     ref_feedfoward = 0;
-    interrupts();   
+    enable_controller();
     // the others
     Wire.beginTransmission(0);
     Wire.write("p 0");
@@ -121,3 +130,7 @@ void calibrate()
     #endif
 }
 
+
+void get_E()
+{
+}
