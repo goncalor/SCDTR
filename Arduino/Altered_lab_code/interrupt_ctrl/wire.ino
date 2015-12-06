@@ -50,14 +50,28 @@ void wire_process_incoming(char *str)
             // reserved
             break;
 
+        case 'd':
+            disable_controller();
+            break;
+
+        case 'e':
+            enable_controller();
+            break;
+
         case 'p':
-            // set the reference in pwm value
-            // 'l pwm'
+            // set the reference in PWM value
+            // 'p pwm'
             in = atoi(lst[0]);
             noInterrupts();
             ctrl_mapped_ref = map(in, 0, 255, 0, 1023);
             ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
             interrupts();   
+            break;
+
+        case 'q':
+            // set the LED to a certain PWM value 
+            // 'q pwm'
+            analogWrite(analogOutPin, atoi(lst[0]));
             break;
 
         default:
@@ -75,7 +89,27 @@ int E_vals[3][3];
 void calibrate()
 {
     get_O();
+    get_E();
 }
+
+
+void disable_all_controllers()
+{
+    disable_controller();
+    Wire.beginTransmission(0);
+    Wire.write("d");
+    Wire.endTransmission();
+}
+
+
+void enable_all_controllers()
+{
+    enable_controller();
+    Wire.beginTransmission(0);
+    Wire.write("e");
+    Wire.endTransmission();
+}
+
 
 void get_O()
 {
@@ -84,18 +118,17 @@ void get_O()
     short dev_id;
     short numwords;
 
+    disable_all_controllers();
+
     // turn the lights off
-    // my own
-    disable_controller();
-    ctrl_mapped_ref = 0;
-    ref_feedfoward = 0;
-    enable_controller();
     // the others
     Wire.beginTransmission(0);
-    Wire.write("p 0");
+    Wire.write("q 0");
     Wire.endTransmission();
+    // my own
+    analogWrite(analogOutPin, 0);
 
-    delay(1000);    // wait for others to turn off and stabilize
+    delay(2000);    // wait for others to turn off and stabilize
 
     for(i=1; i<=3; i++)
     {
@@ -128,6 +161,8 @@ void get_O()
     }
     Serial.print("");
     #endif
+
+    enable_all_controllers();
 }
 
 
