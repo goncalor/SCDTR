@@ -4,8 +4,6 @@
 #define INF 999999
 
 Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::vector<float> c){
-    //FIXME There is a mistake on the A matrix initialization
-
 
     for(unsigned int i=1;i<=c.size();i++){
         internal_struct.N.insert(i);
@@ -17,7 +15,6 @@ Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::v
 
     internal_struct.v=0;
 
-    std::cout << "Inserting in A:" << std::endl;
     for (auto i : internal_struct.B) {
         internal_struct.A[i]=std::map<int,float>();
     }
@@ -25,10 +22,7 @@ Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::v
     for (auto i : internal_struct.B) {
         auto iter_c = (*iter_l).begin();
         for (auto j : internal_struct.N) {
-            std::cout << "A[" << i<< "]["<<j<<"] = " << (*iter_l)[*iter_c] << std::endl;
-            std::cout << "iter_c = " << (*iter_c) << std::endl;
-
-            internal_struct.A[i][j]=(*iter_l)[*iter_c];
+            internal_struct.A[i][j]=*iter_c;
             iter_c++;
         }
         iter_l++;
@@ -158,8 +152,8 @@ void Simplex::init_Simplex(){
 
 bool Simplex::simplex_ended(){
 
-    for(const auto& iter : internal_struct.c){
-        if(iter.second > 0){
+    for (auto i : internal_struct.N) {
+        if(internal_struct.c[i] > 0){
             return false;
         }
     }
@@ -185,13 +179,14 @@ std::vector<float> Simplex::solve(){
             }
 
             for(auto i : internal_struct.B){
-                std::cout << "A[" << i<< "]["<<e<<"] = "<< internal_struct.A[i][e] << std::endl;
+                //std::cout << "A[" << i<< "]["<<e<<"] = "<< internal_struct.A[i][e] << std::endl;
                 if(internal_struct.A[i][e]>0){
                     delta[i] = internal_struct.b[i]/internal_struct.A[i][e];
                 } else {
                     delta[i] = INF;
                 }
-                std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;            }
+                //std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;
+            }
 
             l = *internal_struct.B.begin();
             float min = delta[l];
@@ -205,16 +200,18 @@ std::vector<float> Simplex::solve(){
                 throw 2;
             }
 
+            //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+
             internal_struct = pivot(internal_struct,e,l);
 
-            std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
-
+            //std::cout << "Pivot Result "<< std::endl;
+            //print_internal_struct();
 
         }
 
         for(unsigned int i = 0; i<internal_struct.B.size();i++){
             if (internal_struct.B.find(i)!=internal_struct.B.end()){
-                d[i]=internal_struct.b[i];
+                d[i-1]=internal_struct.b[i];
             }
         }
 

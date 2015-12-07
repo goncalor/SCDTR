@@ -143,7 +143,7 @@ int main() {
     std::cout << "Solution" <<std::endl;
 
     for(auto i : x){
-        std::cout << "x(" << i <<") = " << x[i] << std::endl;
+        std::cout << "x = " << i << std::endl;
     }
 
 }
