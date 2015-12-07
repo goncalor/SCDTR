@@ -1,9 +1,10 @@
 #include "simplex.hpp"
 #include <iostream>
 
+#define INF 999999
 
 Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::vector<float> c){
-
+    //FIXME There is a mistake on the A matrix initialization
 
 
     for(unsigned int i=1;i<=c.size();i++){
@@ -16,7 +17,7 @@ Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::v
 
     internal_struct.v=0;
 
-
+    std::cout << "Inserting in A:" << std::endl;
     for (auto i : internal_struct.B) {
         internal_struct.A[i]=std::map<int,float>();
     }
@@ -24,6 +25,9 @@ Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::v
     for (auto i : internal_struct.B) {
         auto iter_c = (*iter_l).begin();
         for (auto j : internal_struct.N) {
+            std::cout << "A[" << i<< "]["<<j<<"] = " << (*iter_l)[*iter_c] << std::endl;
+            std::cout << "iter_c = " << (*iter_c) << std::endl;
+
             internal_struct.A[i][j]=(*iter_l)[*iter_c];
             iter_c++;
         }
@@ -62,8 +66,8 @@ Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
 
     out.A[e][l]=1/in.A[l][e];
 
-    std::cout << "Updated A line " << e <<std::endl;
-    print_pivot_struct(out);
+    //std::cout << "Updated A line " << e <<std::endl;
+    //print_pivot_struct(out);
 
 
     for (auto i : in.B) {
@@ -77,7 +81,7 @@ Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
         }
     }
 
-    print_pivot_struct(out);
+    //print_pivot_struct(out);
 
 
     out.v = in.v+in.c[e]*out.b[e];
@@ -128,18 +132,101 @@ void Simplex::print_pivot_struct(pivot_struct to_print){
     }
     std::cout << "}" <<std::endl;
 
-    std::cout << "c = " << to_print.v << std::endl << std::endl;
+    std::cout << "v = " << to_print.v << std::endl << std::endl;
 
 }
 
 
 void Simplex::init_Simplex(){
 
+    auto iter_min = internal_struct.b.begin();
+    float min = iter_min->second;
+    for (auto iter = internal_struct.b.begin(); iter != internal_struct.b.end(); ++iter){
+        if(iter->second<min){
+            iter_min=iter;
+            min = iter->second;
+        }
+    }
+
+    if (min < 0){
+        // Unfeasible initial solution
+        throw  1;
+    }
+
+
+}
+
+bool Simplex::simplex_ended(){
+
+    for(const auto& iter : internal_struct.c){
+        if(iter.second > 0){
+            return false;
+        }
+    }
+
+    return true;
 }
 
 std::vector<float> Simplex::solve(){
-    std::vector<float> d;
-    init_Simplex();
+    std::vector<float> d(internal_struct.B.size(),0);
+    try{
+        init_Simplex();
+
+        std::map<int,float> delta;
+        int e;
+        int l;
+
+        while(!simplex_ended()){
+
+            for(auto N_iter : internal_struct.N){
+                if(internal_struct.c[N_iter]>0)
+                    e=N_iter;
+                    break;
+            }
+
+            for(auto i : internal_struct.B){
+                std::cout << "A[" << i<< "]["<<e<<"] = "<< internal_struct.A[i][e] << std::endl;
+                if(internal_struct.A[i][e]>0){
+                    delta[i] = internal_struct.b[i]/internal_struct.A[i][e];
+                } else {
+                    delta[i] = INF;
+                }
+                std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;            }
+
+            l = *internal_struct.B.begin();
+            float min = delta[l];
+            for(auto i : internal_struct.B){
+                if(delta[i] < min){
+                    min = delta[i];
+                    l = i;
+                }
+            }
+            if(delta[l]==INF){
+                throw 2;
+            }
+
+            internal_struct = pivot(internal_struct,e,l);
+
+            std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+
+
+        }
+
+        for(unsigned int i = 0; i<internal_struct.B.size();i++){
+            if (internal_struct.B.find(i)!=internal_struct.B.end()){
+                d[i]=internal_struct.b[i];
+            }
+        }
+
+    }
+    catch(int e){
+        if(e==1){
+            std::cout << "Unfeasible initial solution!" << std::endl;
+        }
+        if(e==2){
+            std::cout << "Unbounded!" << std::endl;
+        }
+    }
 
     return d;
 }

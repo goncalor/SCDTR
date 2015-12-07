@@ -1,4 +1,4 @@
-// g++ -Wall -Wextra -pedantic -std=c++11 Simplex.cpp main.cpp
+// g++ -Wall -Wextra -pedantic -std=c++11 simplex.cpp main.cpp
 
 #include "simplex.hpp"
 #include <iostream>
@@ -85,15 +85,15 @@ int main() {
     int e = 1;
     int l = 6;
 
-    std::cout << "Before Pivot" <<std::endl;
+    //std::cout << "Before Pivot" <<std::endl;
 
-    Simplex::print_pivot_struct(test_struct);
+    //Simplex::print_pivot_struct(test_struct);
 
     out_struct = Simplex::pivot(test_struct,e,l);
 
-    std::cout << "After Pivot" <<std::endl;
+    //std::cout << "After Pivot" <<std::endl;
 
-    Simplex::print_pivot_struct(out_struct);
+    //Simplex::print_pivot_struct(out_struct);
 
     std::vector<float> b;
     b.push_back(30);
@@ -123,7 +123,27 @@ int main() {
 
     std::cout << "Print" <<std::endl;
 
-
     teste.print_internal_struct();
+
+
+    /*
+    N = [1,2,3];
+    B = [4,5,6];
+    A = [1, 1, 3;
+         2, 2, 5;
+         4, 1, 2];
+    b = [30;24;36];
+    c = [3,1,2];
+    v = 0;
+    */
+
+    std::vector<float> x = teste.solve();
+
+
+    std::cout << "Solution" <<std::endl;
+
+    for(auto i : x){
+        std::cout << "x(" << i <<") = " << x[i] << std::endl;
+    }
 
 }

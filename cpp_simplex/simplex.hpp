@@ -36,4 +36,5 @@ public:
 
 private:
     pivot_struct internal_struct;
+    bool simplex_ended();
 };
