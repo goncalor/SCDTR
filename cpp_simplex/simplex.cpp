@@ -46,7 +46,6 @@ Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::v
 Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
     pivot_struct out(in);
 
-
     out.N.erase(e);
     out.N.insert(l);
     out.B.erase(l);
@@ -63,7 +62,6 @@ Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
     //std::cout << "Updated A line " << e <<std::endl;
     //print_pivot_struct(out);
 
-
     for (auto i : in.B) {
         if (i != l){
             out.b[i] = in.b[i]-in.A[i][e]*out.b[e];
@@ -77,7 +75,6 @@ Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
 
     //print_pivot_struct(out);
 
-
     out.v = in.v+in.c[e]*out.b[e];
 
     for (auto j : in.N) {
@@ -86,7 +83,6 @@ Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
     }
 
     out.c[l]=-in.c[e]*out.A[e][l];
-
 
     return out;
 }
@@ -144,16 +140,80 @@ void Simplex::init_Simplex(){
 
     if (min < 0){
         // Unfeasible initial solution
+
+        //create auxiliar linear programm
+        pivot_struct aux_programm(internal_struct);
+        aux_programm.N.insert(0);
+        for (auto j : aux_programm.N) {
+            aux_programm.c[j] = 0;
+        }
+        aux_programm.c[0]=-1;
+        for (auto j : aux_programm.A) {
+            j.second[0] = 1;
+        }
+
+        std::map<int,float> delta;
+        int e = 0;
+        int l = internal_struct.N.size() + internal_struct.B.size();
+
+        aux_programm = pivot(aux_programm,e,l);
+
+
+        while(!simplex_ended(aux_programm)){
+
+            for(auto N_iter : aux_programm.N){
+                if(aux_programm.c[N_iter]>0)
+                    e=N_iter;
+                    break;
+            }
+
+            for(auto i : aux_programm.B){
+                //std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
+                if(aux_programm.A[i][e]>0){
+                    delta[i] = aux_programm.b[i]/aux_programm.A[i][e];
+                } else {
+                    delta[i] = INF;
+                }
+                //std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;
+            }
+
+            l = *aux_programm.B.begin();
+            float min = delta[l];
+            for(auto i : aux_programm.B){
+                if(delta[i] < min){
+                    min = delta[i];
+                    l = i;
+                }
+            }
+            if(delta[l]==INF){
+                throw 2;
+            }
+
+            //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+
+            aux_programm = pivot(aux_programm,e,l);
+
+            //std::cout << "Pivot Result "<< std::endl;
+            //print_aux_programm();
+
+        }
+
+        print_pivot_struct(aux_programm);
+
+        if(aux_programm.v==0){
+            std::cout << "There is a feasible solution." << std::endl;
+        }
+
         throw  1;
     }
 
 
 }
 
-bool Simplex::simplex_ended(){
+bool Simplex::simplex_ended( pivot_struct to_test){
 
-    for (auto i : internal_struct.N) {
-        if(internal_struct.c[i] > 0){
+    for (auto i : to_test.N) {
+        if(to_test.c[i] > 0){
             return false;
         }
     }
@@ -170,7 +230,7 @@ std::vector<float> Simplex::solve(){
         int e;
         int l;
 
-        while(!simplex_ended()){
+        while(!simplex_ended(internal_struct)){
 
             for(auto N_iter : internal_struct.N){
                 if(internal_struct.c[N_iter]>0)
