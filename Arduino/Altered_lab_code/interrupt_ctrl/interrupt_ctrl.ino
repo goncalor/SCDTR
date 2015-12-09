@@ -450,6 +450,7 @@ void wireReceiveEvent(int nbytes) {
             Serial.println("0!");
         //    break;
     }
+    wire_buf[i] = 0;   // terminate the buffer
     wire_data_available = true;
     digitalWrite(13, LOW);
 }
@@ -513,7 +514,7 @@ void enable_controller()
 
 void disable_controller()
 {
-    TIMSK1 &= ~(1 << TOIE1); // enable timer overflow interrupt
+    TIMSK1 &= ~(1 << TOIE1); // disable timer overflow interrupt
 }
 
 

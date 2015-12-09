@@ -88,7 +88,7 @@ int E_vals[3][3];
 
 void calibrate()
 {
-    get_O();
+    //get_O();
     get_E();
 }
 
@@ -159,7 +159,7 @@ void get_O()
         Serial.print(O_vals[i]);
         Serial.print(" ");
     }
-    Serial.print("");
+    Serial.println("");
     #endif
 
     enable_all_controllers();
@@ -168,4 +168,30 @@ void get_O()
 
 void get_E()
 {
+    short i;
+    char *lst[BUF_SPLIT_LEN];
+    short dev_id;
+    short numwords;
+
+    disable_all_controllers();
+    delay(1000);
+
+    // turn the lights off
+    // the others
+    Wire.beginTransmission(0);
+    Wire.write("q 0");
+    Wire.endTransmission();
+    // my own
+    analogWrite(analogOutPin, 0);
+
+    delay(2000);    // wait for others to turn off and stabilize
+
+    Wire.beginTransmission(0);
+    Wire.write("q 255");
+    Wire.endTransmission();
+
+    delay(2000);    // wait for others to turn off and stabilize
+
+
+    enable_all_controllers();
 }
