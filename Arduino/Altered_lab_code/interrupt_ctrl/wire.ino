@@ -88,7 +88,7 @@ int E_vals[3][3];
 
 void calibrate()
 {
-    //get_O();
+    get_O();
     get_E();
 }
 
@@ -111,7 +111,72 @@ void enable_all_controllers()
 }
 
 
+// Writes all the current readings into 'data'
+void get_all_readings(int *data, short len)
+{
+    short i;
+    char *lst[BUF_SPLIT_LEN];
+    short dev_id;
+    short numwords;
+
+    for(i=1; i<=len; i++)
+    {
+        if(i == MASTER_ID)
+            continue;
+        Wire.beginTransmission(i);
+        Wire.write("a");
+        Wire.endTransmission();
+
+        while(!wire_data_available)
+            ;   // wait for data
+        wire_data_available = false;
+
+        numwords = split(wire_buf, lst, BUF_SPLIT_LEN);
+        if(numwords==3 && wire_buf[0]=='b')
+        {
+            dev_id = atoi(lst[1]);
+            data[dev_id-1] = atoi(lst[2]);
+        }
+    }
+
+    // do my own reading
+    data[MASTER_ID-1] = AnalogReadAvg(analogInPin, NUM_SAMPLES);
+}
+
+
 void get_O()
+{
+    disable_all_controllers();
+
+    // turn the lights off
+    // the others
+    Wire.beginTransmission(0);
+    Wire.write("q 0");
+    Wire.endTransmission();
+    // my own
+    analogWrite(analogOutPin, 0);
+
+    delay(2000);    // wait for others to turn off and stabilize
+
+    //TODO call 
+    get_all_readings(O_vals, 3);
+
+    #ifdef DEBUG
+    short i;
+    Serial.print("O_vals: ");
+    for(i=0; i<3; i++)
+    {
+        Serial.print(O_vals[i]);
+        Serial.print(" ");
+    }
+    Serial.println("");
+    #endif
+
+    enable_all_controllers();
+}
+
+
+void get_E()
 {
     short i;
     char *lst[BUF_SPLIT_LEN];
@@ -134,64 +199,40 @@ void get_O()
     {
         if(i == MASTER_ID)
             continue;
+
+        // turn LED on full power
         Wire.beginTransmission(i);
-        Wire.write("a");
+        Wire.write("q 255");
         Wire.endTransmission();
 
-        while(!wire_data_available)
-            ;   // wait for data
-        wire_data_available = false;
+        delay(1000);    // wait to settle
 
-        numwords = split(wire_buf, lst, BUF_SPLIT_LEN);
-        if(numwords==3 && wire_buf[0]=='b')
-        {
-            dev_id = atoi(lst[1]);
-            O_vals[dev_id-1] = atoi(lst[2]);
-        }
+        get_all_readings(E_vals[i-1], 3);
+
+        Wire.beginTransmission(i);
+        Wire.write("q 0");
+        Wire.endTransmission();
+
+        delay(1000);    // wait to settle
     }
 
-    O_vals[MASTER_ID-1] = AnalogReadAvg(analogInPin, NUM_SAMPLES);
+    analogWrite(analogOutPin, 255);
+    delay(1000);
+    get_all_readings(E_vals[MASTER_ID-1], 3);
 
     #ifdef DEBUG
-    Serial.print("O_vals: ");
+    short j;
+    Serial.println("E_vals: ");
     for(i=0; i<3; i++)
     {
-        Serial.print(O_vals[i]);
-        Serial.print(" ");
+        for(j=0; j<3; j++)
+        {
+            Serial.print(E_vals[i][j]);
+            Serial.print(" ");
+        }
+        Serial.println("");
     }
-    Serial.println("");
     #endif
-
-    enable_all_controllers();
-}
-
-
-void get_E()
-{
-    short i;
-    char *lst[BUF_SPLIT_LEN];
-    short dev_id;
-    short numwords;
-
-    disable_all_controllers();
-    delay(1000);
-
-    // turn the lights off
-    // the others
-    Wire.beginTransmission(0);
-    Wire.write("q 0");
-    Wire.endTransmission();
-    // my own
-    analogWrite(analogOutPin, 0);
-
-    delay(2000);    // wait for others to turn off and stabilize
-
-    Wire.beginTransmission(0);
-    Wire.write("q 255");
-    Wire.endTransmission();
-
-    delay(2000);    // wait for others to turn off and stabilize
-
 
     enable_all_controllers();
 }
