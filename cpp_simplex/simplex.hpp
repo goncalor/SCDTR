@@ -17,7 +17,7 @@ public:
         std::map<int,float> c;
         std::set<int> N;
         std::set<int> B;
-        int v;
+        float v;
     };
 
     Simplex(std::vector<std::vector<float>>,std::vector<float>,std::vector<float>);

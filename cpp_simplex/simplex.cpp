@@ -132,14 +132,14 @@ void Simplex::init_Simplex(){
     auto iter_min = internal_struct.b.begin();
     float min = iter_min->second;
     for (auto iter = internal_struct.b.begin(); iter != internal_struct.b.end(); ++iter){
-        std::cout << "b " << iter->first << " = " << iter->second <<std::endl;
+        //std::cout << "b " << iter->first << " = " << iter->second <<std::endl;
         if(iter->second<min){
             iter_min=iter;
             min = iter->second;
         }
     }
 
-    std::cout << "min b = " << min <<std::endl;
+    //std::cout << "min b = " << min <<std::endl;
 
     if (min < 0){
         // Unfeasible initial solution
@@ -165,32 +165,32 @@ void Simplex::init_Simplex(){
         int e = 0;
         int l = internal_struct.N.size() + internal_struct.B.size();
 
-        std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+        //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
 
         aux_programm = pivot(aux_programm,e,l);
 
-        std::cout << "Pivot Result "<< std::endl;
-        print_pivot_struct(aux_programm);
+        //std::cout << "Pivot Result "<< std::endl;
+        //print_pivot_struct(aux_programm);
 
         while(!simplex_ended(aux_programm)){
 
             for(auto N_iter : aux_programm.N){
-            std::cout << "c[" << N_iter << "] = " << aux_programm.c[N_iter] << std::endl;
+            //std::cout << "c[" << N_iter << "] = " << aux_programm.c[N_iter] << std::endl;
                 if(aux_programm.c[N_iter]>0){
                     e=N_iter;
                     break;
                 }
             }
-            std::cout << "e = " << e << std::endl;
+            //std::cout << "e = " << e << std::endl;
 
             for(auto i : aux_programm.B){
-                std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
+                //std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
                 if(aux_programm.A[i][e]>0){
                     delta[i] = aux_programm.b[i]/aux_programm.A[i][e];
                 } else {
                     delta[i] = INF;
                 }
-                std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;
+                //std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;
             }
 
             l = *aux_programm.B.begin();
@@ -205,12 +205,12 @@ void Simplex::init_Simplex(){
                 throw 2;
             }
 
-            std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+            //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
 
             aux_programm = pivot(aux_programm,e,l);
 
-            std::cout << "Pivot Result "<< std::endl;
-            print_pivot_struct(aux_programm);
+            //std::cout << "Pivot Result "<< std::endl;
+            //print_pivot_struct(aux_programm);
 
         }
 
@@ -229,12 +229,12 @@ void Simplex::init_Simplex(){
                 }
                 l=0;
 
-                std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+                //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
 
                 aux_programm = pivot(aux_programm,e,l);
 
-                std::cout << "Pivot Result "<< std::endl;
-                print_pivot_struct(aux_programm);
+                //std::cout << "Pivot Result "<< std::endl;
+                //print_pivot_struct(aux_programm);
 
             }else{
                 std::cout << "x0 is already a basic variable." << std::endl;
@@ -261,29 +261,40 @@ void Simplex::init_Simplex(){
             aux_programm.v=internal_struct.v;
 
             for(auto i : internal_struct.N){
-                aux_programm.c[i]=0;
+
                 if(aux_programm.B.find(i)!=aux_programm.B.end()){
-                    std::cout << "v: adding aux_c["<< i<<"]*aux_b[" << i << "] = " << internal_struct.c[i]*aux_programm.b[i] <<std::endl;
-                        aux_programm.v = aux_programm.v + internal_struct.c[i] * aux_programm.b[i]; //TODO FIX THIS
-                    std::cout << "aux_v = " << aux_programm.v << std::endl;
-                }else{
+                    //std::cout << "v: adding inter_c["<< i<<"]*aux_b[" << i << "] = " << internal_struct.c[i] * aux_programm.b[i] <<std::endl;
+                    aux_programm.v = internal_struct.c[i] * aux_programm.b[i]; //TODO FIX THIS
+                    //std::cout << "aux_v = " << aux_programm.v << std::endl;
+                }/*else{
                     aux_programm.c[i]+=internal_struct.c[i];
                     for(auto j : internal_struct.N){
                         if(aux_programm.B.find(j)!=aux_programm.B.end()){
                             aux_programm.c[i]+=-internal_struct.c[j]*aux_programm.A[j][i];
                         }
                     }
-                }
+                }*/
             }
 
-            std::cout << std::endl <<"New LP to solve: "<< std::endl;
-            print_pivot_struct(aux_programm);
+            for(auto i : aux_programm.N){
+                aux_programm.c[i]=0;
+                if(internal_struct.N.find(i)!=internal_struct.N.end()){
+                    aux_programm.c[i]+=internal_struct.c[i];
+                }
+                for(auto j : internal_struct.N){
+                    if(aux_programm.B.find(j)!=aux_programm.B.end()){
+                        aux_programm.c[i]+=-internal_struct.c[j]*aux_programm.A[j][i];
+                    }
+                }
+            }
+            //std::cout << std::endl <<"New LP to solve: "<< std::endl;
+            //print_pivot_struct(aux_programm);
 
 
 
+        }else{
+            throw  1;
         }
-
-        throw  1;
     }
 
 
