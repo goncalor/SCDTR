@@ -45,7 +45,7 @@ v = 27;
 
 int main() {
 
-    Simplex::pivot_struct test_struct;
+    /*Simplex::pivot_struct test_struct;
     Simplex::pivot_struct out_struct;
 
     test_struct.v=0;
@@ -125,18 +125,6 @@ int main() {
 
     teste.print_internal_struct();
 
-
-    /*
-    N = [1,2,3];
-    B = [4,5,6];
-    A = [1, 1, 3;
-         2, 2, 5;
-         4, 1, 2];
-    b = [30;24;36];
-    c = [3,1,2];
-    v = 0;
-    */
-
     std::vector<float> x = teste.solve();
 
 
@@ -145,5 +133,34 @@ int main() {
     for(auto i : x){
         std::cout << "x = " << i << std::endl;
     }
+
+    */
+
+    std::cout << "Without initial feasible solution: " <<std::endl;
+
+    std::vector<float> b1;
+    b1.push_back(2);
+    b1.push_back(-4);
+
+    std::vector<float> c1;
+    c1.push_back(2);
+    c1.push_back(-1);
+
+    std::vector<std::vector<float>> A1;
+    A1.push_back(std::vector<float> ());
+    A1.push_back(std::vector<float> ());
+    A1[0].push_back(2);
+    A1[0].push_back(-1);
+    A1[1].push_back(1);
+    A1[1].push_back(-5);
+
+    Simplex teste1 = Simplex(A1,b1,c1);
+
+    std::cout << "Print" <<std::endl;
+
+    teste1.print_internal_struct();
+
+    std::vector<float> x1 = teste1.solve();
+
 
 }

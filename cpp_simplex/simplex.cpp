@@ -132,14 +132,20 @@ void Simplex::init_Simplex(){
     auto iter_min = internal_struct.b.begin();
     float min = iter_min->second;
     for (auto iter = internal_struct.b.begin(); iter != internal_struct.b.end(); ++iter){
+        std::cout << "b " << iter->first << " = " << iter->second <<std::endl;
         if(iter->second<min){
             iter_min=iter;
             min = iter->second;
         }
     }
 
+    std::cout << "min b = " << min <<std::endl;
+
     if (min < 0){
         // Unfeasible initial solution
+
+        std::cout << "Unfeasible initial solution." << std::endl <<std::endl;
+
 
         //create auxiliar linear programm
         pivot_struct aux_programm(internal_struct);
@@ -149,15 +155,22 @@ void Simplex::init_Simplex(){
         }
         aux_programm.c[0]=-1;
         for (auto j : aux_programm.A) {
-            j.second[0] = 1;
+            aux_programm.A[j.first][0]=1;
         }
+
+        std::cout << "Aux Linear programm "<< std::endl;
+        print_pivot_struct(aux_programm);
 
         std::map<int,float> delta;
         int e = 0;
         int l = internal_struct.N.size() + internal_struct.B.size();
 
+        std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+
         aux_programm = pivot(aux_programm,e,l);
 
+        std::cout << "Pivot Result "<< std::endl;
+        print_pivot_struct(aux_programm);
 
         while(!simplex_ended(aux_programm)){
 
@@ -168,13 +181,13 @@ void Simplex::init_Simplex(){
             }
 
             for(auto i : aux_programm.B){
-                //std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
+                std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
                 if(aux_programm.A[i][e]>0){
                     delta[i] = aux_programm.b[i]/aux_programm.A[i][e];
                 } else {
                     delta[i] = INF;
                 }
-                //std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;
+                std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;
             }
 
             l = *aux_programm.B.begin();
@@ -189,19 +202,22 @@ void Simplex::init_Simplex(){
                 throw 2;
             }
 
-            //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+            std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
 
             aux_programm = pivot(aux_programm,e,l);
 
-            //std::cout << "Pivot Result "<< std::endl;
-            //print_aux_programm();
+            std::cout << "Pivot Result "<< std::endl;
+            print_pivot_struct(aux_programm);
 
         }
 
-        print_pivot_struct(aux_programm);
-
         if(aux_programm.v==0){
             std::cout << "There is a feasible solution." << std::endl;
+            if(aux_programm.N.find(0)!=aux_programm.N.end()){
+                std::cout << "x0 is a basic varialbe." << std::endl;
+            }else{
+                std::cout << "x0 is not a basic variable." << std::endl;
+            }
         }
 
         throw  1;
