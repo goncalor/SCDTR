@@ -155,7 +155,7 @@ void Simplex::init_Simplex(){
         }
         aux_programm.c[0]=-1;
         for (auto j : aux_programm.A) {
-            aux_programm.A[j.first][0]=1;
+            aux_programm.A[j.first][0]=-1;
         }
 
         std::cout << "Aux Linear programm "<< std::endl;
@@ -175,10 +175,13 @@ void Simplex::init_Simplex(){
         while(!simplex_ended(aux_programm)){
 
             for(auto N_iter : aux_programm.N){
-                if(aux_programm.c[N_iter]>0)
+            std::cout << "c[" << N_iter << "] = " << aux_programm.c[N_iter] << std::endl;
+                if(aux_programm.c[N_iter]>0){
                     e=N_iter;
                     break;
+                }
             }
+            std::cout << "e = " << e << std::endl;
 
             for(auto i : aux_programm.B){
                 std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
@@ -213,11 +216,71 @@ void Simplex::init_Simplex(){
 
         if(aux_programm.v==0){
             std::cout << "There is a feasible solution." << std::endl;
-            if(aux_programm.N.find(0)!=aux_programm.N.end()){
-                std::cout << "x0 is a basic varialbe." << std::endl;
+            if(aux_programm.N.find(0)==aux_programm.N.end()){
+                std::cout << "x0 is not a basic varialbe." << std::endl;
+                //perform one (degenerate) pivot to make it nonbasic
+
+                // we perform a pivot step to remove x0 from the basis, using any e in N such that a_0e != 0 as the entering variable
+                for (auto j : aux_programm.N) {
+                    if(aux_programm.A[0][j]!=0){
+                        e=j;
+                        break;
+                    }
+                }
+                l=0;
+
+                std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+
+                aux_programm = pivot(aux_programm,e,l);
+
+                std::cout << "Pivot Result "<< std::endl;
+                print_pivot_struct(aux_programm);
+
             }else{
-                std::cout << "x0 is not a basic variable." << std::endl;
+                std::cout << "x0 is already a basic variable." << std::endl;
             }
+            //from the final slack form of Laux , remove x0 from the constraints and restore the original objective function of L, but replace each basic variable in this objective function by the right-hand side of its associated constrain
+
+            //   auto it = aux_programm.c.find(0);
+            //   aux_programm.c.erase(it);
+
+            for (auto j : aux_programm.N) {
+                aux_programm.c.erase(j);
+            }
+            aux_programm.N.erase(0);
+
+            /*for(auto j : internal_struct.N) {
+                auto it = aux_programm.c.find(j);
+                if(it!=aux_programm.c.end()){
+                    // found a non basic varialble in aux_programm that is basic in the internal_struct
+                    aux_programm.c[it] =
+
+
+                }
+            }*/
+            aux_programm.v=internal_struct.v;
+
+            for(auto i : internal_struct.N){
+                aux_programm.c[i]=0;
+                if(aux_programm.B.find(i)!=aux_programm.B.end()){
+                    std::cout << "v: adding aux_c["<< i<<"]*aux_b[" << i << "] = " << internal_struct.c[i]*aux_programm.b[i] <<std::endl;
+                        aux_programm.v = aux_programm.v + internal_struct.c[i] * aux_programm.b[i]; //TODO FIX THIS
+                    std::cout << "aux_v = " << aux_programm.v << std::endl;
+                }else{
+                    aux_programm.c[i]+=internal_struct.c[i];
+                    for(auto j : internal_struct.N){
+                        if(aux_programm.B.find(j)!=aux_programm.B.end()){
+                            aux_programm.c[i]+=-internal_struct.c[j]*aux_programm.A[j][i];
+                        }
+                    }
+                }
+            }
+
+            std::cout << std::endl <<"New LP to solve: "<< std::endl;
+            print_pivot_struct(aux_programm);
+
+
+
         }
 
         throw  1;
@@ -276,12 +339,12 @@ std::vector<float> Simplex::solve(){
                 throw 2;
             }
 
-            //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+            std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
 
             internal_struct = pivot(internal_struct,e,l);
 
-            //std::cout << "Pivot Result "<< std::endl;
-            //print_internal_struct();
+            std::cout << "Pivot Result "<< std::endl;
+            print_internal_struct();
 
         }
 

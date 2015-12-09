@@ -1,4 +1,4 @@
-// g++ -Wall -Wextra -pedantic -std=c++11 simplex.cpp main.cpp
+// g++ -Wall -Wextra -pedantic -std=c++11 -g simplex.cpp main.cpp
 
 #include "simplex.hpp"
 #include <iostream>
@@ -44,8 +44,8 @@ v = 27;
 */
 
 int main() {
-
-    /*Simplex::pivot_struct test_struct;
+/*
+    Simplex::pivot_struct test_struct;
     Simplex::pivot_struct out_struct;
 
     test_struct.v=0;
