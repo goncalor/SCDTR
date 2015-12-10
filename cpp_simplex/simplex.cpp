@@ -3,6 +3,8 @@
 
 #define INF 999999
 
+#define APPROX_ZERO 0.000001
+
 Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::vector<float> c){
 
     for(unsigned int i=1;i<=c.size();i++){
@@ -165,18 +167,27 @@ void Simplex::init_Simplex(){
         int e = 0;
         int l = internal_struct.N.size() + internal_struct.B.size();
 
-        //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+        l = *aux_programm.B.begin();
+        float min = internal_struct.b[l];
+        for(auto i : internal_struct.B){
+            if(internal_struct.b[i] < min){
+                min = internal_struct.b[i] ;
+                l = i;
+            }
+        }
+
+        std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
 
         aux_programm = pivot(aux_programm,e,l);
 
-        //std::cout << "Pivot Result "<< std::endl;
-        //print_pivot_struct(aux_programm);
+        std::cout << "Pivot Result "<< std::endl;
+        print_pivot_struct(aux_programm);
 
         while(!simplex_ended(aux_programm)){
 
             for(auto N_iter : aux_programm.N){
             //std::cout << "c[" << N_iter << "] = " << aux_programm.c[N_iter] << std::endl;
-                if(aux_programm.c[N_iter]>0){
+                if(aux_programm.c[N_iter]>APPROX_ZERO){
                     e=N_iter;
                     break;
                 }
@@ -185,8 +196,13 @@ void Simplex::init_Simplex(){
 
             for(auto i : aux_programm.B){
                 //std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
-                if(aux_programm.A[i][e]>0){
-                    delta[i] = aux_programm.b[i]/aux_programm.A[i][e];
+                if(aux_programm.A[i][e]>APPROX_ZERO){
+                    //delta[i] = aux_programm.b[i]/aux_programm.A[i][e];
+                    if(aux_programm.b[i] > APPROX_ZERO || aux_programm.b[i] < -APPROX_ZERO ){
+                        delta[i] = aux_programm.b[i]/aux_programm.A[i][e];
+                    } else {
+                        delta[i] = 0;
+                    }
                 } else {
                     delta[i] = INF;
                 }
@@ -205,16 +221,16 @@ void Simplex::init_Simplex(){
                 throw 2;
             }
 
-            //std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
+            std::cout << "Pivot: e = " << e << " l = " << l << std::endl;
 
             aux_programm = pivot(aux_programm,e,l);
 
-            //std::cout << "Pivot Result "<< std::endl;
-            //print_pivot_struct(aux_programm);
+            std::cout << "Pivot Result "<< std::endl;
+            print_pivot_struct(aux_programm);
 
         }
 
-        if(aux_programm.v==0){
+        if(aux_programm.v < APPROX_ZERO && aux_programm.v > -APPROX_ZERO ){
             std::cout << "There is a feasible solution." << std::endl;
             if(aux_programm.N.find(0)==aux_programm.N.end()){
                 std::cout << "x0 is not a basic varialbe." << std::endl;
@@ -287,8 +303,17 @@ void Simplex::init_Simplex(){
                     }
                 }
             }
-            //std::cout << std::endl <<"New LP to solve: "<< std::endl;
-            //print_pivot_struct(aux_programm);
+            std::cout << std::endl <<"New LP to solve: "<< std::endl;
+            print_pivot_struct(aux_programm);
+
+                internal_struct.A = aux_programm.A;
+                internal_struct.b = aux_programm.b;
+                internal_struct.c = aux_programm.c;
+                internal_struct.N = aux_programm.N;
+                internal_struct.B = aux_programm.B;
+                internal_struct.v = aux_programm.v;
+
+
 
 
 
@@ -303,7 +328,7 @@ void Simplex::init_Simplex(){
 bool Simplex::simplex_ended( pivot_struct to_test){
 
     for (auto i : to_test.N) {
-        if(to_test.c[i] > 0){
+        if(to_test.c[i] > APPROX_ZERO){
             return false;
         }
     }
@@ -320,18 +345,26 @@ std::vector<float> Simplex::solve(){
         int e;
         int l;
 
+        std::cout << "Simplex Solve: "<< std::endl;
+        print_internal_struct();
+
         while(!simplex_ended(internal_struct)){
 
             for(auto N_iter : internal_struct.N){
-                if(internal_struct.c[N_iter]>0)
+                if(internal_struct.c[N_iter]>APPROX_ZERO)
                     e=N_iter;
                     break;
             }
 
             for(auto i : internal_struct.B){
                 //std::cout << "A[" << i<< "]["<<e<<"] = "<< internal_struct.A[i][e] << std::endl;
-                if(internal_struct.A[i][e]>0){
-                    delta[i] = internal_struct.b[i]/internal_struct.A[i][e];
+                if(internal_struct.A[i][e]>APPROX_ZERO){
+                    if(internal_struct.b[i] > APPROX_ZERO || internal_struct.b[i] < -APPROX_ZERO ){
+                        delta[i] = internal_struct.b[i]/internal_struct.A[i][e];
+                    } else {
+                        delta[i] = 0;
+                    }
+                    // delta[i] = internal_struct.b[i]/internal_struct.A[i][e];
                 } else {
                     delta[i] = INF;
                 }

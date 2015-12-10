@@ -189,7 +189,210 @@ int main() {
  0 0 0 0 0 0 1 0 0
  0 0 0 0 0 0 0 1 0
  0 0 0 0 0 0 0 0 1
+*/
 
+std::vector<std::vector<float>> A2;
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+A2.push_back(std::vector<float> ());
+
+A2[0].push_back(-10.2183035083);
+A2[0].push_back(-0.7271861952);
+A2[0].push_back(-0.0974851965);
+A2[0].push_back(-0.7271861952);
+A2[0].push_back(-0.2769996702);
+A2[0].push_back(-0.0689046469);
+A2[0].push_back(-0.0974851965);
+A2[0].push_back(-0.0689046469);
+A2[0].push_back(-0.0328039276);
+
+A2[1].push_back(-0.7271861952428118);
+A2[1].push_back(-10.21830350832508);
+A2[1].push_back(-0.7271861952428118);
+A2[1].push_back(-0.2769996701683155);
+A2[1].push_back(-0.7271861952428118);
+A2[1].push_back(-0.2769996701683155);
+A2[1].push_back(-0.06890464691960219);
+A2[1].push_back(-0.09748519653650334);
+A2[1].push_back(-0.06890464691960219);
+
+A2[2].push_back(-0.09748519653650334);
+A2[2].push_back(-0.7271861952428118);
+A2[2].push_back(-10.21830350832508);
+A2[2].push_back(-0.06890464691960219);
+A2[2].push_back(-0.2769996701683155);
+A2[2].push_back(-0.7271861952428118);
+A2[2].push_back(-0.03280392761204531);
+A2[2].push_back(-0.06890464691960219);
+A2[2].push_back(-0.09748519653650334);
+
+A2[3].push_back(-0.7271861952428118);
+A2[3].push_back(-0.2769996701683155 );
+A2[3].push_back(-0.06890464691960219);
+A2[3].push_back(-10.21830350832508);
+A2[3].push_back(-0.7271861952428118);
+A2[3].push_back(-0.09748519653650334);
+A2[3].push_back(-0.7271861952428118);
+A2[3].push_back(-0.2769996701683155);
+A2[3].push_back(-0.06890464691960219);
+
+A2[4].push_back(-0.2769996701683155);
+A2[4].push_back(-0.7271861952428118);
+A2[4].push_back(-0.2769996701683155);
+A2[4].push_back(-0.7271861952428118);
+A2[4].push_back(-10.21830350832508);
+A2[4].push_back(-0.7271861952428118);
+A2[4].push_back(-0.2769996701683155);
+A2[4].push_back(-0.7271861952428118);
+A2[4].push_back(-0.2769996701683155);
+
+A2[5].push_back(-0.06890464691960219);
+A2[5].push_back(-0.2769996701683155);
+A2[5].push_back(-0.7271861952428118);
+A2[5].push_back(-0.09748519653650334);
+A2[5].push_back(-0.7271861952428118);
+A2[5].push_back(-10.21830350832508);
+A2[5].push_back(-0.06890464691960219);
+A2[5].push_back(-0.2769996701683155);
+A2[5].push_back(-0.7271861952428118);
+
+A2[6].push_back(-0.09748519653650334);
+A2[6].push_back(-0.06890464691960219);
+A2[6].push_back(-0.03280392761204531);
+A2[6].push_back(-0.7271861952428118);
+A2[6].push_back(-0.2769996701683155);
+A2[6].push_back(-0.06890464691960219);
+A2[6].push_back(-10.21830350832508);
+A2[6].push_back(-0.7271861952428118);
+A2[6].push_back(-0.09748519653650334);
+
+A2[7].push_back(-0.06890464691960219);
+A2[7].push_back(-0.09748519653650334);
+A2[7].push_back(-0.06890464691960219);
+A2[7].push_back(-0.2769996701683155);
+A2[7].push_back(-0.7271861952428118);
+A2[7].push_back(-0.2769996701683155);
+A2[7].push_back(-0.7271861952428118);
+A2[7].push_back(-10.21830350832508);
+A2[7].push_back(-0.7271861952428118);
+
+A2[8].push_back(-0.03280392761204531);
+A2[8].push_back(-0.06890464691960219);
+A2[8].push_back(-0.09748519653650334);
+A2[8].push_back(-0.06890464691960219);
+A2[8].push_back(-0.2769996701683155);
+A2[8].push_back(-0.7271861952428118);
+A2[8].push_back(-0.09748519653650334);
+A2[8].push_back(-0.7271861952428118);
+A2[8].push_back(-10.21830350832508);
+
+A2[9].push_back(1);
+A2[9].push_back(0);
+A2[9].push_back(0);
+A2[9].push_back(0);
+A2[9].push_back(0);
+A2[9].push_back(0);
+A2[9].push_back(0);
+A2[9].push_back(0);
+A2[9].push_back(0);
+
+A2[10].push_back(0);
+A2[10].push_back(1);
+A2[10].push_back(0);
+A2[10].push_back(0);
+A2[10].push_back(0);
+A2[10].push_back(0);
+A2[10].push_back(0);
+A2[10].push_back(0);
+A2[10].push_back(0);
+
+A2[11].push_back(0);
+A2[11].push_back(0);
+A2[11].push_back(1);
+A2[11].push_back(0);
+A2[11].push_back(0);
+A2[11].push_back(0);
+A2[11].push_back(0);
+A2[11].push_back(0);
+A2[11].push_back(0);
+
+A2[12].push_back(0);
+A2[12].push_back(0);
+A2[12].push_back(0);
+A2[12].push_back(1);
+A2[12].push_back(0);
+A2[12].push_back(0);
+A2[12].push_back(0);
+A2[12].push_back(0);
+A2[12].push_back(0);
+
+A2[13].push_back(0);
+A2[13].push_back(0);
+A2[13].push_back(0);
+A2[13].push_back(0);
+A2[13].push_back(1);
+A2[13].push_back(0);
+A2[13].push_back(0);
+A2[13].push_back(0);
+A2[13].push_back(0);
+
+A2[14].push_back(0);
+A2[14].push_back(0);
+A2[14].push_back(0);
+A2[14].push_back(0);
+A2[14].push_back(0);
+A2[14].push_back(1);
+A2[14].push_back(0);
+A2[14].push_back(0);
+A2[14].push_back(0);
+
+A2[15].push_back(0);
+A2[15].push_back(0);
+A2[15].push_back(0);
+A2[15].push_back(0);
+A2[15].push_back(0);
+A2[15].push_back(0);
+A2[15].push_back(1);
+A2[15].push_back(0);
+A2[15].push_back(0);
+
+A2[16].push_back(0);
+A2[16].push_back(0);
+A2[16].push_back(0);
+A2[16].push_back(0);
+A2[16].push_back(0);
+A2[16].push_back(0);
+A2[16].push_back(0);
+A2[16].push_back(1);
+A2[16].push_back(0);
+
+A2[17].push_back(0);
+A2[17].push_back(0);
+A2[17].push_back(0);
+A2[17].push_back(0);
+A2[17].push_back(0);
+A2[17].push_back(0);
+A2[17].push_back(0);
+A2[17].push_back(0);
+A2[17].push_back(1);
+
+
+ /*
 
 # name: b
 # type: matrix
@@ -213,18 +416,41 @@ int main() {
  1
  1
  1
+*/
+std::vector<float> b2;
+b2.push_back(-2.234087037518483);
+b2.push_back(-6.370072142271482);
+b2.push_back(-2.314137495496334);
+b2.push_back(-4.195003918678363);
+b2.push_back(-2.89337934873546);
+b2.push_back(-7.706424278239382);
+b2.push_back(-7.357001197283779);
+b2.push_back(-5.483351507948527);
+b2.push_back(-7.286096857845781);
+b2.push_back(1);
+b2.push_back(1);
+b2.push_back(1);
+b2.push_back(1);
+b2.push_back(1);
+b2.push_back(1);
+b2.push_back(1);
+b2.push_back(1);
+b2.push_back(1);
+/*
+c =  -1  -1  -1  -1  -1  -1  -1  -1  -1
+*/
+std::vector<float> c2;
+c2.push_back(-1);
+c2.push_back(-1);
+c2.push_back(-1);
+c2.push_back(-1);
+c2.push_back(-1);
+c2.push_back(-1);
+c2.push_back(-1);
+c2.push_back(-1);
+c2.push_back(-1);
 
-
-# name: c
-# type: range
-# base, length, increment
--1 9 -0
-
-c =
-
-  -1  -1  -1  -1  -1  -1  -1  -1  -1
-
-
+/*
 # name: random_pwm
 # type: matrix
 # rows: 9
@@ -238,8 +464,23 @@ c =
  0.6504349725253338
  0.4053939889252992
  0.6207688892129481
-
-
 */
+
+
+    Simplex teste2 = Simplex(A2,b2,c2);
+
+    std::cout << "Print" <<std::endl;
+
+    teste2.print_internal_struct();
+
+    std::vector<float> x2 = teste2.solve();
+
+    std::cout << "Solution" <<std::endl;
+
+    for(auto i : x2){
+        std::cout << "x = " << i << std::endl;
+    }
+
+
 
 }
