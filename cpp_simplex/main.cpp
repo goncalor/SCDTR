@@ -94,7 +94,9 @@ int main() {
     //std::cout << "After Pivot" <<std::endl;
 
     //Simplex::print_pivot_struct(out_struct);
+*/
 
+/*
     std::vector<float> b;
     b.push_back(30);
     b.push_back(24);
@@ -134,8 +136,8 @@ int main() {
         std::cout << "x = " << i << std::endl;
     }
 
-    */
-/*
+
+
     std::cout << "Without initial feasible solution: " <<std::endl;
 
     std::vector<float> b1;
@@ -161,8 +163,16 @@ int main() {
     teste1.print_internal_struct();
 
     std::vector<float> x1 = teste1.solve();
-*/
 
+    std::cout << "Solution" <<std::endl;
+
+    std::cout << "Size: " << x1.size() << std::endl;
+
+    for(auto i : x1){
+        std::cout << "x = " << i << std::endl;
+    }
+    std::cout << std::endl<< std::endl;
+*/
 // TEST with Arduino LP
 
 /*
@@ -191,6 +201,54 @@ int main() {
  0 0 0 0 0 0 0 0 1
 */
 
+
+ /*
+
+# name: b
+# type: matrix
+# rows: 18
+# columns: 1
+ -2.234087037518483
+ -6.370072142271482
+ -2.314137495496334
+ -4.195003918678363
+ -2.89337934873546
+ -7.706424278239382
+ -7.357001197283779
+ -5.483351507948527
+ -7.286096857845781
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+ 1
+*/
+
+
+/*
+c =  -1  -1  -1  -1  -1  -1  -1  -1  -1
+*/
+/*
+# name: random_pwm
+# type: matrix
+# rows: 9
+# columns: 1
+ 0.1374661759009127
+ 0.5587605221930771
+ 0.1228113038292256
+ 0.3096195642559854
+ 0.104062656935522
+ 0.659452543924277
+ 0.6504349725253338
+ 0.4053939889252992
+ 0.6207688892129481
+*/
+
+/*
 std::vector<std::vector<float>> A2;
 A2.push_back(std::vector<float> ());
 A2.push_back(std::vector<float> ());
@@ -392,31 +450,6 @@ A2[17].push_back(0);
 A2[17].push_back(1);
 
 
- /*
-
-# name: b
-# type: matrix
-# rows: 18
-# columns: 1
- -2.234087037518483
- -6.370072142271482
- -2.314137495496334
- -4.195003918678363
- -2.89337934873546
- -7.706424278239382
- -7.357001197283779
- -5.483351507948527
- -7.286096857845781
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
- 1
-*/
 std::vector<float> b2;
 b2.push_back(-2.234087037518483);
 b2.push_back(-6.370072142271482);
@@ -436,9 +469,7 @@ b2.push_back(1);
 b2.push_back(1);
 b2.push_back(1);
 b2.push_back(1);
-/*
-c =  -1  -1  -1  -1  -1  -1  -1  -1  -1
-*/
+
 std::vector<float> c2;
 c2.push_back(-1);
 c2.push_back(-1);
@@ -450,21 +481,6 @@ c2.push_back(-1);
 c2.push_back(-1);
 c2.push_back(-1);
 
-/*
-# name: random_pwm
-# type: matrix
-# rows: 9
-# columns: 1
- 0.1374661759009127
- 0.5587605221930771
- 0.1228113038292256
- 0.3096195642559854
- 0.104062656935522
- 0.659452543924277
- 0.6504349725253338
- 0.4053939889252992
- 0.6207688892129481
-*/
 
 
     Simplex teste2 = Simplex(A2,b2,c2);
@@ -480,7 +496,99 @@ c2.push_back(-1);
     for(auto i : x2){
         std::cout << "x = " << i << std::endl;
     }
+*/
+
+    // Mr Silva test, lab 12:
+/*
+    std::vector<std::vector<float>> A3;
+    A3.push_back(std::vector<float> ());
+    A3.push_back(std::vector<float> ());
+    A3.push_back(std::vector<float> ());
+    A3[0].push_back(2);
+    A3[0].push_back(1);
+    A3[1].push_back(4);
+    A3[1].push_back(3);
+
+
+    std::vector<float> b3;
+    b3.push_back(100);
+    b3.push_back(240);
+
+    std::vector<float> c3;
+    c3.push_back(7);
+    c3.push_back(5);
 
 
 
+
+    Simplex teste3 = Simplex(A3,b3,c3);
+
+    std::cout << "Print" <<std::endl;
+
+    teste3.print_internal_struct();
+
+    std::vector<float> x3 = teste3.solve();
+
+    std::cout << "Solution" <<std::endl;
+
+    for(auto i : x3){
+        std::cout << "x = " << i << std::endl;
+    }
+*/
+
+    // Mr Silva with unnecessary constrain
+
+    std::vector<std::vector<float>> A4;
+    A4.push_back(std::vector<float> ());
+    A4.push_back(std::vector<float> ());
+    A4.push_back(std::vector<float> ());
+    A4[0].push_back(2);
+    A4[0].push_back(1);
+    A4[1].push_back(4);
+    A4[1].push_back(3);
+    A4[2].push_back(-1);
+    A4[2].push_back(0);
+
+
+    std::vector<float> b4;
+    b4.push_back(100);
+    b4.push_back(240);
+    b4.push_back(-20);
+
+    std::vector<float> c4;
+    c4.push_back(7);
+    c4.push_back(5);
+
+
+
+
+    Simplex teste4 = Simplex(A4,b4,c4);
+
+    std::cout << "Print" <<std::endl;
+
+    teste4.print_internal_struct();
+
+    std::vector<float> x4 = teste4.solve();
+
+    std::cout << "Solution" <<std::endl;
+
+    for(auto i : x4){
+        std::cout << "x = " << i << std::endl;
+    }
+
+
+
+
+/*
+N = {2,5,}
+B = {1,3,4,}
+A = {
+0,-1,
+1,2,
+3,4,
+}
+b = {20,60,160,}
+c = {5,7,}
+v = 140
+*/
 }

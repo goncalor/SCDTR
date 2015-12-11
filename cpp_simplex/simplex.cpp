@@ -3,7 +3,17 @@
 
 #define INF 999999
 
+//#define DEGUB
+
 #define APPROX_ZERO 0.000001
+
+float filter_zero(float to_filter){
+    if (to_filter<APPROX_ZERO && to_filter>-APPROX_ZERO)
+        return 0;
+    return to_filter;
+
+}
+
 
 Simplex::Simplex(std::vector<std::vector<float>> A, std::vector<float> b, std::vector<float> c){
 
@@ -55,8 +65,10 @@ Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
 
     out.b[e]=in.b[l]/in.A[l][e];
     for (auto j : in.N) {
-        if (j != e)
-        out.A[e][j] = in.A[l][j]/in.A[l][e];
+        if (j != e) {
+            out.A[e][j] = in.A[l][j]/in.A[l][e];
+            out.A[e][j] = filter_zero(out.A[e][j]);
+        }
     }
 
     out.A[e][l]=1/in.A[l][e];
@@ -67,24 +79,33 @@ Simplex::pivot_struct Simplex::pivot(pivot_struct in, int e, int l){
     for (auto i : in.B) {
         if (i != l){
             out.b[i] = in.b[i]-in.A[i][e]*out.b[e];
+            out.b[i] = filter_zero(out.b[i]);
             for (auto j : in.N) {
-                if (j != e)
-                out.A[i][j] = in.A[i][j]-in.A[i][e]*out.A[e][j];
+                if (j != e){
+                    out.A[i][j] = in.A[i][j]-in.A[i][e]*out.A[e][j];
+                    out.A[i][j] = filter_zero(out.A[i][j]);
+                }
             }
             out.A[i][l] = -in.A[i][e]*out.A[e][l];
+            out.A[i][l] = filter_zero(out.A[i][l]);
         }
     }
 
     //print_pivot_struct(out);
 
     out.v = in.v+in.c[e]*out.b[e];
+    out.v = filter_zero(out.v);
 
     for (auto j : in.N) {
-        if (j != e)
-        out.c[j] = in.c[j]- in.c[e]*out.A[e][j];
+        if (j != e){
+            out.c[j] = in.c[j]- in.c[e]*out.A[e][j];
+            out.c[j] = filter_zero(out.c[j]);
+        }
     }
 
     out.c[l]=-in.c[e]*out.A[e][l];
+    out.c[l] = filter_zero(out.c[l]);
+
 
     return out;
 }
@@ -217,7 +238,7 @@ void Simplex::init_Simplex(){
                     l = i;
                 }
             }
-            if(delta[l]==INF){
+            if(delta[l]>=INF){
                 throw 2;
             }
 
@@ -279,9 +300,9 @@ void Simplex::init_Simplex(){
             for(auto i : internal_struct.N){
 
                 if(aux_programm.B.find(i)!=aux_programm.B.end()){
-                    //std::cout << "v: adding inter_c["<< i<<"]*aux_b[" << i << "] = " << internal_struct.c[i] * aux_programm.b[i] <<std::endl;
+                    std::cout << "v: adding inter_c["<< i<<"]*aux_b[" << i << "] = " << internal_struct.c[i] * aux_programm.b[i] <<std::endl;
                     aux_programm.v = internal_struct.c[i] * aux_programm.b[i]; //TODO FIX THIS
-                    //std::cout << "aux_v = " << aux_programm.v << std::endl;
+                    std::cout << "aux_v = " << aux_programm.v << std::endl;
                 }/*else{
                     aux_programm.c[i]+=internal_struct.c[i];
                     for(auto j : internal_struct.N){
@@ -293,13 +314,23 @@ void Simplex::init_Simplex(){
             }
 
             for(auto i : aux_programm.N){
+                #if defined DEGUB
+                    std::cout << "Calculating c["<<i<<"]"<<std::endl;
+                    std::cout << "c["<<i<<"] = 0;"<<std::endl;
+                #endif
                 aux_programm.c[i]=0;
                 if(internal_struct.N.find(i)!=internal_struct.N.end()){
+                    #if defined DEGUB
+                        std::cout << "c["<<i<<"] += "<< internal_struct.c[i] <<std::endl;
+                    #endif
                     aux_programm.c[i]+=internal_struct.c[i];
                 }
                 for(auto j : internal_struct.N){
                     if(aux_programm.B.find(j)!=aux_programm.B.end()){
                         aux_programm.c[i]+=-internal_struct.c[j]*aux_programm.A[j][i];
+                        #if defined DEGUB
+                            std::cout << "c["<<i<<"] += "<< -internal_struct.c[j]*aux_programm.A[j][i] <<std::endl;
+                        #endif
                     }
                 }
             }
@@ -392,7 +423,7 @@ std::vector<float> Simplex::solve(){
 
         }
 
-        for(unsigned int i = 0; i<internal_struct.B.size();i++){
+        for(unsigned int i = 1; i<=internal_struct.B.size();i++){
             if (internal_struct.B.find(i)!=internal_struct.B.end()){
                 d[i-1]=internal_struct.b[i];
             }

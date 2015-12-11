@@ -6,34 +6,8 @@
 
 #define DELTA 0.001
 
-// EXAMPLE
-/*
-//____________________________________________________________________________//
+// For instructions see: http://www.boost.org/doc/libs/1_36_0/libs/test/doc/html/minimal.html
 
-int add( int i, int j ) { return i+j; }
-
-//____________________________________________________________________________//
-
-
-// returns true if there is an error
-bool first_test(){
-    return add( 2,2 ) != 5;
-}
-
-int test_main( int, char *[] )             // note the name!
-{
-    // six ways to detect and report the same error:
-    BOOST_CHECK( add( 2,2 ) == 4 );        // #1 continues on error
-    BOOST_REQUIRE( add( 2,2 ) == 4 );      // #2 throws on error
-    if(first_test() )
-        BOOST_ERROR( "Ouch..." );          // #3 continues on error
-    if( add( 2,2 ) != 4 )
-        BOOST_FAIL( "Ouch..." );           // #4 throws on error
-    if( add( 2,2 ) != 4 ) throw "Oops..."; // #5 throws on error
-
-    return add( 2, 2 ) == 4 ? 0 : 1;       // #6 returns error code
-}
-*/
 // returns true if there is an error
 bool test_Mr_Silva_1(){
     std::vector<std::vector<float>> A3;
@@ -58,7 +32,6 @@ bool test_Mr_Silva_1(){
     return (x3[0]!=30 || x3[1]!=40);
 
 }
-
 
 // returns true if there is an error
 bool test_Cormen_basic(){
@@ -116,16 +89,46 @@ bool test_Cormen_no_initial_solution(){
     return ((x[0] > (1.55556 + DELTA) || x[0] < (1.55556 - DELTA)) ||  (x[1] > (1.11111 + DELTA) || x[1] < (1.11111 - DELTA)));
 }
 
+bool test_Mr_Silva_unnecessary_constrain(){
+    // Mr Silva with unnecessary constrain
+
+    std::vector<std::vector<float>> A4;
+    A4.push_back(std::vector<float> ());
+    A4.push_back(std::vector<float> ());
+    A4.push_back(std::vector<float> ());
+    A4[0].push_back(2);
+    A4[0].push_back(1);
+    A4[1].push_back(4);
+    A4[1].push_back(3);
+    A4[2].push_back(-1);
+    A4[2].push_back(0);
+
+    std::vector<float> b4;
+    b4.push_back(100);
+    b4.push_back(240);
+    b4.push_back(-20);
+
+    std::vector<float> c4;
+    c4.push_back(7);
+    c4.push_back(5);
+
+    Simplex teste4 = Simplex(A4,b4,c4);
+    std::vector<float> x4 = teste4.solve();
+
+    return (x4[0]!=30 || x4[1]!=40);
+
+}
+
 int test_main( int, char *[] )             // note the name!
 {
     if(test_Mr_Silva_1() )
-        BOOST_ERROR( "Test Mr. Silva 1" );
+        BOOST_ERROR( "Test Mr. Silva simple" );
     if(test_Cormen_basic() )
         BOOST_ERROR( "Test Basic Cormen 865" );
-
     if(test_Cormen_no_initial_solution() )
         BOOST_ERROR( "Test Basic Cormen 888" );
-
+    if(test_Mr_Silva_unnecessary_constrain() )
+        BOOST_ERROR( "Test Mr Silva with unnecessary constrain" );
 
     return 0;
 }
