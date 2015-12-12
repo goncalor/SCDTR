@@ -79,7 +79,6 @@ void wire_process_incoming(char *str)
     }
 }
 
-// TODO: turn off controller while calibrating
 // TODO: distribute O
 // TODO: distribute E
 
@@ -88,8 +87,10 @@ int E_vals[3][3];
 
 void calibrate()
 {
+    disable_all_controllers();
     get_O();
     get_E();
+    enable_all_controllers();
 }
 
 
@@ -146,8 +147,6 @@ void get_all_readings(int *data, short len)
 
 void get_O()
 {
-    disable_all_controllers();
-
     // turn the lights off
     // the others
     Wire.beginTransmission(0);
@@ -171,8 +170,6 @@ void get_O()
     }
     Serial.println("");
     #endif
-
-    enable_all_controllers();
 }
 
 
@@ -182,8 +179,6 @@ void get_E()
     char *lst[BUF_SPLIT_LEN];
     short dev_id;
     short numwords;
-
-    disable_all_controllers();
 
     // turn the lights off
     // the others
@@ -233,6 +228,4 @@ void get_E()
         Serial.println("");
     }
     #endif
-
-    enable_all_controllers();
 }
