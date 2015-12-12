@@ -207,16 +207,16 @@ void Simplex::init_Simplex(){
         while(!simplex_ended(aux_programm)){
 
             for(auto N_iter : aux_programm.N){
-            //std::cout << "c[" << N_iter << "] = " << aux_programm.c[N_iter] << std::endl;
+            std::cout << "c[" << N_iter << "] = " << aux_programm.c[N_iter] << std::endl;
                 if(aux_programm.c[N_iter]>APPROX_ZERO){
                     e=N_iter;
                     break;
                 }
             }
-            //std::cout << "e = " << e << std::endl;
+            std::cout << "e = " << e << std::endl;
 
             for(auto i : aux_programm.B){
-                //std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
+                std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
                 if(aux_programm.A[i][e]>APPROX_ZERO){
                     //delta[i] = aux_programm.b[i]/aux_programm.A[i][e];
                     if(aux_programm.b[i] > APPROX_ZERO || aux_programm.b[i] < -APPROX_ZERO ){
@@ -227,7 +227,7 @@ void Simplex::init_Simplex(){
                 } else {
                     delta[i] = INF;
                 }
-                //std::cout << "Delta (" << i << ") = " << delta[i] << std::endl;
+                std::cout << "Delta [" << i << "] = " << delta[i] << std::endl;
             }
 
             l = *aux_programm.B.begin();
@@ -382,9 +382,12 @@ std::vector<float> Simplex::solve(){
         while(!simplex_ended(internal_struct)){
 
             for(auto N_iter : internal_struct.N){
-                if(internal_struct.c[N_iter]>APPROX_ZERO)
+                std::cout << "c[" << N_iter << "] = " << internal_struct.c[N_iter] << std::endl;
+                if(internal_struct.c[N_iter]>APPROX_ZERO){
+                    std::cout << "selected e =" << N_iter << std::endl;
                     e=N_iter;
                     break;
+                }
             }
 
             for(auto i : internal_struct.B){
@@ -423,7 +426,7 @@ std::vector<float> Simplex::solve(){
 
         }
 
-        for(unsigned int i = 1; i<=d.size();i++){ 
+        for(unsigned int i = 1; i<=d.size();i++){
             if (internal_struct.B.find(i)!=internal_struct.B.end()){
                 d[i-1]=internal_struct.b[i];
             }

@@ -248,7 +248,7 @@ c =  -1  -1  -1  -1  -1  -1  -1  -1  -1
  0.6207688892129481
 */
 
-/*
+
 std::vector<std::vector<float>> A2;
 A2.push_back(std::vector<float> ());
 A2.push_back(std::vector<float> ());
@@ -496,7 +496,7 @@ c2.push_back(-1);
     for(auto i : x2){
         std::cout << "x = " << i << std::endl;
     }
-*/
+
 
 /*    // Mr Silva test, lab 12:
 
@@ -537,23 +537,24 @@ c2.push_back(-1);
 */
 
     // Mr Silva with unnecessary constrain
-
+/*
     std::vector<std::vector<float>> A4;
     A4.push_back(std::vector<float> ());
     A4.push_back(std::vector<float> ());
     A4.push_back(std::vector<float> ());
-    A4[0].push_back(2);
-    A4[0].push_back(1);
-    A4[1].push_back(4);
-    A4[1].push_back(3);
-    A4[2].push_back(-1);
-    A4[2].push_back(0);
+    A4[0].push_back(-1);
+    A4[0].push_back(0);
+    A4[1].push_back(2);
+    A4[1].push_back(1);
+    A4[2].push_back(4);
+    A4[2].push_back(3);
+
 
 
     std::vector<float> b4;
+    b4.push_back(-20);
     b4.push_back(100);
     b4.push_back(240);
-    b4.push_back(-20);
 
     std::vector<float> c4;
     c4.push_back(7);
@@ -563,6 +564,9 @@ c2.push_back(-1);
 
 
     Simplex teste4 = Simplex(A4,b4,c4);
+    std::cout << "Print" <<std::endl;
+
+    teste4.print_internal_struct();
 
     std::vector<float> x4 = teste4.solve();
 
@@ -572,7 +576,7 @@ c2.push_back(-1);
         std::cout << "x = " << i << std::endl;
     }
 
-
+*/
 
 
 /*
@@ -588,7 +592,7 @@ c = {5,7,}
 v = 140
 */
 
-
+/*
 std::vector<std::vector<float>> A5;
 A5.push_back(std::vector<float> ());
 A5.push_back(std::vector<float> ());
@@ -619,6 +623,7 @@ std::cout << "Solution" <<std::endl;
 for(auto i : x5){
     std::cout << "x = " << i << std::endl;
 }
+*/
 
 
 }

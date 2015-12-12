@@ -145,8 +145,11 @@ bool test_Mr_Silva_unnecessary_constrain(){
     Simplex teste4 = Simplex(A4,b4,c4);
     std::vector<float> x4 = teste4.solve();
 
-    return (x4[0]!=30 || x4[1]!=40);
+    for(auto i : x4){
+        std::cout << "x = " << i << std::endl;
+    }
 
+    return ((x4[0] > (30 + DELTA) || x4[0] < (30 - DELTA)) ||  (x4[1] > (40 + DELTA) || x4[1] < (40 - DELTA)));
 }
 
 bool test_simplex_with_initial_solution1(){
@@ -175,9 +178,7 @@ bool test_simplex_with_initial_solution1(){
     Simplex teste5 = Simplex(A5,b5,c5);
     std::vector<float> x5 = teste5.solve();
 
-    for(auto i : x5){
-        std::cout << "x = " << i << std::endl;
-    }
+
 
     return ((x5[0] > (40 + DELTA) || x5[0] < (40 - DELTA)) ||  (x5[1] > (10 + DELTA) || x5[1] < (10 - DELTA)));
 
