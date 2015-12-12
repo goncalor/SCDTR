@@ -368,7 +368,7 @@ bool Simplex::simplex_ended( pivot_struct to_test){
 }
 
 std::vector<float> Simplex::solve(){
-    std::vector<float> d(internal_struct.B.size(),0);
+    std::vector<float> d(internal_struct.N.size(),0);
     try{
         init_Simplex();
 
@@ -423,7 +423,7 @@ std::vector<float> Simplex::solve(){
 
         }
 
-        for(unsigned int i = 1; i<=internal_struct.B.size();i++){
+        for(unsigned int i = 1; i<=d.size();i++){ 
             if (internal_struct.B.find(i)!=internal_struct.B.end()){
                 d[i-1]=internal_struct.b[i];
             }

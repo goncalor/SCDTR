@@ -89,6 +89,36 @@ bool test_Cormen_no_initial_solution(){
     return ((x[0] > (1.55556 + DELTA) || x[0] < (1.55556 - DELTA)) ||  (x[1] > (1.11111 + DELTA) || x[1] < (1.11111 - DELTA)));
 }
 
+bool test_Cormen_29_5(){
+
+    std::vector<float> b;
+    b.push_back(8);
+    b.push_back(-3);
+    b.push_back(2);
+
+    std::vector<float> c;
+    c.push_back(1);
+    c.push_back(3);
+
+    std::vector<std::vector<float>> A;
+    A.push_back(std::vector<float> ());
+    A.push_back(std::vector<float> ());
+    A.push_back(std::vector<float> ());
+    A[0].push_back(1);
+    A[0].push_back(-1);
+    A[1].push_back(-1);
+    A[1].push_back(-1);
+    A[2].push_back(-1);
+    A[2].push_back(4);
+
+    Simplex teste = Simplex(A,b,c);
+
+    std::vector<float> x = teste.solve();
+
+    return ((x[0] > (11.33333 + DELTA) || x[0] < (11.33333 - DELTA)) ||  (x[1] > (3.33333 + DELTA) || x[1] < (3.33333 - DELTA)));
+}
+
+
 bool test_Mr_Silva_unnecessary_constrain(){
     // Mr Silva with unnecessary constrain
 
@@ -119,6 +149,40 @@ bool test_Mr_Silva_unnecessary_constrain(){
 
 }
 
+bool test_simplex_with_initial_solution1(){
+    std::vector<std::vector<float>> A5;
+    A5.push_back(std::vector<float> ());
+    A5.push_back(std::vector<float> ());
+    A5.push_back(std::vector<float> ());
+    A5[0].push_back(0);
+    A5[0].push_back(-1);
+    A5[1].push_back(1);
+    A5[1].push_back(2);
+    A5[2].push_back(3);
+    A5[2].push_back(4);
+
+
+    std::vector<float> b5;
+    b5.push_back(20);
+    b5.push_back(60);
+    b5.push_back(160);
+
+    std::vector<float> c5;
+    c5.push_back(5);
+    c5.push_back(7);
+
+
+    Simplex teste5 = Simplex(A5,b5,c5);
+    std::vector<float> x5 = teste5.solve();
+
+    for(auto i : x5){
+        std::cout << "x = " << i << std::endl;
+    }
+
+    return ((x5[0] > (40 + DELTA) || x5[0] < (40 - DELTA)) ||  (x5[1] > (10 + DELTA) || x5[1] < (10 - DELTA)));
+
+}
+
 int test_main( int, char *[] )             // note the name!
 {
     if(test_Mr_Silva_1() )
@@ -129,6 +193,11 @@ int test_main( int, char *[] )             // note the name!
         BOOST_ERROR( "Test Basic Cormen 888" );
     if(test_Mr_Silva_unnecessary_constrain() )
         BOOST_ERROR( "Test Mr Silva with unnecessary constrain" );
+    if(test_simplex_with_initial_solution1() )
+        BOOST_ERROR( "Test Simplex with initial solution 1" );
+    if(test_Cormen_29_5 () )
+        BOOST_ERROR( "Test Cormen 29-5.5" );
+
 
     return 0;
 }

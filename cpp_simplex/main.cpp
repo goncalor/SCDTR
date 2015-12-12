@@ -498,8 +498,8 @@ c2.push_back(-1);
     }
 */
 
-    // Mr Silva test, lab 12:
-/*
+/*    // Mr Silva test, lab 12:
+
     std::vector<std::vector<float>> A3;
     A3.push_back(std::vector<float> ());
     A3.push_back(std::vector<float> ());
@@ -564,10 +564,6 @@ c2.push_back(-1);
 
     Simplex teste4 = Simplex(A4,b4,c4);
 
-    std::cout << "Print" <<std::endl;
-
-    teste4.print_internal_struct();
-
     std::vector<float> x4 = teste4.solve();
 
     std::cout << "Solution" <<std::endl;
@@ -591,4 +587,38 @@ b = {20,60,160,}
 c = {5,7,}
 v = 140
 */
+
+
+std::vector<std::vector<float>> A5;
+A5.push_back(std::vector<float> ());
+A5.push_back(std::vector<float> ());
+A5.push_back(std::vector<float> ());
+A5[0].push_back(0);
+A5[0].push_back(-1);
+A5[1].push_back(1);
+A5[1].push_back(2);
+A5[2].push_back(3);
+A5[2].push_back(4);
+
+
+std::vector<float> b5;
+b5.push_back(20);
+b5.push_back(60);
+b5.push_back(160);
+
+std::vector<float> c5;
+c5.push_back(5);
+c5.push_back(7);
+
+
+Simplex teste5 = Simplex(A5,b5,c5);
+std::vector<float> x5 = teste5.solve();
+
+std::cout << "Solution" <<std::endl;
+
+for(auto i : x5){
+    std::cout << "x = " << i << std::endl;
+}
+
+
 }
