@@ -4,6 +4,7 @@
 #include "util_testing.hpp"
 #include <iostream>
 #include <vector>
+#include "../utils.hpp"
 
 #define DELTA 0.001
 
@@ -443,35 +444,43 @@ bool test_lab_08_ex_random_pwm(){
 
 bool test_with_real_arduino_values(){
 
-        std::vector<float> b;
-        b.push_back(8);
-        b.push_back(-3);
-        b.push_back(2);
+    std::vector<std::vector<float>> E;
+    std::vector<float> O;
+    std::vector<float> L;
+    E.push_back(std::vector<float>());
+    E.push_back(std::vector<float>());
+    E.push_back(std::vector<float>());
+    O.push_back(5.0/1024);
+    O.push_back(3.0/1024);
+    O.push_back(3.0/1024);
+    L.push_back(600.0/1024);
+    L.push_back(600.0/1024);
+    L.push_back(600.0/1024);
+    E[0].push_back(745.0/1024);
+    E[0].push_back(137.0/1024);
+    E[0].push_back(67.0/1024);
+    E[1].push_back(598.0/1024);
+    E[1].push_back(704.0/1024);
+    E[1].push_back(113.0/1024);
+    E[2].push_back(317.0/1024);
+    E[2].push_back(586.0/1024);
+    E[2].push_back(674.0/1024);
 
-        std::vector<float> c;
-        c.push_back(1);
-        c.push_back(3);
 
-        std::vector<std::vector<float>> A;
-        A.push_back(std::vector<float> ());
-        A.push_back(std::vector<float> ());
-        A.push_back(std::vector<float> ());
-        A[0].push_back(1);
-        A[0].push_back(-1);
-        A[1].push_back(-1);
-        A[1].push_back(-1);
-        A[2].push_back(-1);
-        A[2].push_back(4);
 
-        Simplex teste = Simplex(A,b,c);
+    lp_struct lp = generate_linear_programm(E,O,L);
 
-        std::vector<float> x = teste.solve();
+    Simplex teste = Simplex(lp.A,lp.b,lp.c);
 
-        std::vector<float> sol;
-        sol.push_back(11.33333);
-        sol.push_back(3.33333);
+    std::vector<float> x = teste.solve();
 
-        return !vector_within_delta(x,sol,DELTA);
+    std::vector<float> sol;
+    sol.push_back(186.91/255);
+    sol.push_back(41.0616/255);
+    sol.push_back(102.259/255);
+
+    return !vector_within_delta(x,sol,DELTA);
+    return false;
 }
 
 int test_main( int, char *[] ){             // note the name!
@@ -491,6 +500,5 @@ int test_main( int, char *[] ){             // note the name!
         BOOST_ERROR( "Test Simplex Lab random PWM" );
     if(test_with_real_arduino_values())
         BOOST_ERROR( "Test Simplex with O and E matrix from Arduino" );
-
     return 0;
 }

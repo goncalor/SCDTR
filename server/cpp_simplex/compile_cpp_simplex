@@ -3,9 +3,9 @@
 
 # Compile and run tests
 rm simplex_test_log.out
-g++ -Wall -Wextra -pedantic -std=c++11 -g util_testing.cpp simplex.cpp  simplex_test.cpp -o simplex_test.out
+g++ -Wall -Wextra -pedantic -std=c++11 -g ../utils.cpp util_testing.cpp simplex.cpp  simplex_test.cpp -o simplex_test.out
 ./simplex_test.out >> simplex_test_log.out
 #tail -2 simplex_test_log.out
 
 # Compile main simplex
-g++ -Wall -Wextra -pedantic -std=c++11 -g simplex.cpp main.cpp -o main.out
+g++ -Wall -Wextra -pedantic -std=c++11 -g ../utils.cpp simplex.cpp main.cpp -o main.out

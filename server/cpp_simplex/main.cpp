@@ -1,6 +1,7 @@
 // g++ -Wall -Wextra -pedantic -std=c++11 -g simplex.cpp main.cpp
 
 #include "simplex.hpp"
+#include "../utils.hpp"
 #include <iostream>
 #include <vector>
 
@@ -257,10 +258,10 @@ x = 0.659453
 x = 0.650444
 x = 0.405394
 x = 0.620769
-    
+
 */
 
-
+/*
 std::vector<std::vector<float>> A2;
 A2.push_back(std::vector<float> ());
 A2.push_back(std::vector<float> ());
@@ -508,7 +509,7 @@ c2.push_back(-1);
     for(auto i : x2){
         std::cout << "x = " << i << std::endl;
     }
-
+*/
 
 /*    // Mr Silva test, lab 12:
 
@@ -637,5 +638,87 @@ for(auto i : x5){
 }
 */
 
+
+/*isto é para aberto
+
+O_vals: 198 236 260
+E_vals:
+708 275 269
+579 640 284
+380 560 581
+*/
+  /*
+std::vector<std::vector<float>> E;
+std::vector<float> O;
+std::vector<float> L;
+E.push_back(std::vector<float>());
+E.push_back(std::vector<float>());
+E.push_back(std::vector<float>());
+O.push_back(198.0/1024);
+O.push_back(236.0/1024);
+O.push_back(260.0/1024);
+L.push_back(600.0/1024);
+L.push_back(600.0/1024);
+L.push_back(600.0/1024);
+E[0].push_back(708.0/1024);
+E[0].push_back(275.0/1024);
+E[0].push_back(269.0/1024);
+E[1].push_back(579.0/1024);
+E[1].push_back(640.0/1024);
+E[1].push_back(284.0/1024);
+E[2].push_back(380.0/1024);
+E[2].push_back(560.0/1024);
+E[2].push_back(581.0/1024);
+
+lp_struct lp = generate_linear_programm(E,O,L);
+
+Simplex teste = Simplex(lp.A,lp.b,lp.c);
+
+std::vector<float> x = teste.solve();
+
+for(auto i : x){
+    std::cout << "x = " << i*255 << std::endl;
+}
+*/
+
+/*fechado
+
+O_vals: 5 3 3
+E_vals:
+745 137 67
+598 704 113
+317 586 674*/
+
+std::vector<std::vector<float>> E;
+std::vector<float> O;
+std::vector<float> L;
+E.push_back(std::vector<float>());
+E.push_back(std::vector<float>());
+E.push_back(std::vector<float>());
+O.push_back(5.0/1024);
+O.push_back(3.0/1024);
+O.push_back(3.0/1024);
+L.push_back(600.0/1024);
+L.push_back(600.0/1024);
+L.push_back(600.0/1024);
+E[0].push_back(745.0/1024);
+E[0].push_back(137.0/1024);
+E[0].push_back(67.0/1024);
+E[1].push_back(598.0/1024);
+E[1].push_back(704.0/1024);
+E[1].push_back(113.0/1024);
+E[2].push_back(317.0/1024);
+E[2].push_back(586.0/1024);
+E[2].push_back(674.0/1024);
+
+lp_struct lp = generate_linear_programm(E,O,L);
+
+Simplex teste = Simplex(lp.A,lp.b,lp.c);
+
+std::vector<float> x = teste.solve();
+
+for(auto i : x){
+  std::cout << "x = " << i*255 << std::endl;
+}
 
 }
