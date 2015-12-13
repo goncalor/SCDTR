@@ -301,7 +301,7 @@ void Simplex::init_Simplex(){
 
                 if(aux_programm.B.find(i)!=aux_programm.B.end()){
                     std::cout << "v: adding inter_c["<< i<<"]*aux_b[" << i << "] = " << internal_struct.c[i] * aux_programm.b[i] <<std::endl;
-                    aux_programm.v = internal_struct.c[i] * aux_programm.b[i]; //TODO FIX THIS
+                    aux_programm.v = internal_struct.c[i] * aux_programm.b[i]; 
                     std::cout << "aux_v = " << aux_programm.v << std::endl;
                 }/*else{
                     aux_programm.c[i]+=internal_struct.c[i];
