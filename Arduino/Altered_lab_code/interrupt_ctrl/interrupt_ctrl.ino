@@ -22,7 +22,7 @@
 #define PID_A 10
 #define RESISTENCIA 10000.0
 #define LDR_B 4.7782
-#define LDR_A -0.6901
+#define LDR_A 0.6901
 #define INT_GAIN 10
 #define INTERRUPT_TIME (65536 - (16000000./8)*(SAMPLE_TIME/1000000.))
 #define EEPROM_ID_ADDRESS 0   // the address for this Arduino's ID
@@ -58,7 +58,7 @@ double feedforward_gain = GAIN_FEEDFORWARD, a=PID_A, gain_i=GAIN_I;
  * Returns that value. */ 
 int lux_to_pwm(double lux_dado) {
     double ctrl_ref_novo=0, ldr=0, voltagem=0, resist=RESISTENCIA;
-    ldr = pow(10.0, (LDR_A*log10(lux_dado) + LDR_B));
+    ldr = pow(10.0, (-LDR_A*log10(lux_dado) + LDR_B));
     voltagem = 5/(1 + ldr/resist);
     ctrl_ref_novo = voltagem*255/5;
     return ctrl_ref_novo;
@@ -68,8 +68,8 @@ int lux_to_pwm(double lux_dado) {
 double adc_to_lux(int adc_val) {
     double ldr_ohms, lux;
     ldr_ohms = 1023 * RESISTENCIA/adc_val - RESISTENCIA;
-    lux = pow(10, (log10(ldr_ohms)-LDR_B)/LDR_A);
-    return lux;	
+    lux = pow(ldr_ohms, -1/LDR_A)*pow(10, LDR_B/LDR_A);
+    return lux;
 }
 
 
@@ -161,7 +161,7 @@ volatile double energy = 0;
 volatile float prev_duty = 0;
 
 volatile double confort_error_accum = 0;  // TODO what if the occupation changes?
-volatile double lux_ref = adc_to_lux(ctrl_ref);
+volatile double lux_ref = adc_to_lux(4*ctrl_ref);
 volatile double lux_measured;
 
 volatile unsigned long nr_samples_collected = 0;
@@ -564,7 +564,8 @@ void loop() {
         #endif
     }
 
-    Serial.println(confort_error_accum / nr_samples_collected);
+    //Serial.println(confort_error_accum / nr_samples_collected);
+    Serial.println(confort_error_accum);
     delay(1);
 
     if(print_flag and enable_print) {
