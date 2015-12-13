@@ -29,6 +29,9 @@
 #define NUM_SAMPLES 3   // number of samples used for average of analogRead
 #define MASTER_ID 1  // the ID of the master TODO
 
+/* Notes:
+ *   - in the UNO floats and doubles are the same
+ */
 
 const int analogInPin = 0;  // Analog input pin that the LDR is attached to
 int analogOutPin = 5; // Analog output pin that the LED is attached to
@@ -162,9 +165,15 @@ volatile float prev_duty = 0;
 
 volatile double confort_error_accum = 0;  // TODO what if the occupation changes?
 volatile double lux_ref = adc_to_lux(4*ctrl_ref);
-volatile double lux_measured;
+volatile double lux_measured = 0;       // lux_measured in t
+volatile double lux_measured_t1 = 0;    // lux_measured in t-1
+volatile double lux_measured_t2 = 0;    // lux_measured in t-2
+
+volatile double flicker_accum = 0;
 
 volatile unsigned long nr_samples_collected = 0;
+
+volatile double aux;
 
 
 ISR(TIMER1_OVF_vect) {
@@ -206,9 +215,14 @@ ISR(TIMER1_OVF_vect) {
     prev_duty = ctrl_u;
 
     // confort error
+    lux_measured_t2 = lux_measured_t1;
+    lux_measured_t1 = lux_measured;
     lux_measured = adc_to_lux(ctrl_y);
     confort_error_accum += lux_ref > lux_measured ? lux_ref - lux_measured : 0;
 
+    // flicker
+    aux = lux_measured - 2*lux_measured_t1 + lux_measured_t2;
+    flicker_accum += aux > 0 ? aux : -aux;
 
     nr_samples_collected++;
 }
@@ -564,9 +578,21 @@ void loop() {
         #endif
     }
 
-    //Serial.println(confort_error_accum / nr_samples_collected);
-    Serial.println(confort_error_accum);
-    delay(1);
+    if(print_flag)
+    {
+        print_flag = 0;
+        //Serial.println(confort_error_accum / nr_samples_collected);
+        //Serial.print(lux_measured);
+        //Serial.print(" ");
+        //Serial.print(lux_measured_t1);
+        //Serial.print(" ");
+        //Serial.print(lux_measured_t2);
+        //Serial.print(" ");
+        Serial.println(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)));
+        //Serial.print(nr_samples_collected);
+        //Serial.print(" ");
+        //Serial.println(confort_error_accum);
+    }
 
     if(print_flag and enable_print) {
         print_flag = 0;
