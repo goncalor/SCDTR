@@ -41,7 +41,7 @@ int n;
 
 bool enable_print = false;
 bool i_am_master = false;
-int ctrl_ref=127;	
+int ctrl_ref=127;	// range 0 - 255
 int loopOutputFlag= 1;
 int ctrl_verbose_flag= 0;
 
@@ -54,21 +54,23 @@ double gain_k = GAIN_K, gain_d=GAIN_D, ctrl_wind_gain=GAIN_ANTIWINDUP;
 double feedforward_gain = GAIN_FEEDFORWARD, a=PID_A, gain_i=GAIN_I;
 
 
-int luxfunction(double lux_dado) {
-    double ctrl_ref_novo=0,ldr=0, voltagem=0, resist=RESISTENCIA;
-    ldr=pow(10.0,(LDR_A*log10(lux_dado)+LDR_B));
-    voltagem=5/(1+ldr/resist);
-    ctrl_ref_novo=voltagem*255/5;
+/* Converts a lux value 'lux_dado' to a PMW duty cycle value (0 to 255).
+ * Returns that value. */ 
+int lux_to_pwm(double lux_dado) {
+    double ctrl_ref_novo=0, ldr=0, voltagem=0, resist=RESISTENCIA;
+    ldr = pow(10.0, (LDR_A*log10(lux_dado) + LDR_B));
+    voltagem = 5/(1 + ldr/resist);
+    ctrl_ref_novo = voltagem*255/5;
     return ctrl_ref_novo;
 }
 
+/* Converts ADC value 'adc_val' (range 0 1023) to a lux value. */
 double adc_to_lux(int adc_val) {
     double ldr_ohms, lux;
-    ldr_ohms = 1023 * RESISTENCIA / adc_val - RESISTENCIA;
-    lux= pow(10,(log10(ldr_ohms) - LDR_B)/LDR_A);
+    ldr_ohms = 1023 * RESISTENCIA/adc_val - RESISTENCIA;
+    lux = pow(10, (log10(ldr_ohms)-LDR_B)/LDR_A);
     return lux;	
 }
-
 
 
 int AnalogReadAvg(int pin,int n) {
@@ -158,6 +160,12 @@ volatile short print_flag;
 volatile double energy = 0;
 volatile float prev_duty = 0;
 
+volatile double confort_error_accum = 0;  // TODO what if the occupation changes?
+volatile double lux_ref = adc_to_lux(ctrl_ref);
+volatile double lux_measured;
+
+volatile unsigned long nr_samples_collected = 0;
+
 
 ISR(TIMER1_OVF_vect) {
     TCNT1 = (unsigned int) INTERRUPT_TIME; // reload timer. don't move this
@@ -193,9 +201,16 @@ ISR(TIMER1_OVF_vect) {
     //end_time = micros();
 
     // compute and save metrics
-    //energy += (float)prev_duty/255*((float)SAMPLE_TIME/1000000);
+    // energy
     energy += prev_duty*SAMPLE_TIME/(float)(255*1000000);
     prev_duty = ctrl_u;
+
+    // confort error
+    lux_measured = adc_to_lux(ctrl_y);
+    confort_error_accum += lux_ref > lux_measured ? lux_ref - lux_measured : 0;
+
+
+    nr_samples_collected++;
 }
 
 
@@ -294,7 +309,8 @@ void main_switch() {
                 Serial.println("command for me");
                 x = atof(lst[0]);
                 noInterrupts();
-                ctrl_ref = luxfunction(x);
+                lux_ref = x;
+                ctrl_ref = lux_to_pwm(x);
                 ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
                 ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
                 interrupts();   
@@ -314,6 +330,7 @@ void main_switch() {
                 // 'r pwmref'
                 x = atof(lst[0]);
                 noInterrupts();
+                lux_ref = adc_to_lux(4*x);
                 ctrl_ref = x;
                 ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
                 ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
@@ -547,7 +564,7 @@ void loop() {
         #endif
     }
 
-    Serial.println(energy);
+    Serial.println(confort_error_accum / nr_samples_collected);
     delay(1);
 
     if(print_flag and enable_print) {

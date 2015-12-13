@@ -27,7 +27,8 @@ void wire_process_incoming(char *str)
             // 'l lux'
             fl = atof(lst[0]);
             noInterrupts();
-            ctrl_ref = luxfunction(fl);
+            lux_ref = fl;
+            ctrl_ref = lux_to_pwm(fl);
             ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
             ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
             interrupts();   
