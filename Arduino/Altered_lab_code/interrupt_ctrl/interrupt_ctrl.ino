@@ -154,10 +154,15 @@ volatile double gain_d_Ts = gain_d/Ts_sec;
 volatile double c;
 volatile short print_flag;
 
+// metrics
+volatile double energy = 0;
+volatile float prev_duty = 0;
+
+
 ISR(TIMER1_OVF_vect) {
     TCNT1 = (unsigned int) INTERRUPT_TIME; // reload timer. don't move this
     //start_time = micros();
-    print_flag = 1;
+    print_flag = true;
 
     ctrl_y = AnalogReadAvg(analogInPin, NUM_SAMPLES);
     ctrl_e = ctrl_mapped_ref - ctrl_y;
@@ -186,6 +191,11 @@ ISR(TIMER1_OVF_vect) {
     i =  i + ((ctrl_e + ctrl_e_before) / 2 + ctrl_e_sat * ctrl_wind_gain) * Ts_gain_k_i ;
     ctrl_e_before = ctrl_e; 
     //end_time = micros();
+
+    // compute and save metrics
+    //energy += (float)prev_duty/255*((float)SAMPLE_TIME/1000000);
+    energy += prev_duty*SAMPLE_TIME/(float)(255*1000000);
+    prev_duty = ctrl_u;
 }
 
 
@@ -527,6 +537,7 @@ void loop() {
     }
 
     serial_data_available = serial_read_str(buf, BUF_LEN);
+
     if(serial_data_available)
     {
         main_switch();
@@ -535,6 +546,9 @@ void loop() {
         Serial.println(buf);
         #endif
     }
+
+    Serial.println(energy);
+    delay(1);
 
     if(print_flag and enable_print) {
         print_flag = 0;
