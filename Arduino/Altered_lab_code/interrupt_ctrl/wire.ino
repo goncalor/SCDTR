@@ -112,7 +112,8 @@ void enable_all_controllers()
 }
 
 
-// Writes all the current readings into 'data'
+/* Writes all the current readings into 'data'. This function blocks while it
+ * does not have all the readings. */
 void get_all_readings(int *data, short len)
 {
     short i;
@@ -123,7 +124,12 @@ void get_all_readings(int *data, short len)
     for(i=1; i<=len; i++)
     {
         if(i == MASTER_ID)
+        {
+            // do my own reading
+            data[i-1] = AnalogReadAvg(analogInPin, NUM_SAMPLES);
             continue;
+        }
+
         Wire.beginTransmission(i);
         Wire.write("a");
         Wire.endTransmission();
@@ -139,9 +145,6 @@ void get_all_readings(int *data, short len)
             data[dev_id-1] = atoi(lst[2]);
         }
     }
-
-    // do my own reading
-    data[MASTER_ID-1] = AnalogReadAvg(analogInPin, NUM_SAMPLES);
 }
 
 
@@ -173,6 +176,8 @@ void get_O()
 }
 
 
+/* Get the E matrix. This should only be called after get_O(). This is because
+ * Eij must be compensated by Oj. */
 void get_E()
 {
     short i;
@@ -193,7 +198,14 @@ void get_E()
     for(i=1; i<=3; i++)
     {
         if(i == MASTER_ID)
+        {
+            analogWrite(analogOutPin, 255);
+            delay(1000);
+            get_all_readings(E_vals[i-1], 3);
+            analogWrite(analogOutPin, 0);
+            delay(1000);
             continue;
+        }
 
         // turn LED on full power
         Wire.beginTransmission(i);
@@ -211,9 +223,13 @@ void get_E()
         delay(1000);    // wait to settle
     }
 
-    analogWrite(analogOutPin, 255);
-    delay(1000);
-    get_all_readings(E_vals[MASTER_ID-1], 3);
+    // compensate Eij by Oj
+    for(i=0; i<3; i++)
+        for(int j=0; j<3; j++)
+            if(E_vals[i][j] < O_vals[j])
+                E_vals[i][j] = 0;
+            else
+                E_vals[i][j] -= O_vals[j];
 
     #ifdef DEBUG
     short j;
