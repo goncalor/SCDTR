@@ -2,3 +2,7 @@
 
 
 # Compile and run tests
+g++ -Wall -Wextra -pedantic -std=c++11 -g tcp_server.cpp main.cpp -lpthread -lboost_system  -o tcp_server.out
+g++ -std=c++11 ../AlexBernardinoCode/blocking_tcp_echo_client.cpp -lpthread -lboost_system -o client.out
+terminator --new-tab &
+./tcp_server.out 17000
