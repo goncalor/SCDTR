@@ -1,3 +1,4 @@
+#include "circbuf.h"
 #include "utils.h"
 #include <avr/interrupt.h>
 #include <EEPROM.h>
@@ -7,10 +8,11 @@
 
 #define DEBUG
 
-#define BUF_LEN 100
-#define BUF_LEN_2 10
-#define BUF_WIRE_LEN    40
-#define BUF_SPLIT_LEN   20
+#define BUF_LEN       100
+#define BUF_LEN_2      10
+#define BUF_WIRE_LEN   40
+#define BUF_SPLIT_LEN  20
+#define BUF_STATS_LEN  61  // use more than what you actually want
 #define BAUDRATE 38400
 #define SAMPLE_TIME 5000    // microseconds
 #define GAIN_K 10
@@ -28,9 +30,10 @@
 #define EEPROM_ID_ADDRESS 0   // the address for this Arduino's ID
 #define NUM_SAMPLES 3   // number of samples used for average of analogRead
 #define MASTER_ID 1  // the ID of the master TODO
+#define STATS_PERIOD 200   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD
 
 /* Notes:
- *   - in the UNO floats and doubles are the same
+ *   - in the Uno floats and floats are the same
  */
 
 const int analogInPin = 0;  // Analog input pin that the LDR is attached to
@@ -53,14 +56,15 @@ volatile bool wire_data_available = false;
 
 // PID variables
 unsigned int Ts= SAMPLE_TIME;
-double gain_k = GAIN_K, gain_d=GAIN_D, ctrl_wind_gain=GAIN_ANTIWINDUP;
-double feedforward_gain = GAIN_FEEDFORWARD, a=PID_A, gain_i=GAIN_I;
+float gain_k = GAIN_K, gain_d=GAIN_D, ctrl_wind_gain=GAIN_ANTIWINDUP;
+float feedforward_gain = GAIN_FEEDFORWARD, a=PID_A, gain_i=GAIN_I;
 
 
 /* Converts a lux value 'lux_dado' to a PMW duty cycle value (0 to 255).
  * Returns that value. */ 
-int lux_to_pwm(double lux_dado) {
-    double ctrl_ref_novo=0, ldr=0, voltagem=0, resist=RESISTENCIA;
+// TODO: optimise this
+int lux_to_pwm(float lux_dado) {
+    float ctrl_ref_novo=0, ldr=0, voltagem=0, resist=RESISTENCIA;
     ldr = pow(10.0, (-LDR_A*log10(lux_dado) + LDR_B));
     voltagem = 5/(1 + ldr/resist);
     ctrl_ref_novo = voltagem*255/5;
@@ -68,8 +72,8 @@ int lux_to_pwm(double lux_dado) {
 }
 
 /* Converts ADC value 'adc_val' (range 0 1023) to a lux value. */
-double adc_to_lux(int adc_val) {
-    double ldr_ohms, lux;
+float adc_to_lux(int adc_val) {
+    float ldr_ohms, lux;
     ldr_ohms = 1023 * RESISTENCIA/adc_val - RESISTENCIA;
     lux = pow(ldr_ohms, -1/LDR_A)*pow(10, LDR_B/LDR_A);
     return lux;
@@ -133,7 +137,7 @@ void pwm_config(int freqId) {
 // control signals
 volatile long p, i=0, full_ctrl_u, ctrl_e_sat=0;
 volatile int ctrl_e, ctrl_u, ctrl_y=0;
-volatile double d=0;
+volatile float d=0;
 
 // previous vars
 volatile long i_before=0, d_before=0, ctrl_e_before=0;
@@ -145,35 +149,43 @@ volatile long delay_time;
 
 // Precalculated vars
 volatile unsigned int ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
-volatile double Ts_sec = (float) Ts/1000000.0;
-//double gain_i=1./integral_time;
+volatile float Ts_sec = (float) Ts/1000000.0;
+//float gain_i=1./integral_time;
 
-volatile double derivative_const = gain_d /(gain_d + a*Ts_sec);
-volatile double gain_k_i = gain_i*gain_k;
-volatile double gain_k_a = gain_k * a;
-volatile double ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-volatile double Ts_gain_k_i = Ts_sec * gain_k_i;
-volatile double gain_d_Ts = gain_d/Ts_sec;
+volatile float derivative_const = gain_d /(gain_d + a*Ts_sec);
+volatile float gain_k_i = gain_i*gain_k;
+volatile float gain_k_a = gain_k * a;
+volatile float ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+volatile float Ts_gain_k_i = Ts_sec * gain_k_i;
+volatile float gain_d_Ts = gain_d/Ts_sec;
 
 // other
-volatile double c;
+volatile float c;
 volatile short print_flag;
 
 // metrics
-volatile double energy = 0;
-volatile float prev_duty = 0;
+volatile float energy = 0;
+volatile float energy_buf[BUF_STATS_LEN];
+volatile short prev_duty = 0;
 
-volatile double confort_error_accum = 0;  // TODO what if the occupation changes?
-volatile double lux_ref = adc_to_lux(4*ctrl_ref);
-volatile double lux_measured = 0;       // lux_measured in t
-volatile double lux_measured_t1 = 0;    // lux_measured in t-1
-volatile double lux_measured_t2 = 0;    // lux_measured in t-2
+volatile float confort_error_accum = 0;  // TODO what if the occupation changes?
+volatile float confort_error_accum_buf[BUF_STATS_LEN];
+volatile float lux_ref = adc_to_lux(4*ctrl_ref);
+volatile float lux_measured = 0;       // lux_measured in t
+volatile float lux_measured_t1 = 0;    // lux_measured in t-1
+volatile float lux_measured_t2 = 0;    // lux_measured in t-2
 
-volatile double flicker_accum = 0;
+volatile float flicker_accum = 0;
+volatile float flicker_accum_buf[BUF_STATS_LEN];
 
 volatile unsigned long nr_samples_collected = 0;
 
-volatile double aux;
+volatile float aux;
+
+//TODO move this
+circbuf_t energy_cb = {.buf=(float*)energy_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
+circbuf_t confort_cb = {.buf=(float*)confort_error_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
+circbuf_t flicker_cb = {.buf=(float*)flicker_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
 
 
 ISR(TIMER1_OVF_vect) {
@@ -213,16 +225,19 @@ ISR(TIMER1_OVF_vect) {
     // energy
     energy += prev_duty*SAMPLE_TIME/(float)(255*1000000);
     prev_duty = ctrl_u;
+    circbuf_add(&energy_cb, energy);
 
     // confort error
     lux_measured_t2 = lux_measured_t1;
     lux_measured_t1 = lux_measured;
     lux_measured = adc_to_lux(ctrl_y);
     confort_error_accum += lux_ref > lux_measured ? lux_ref - lux_measured : 0;
+    circbuf_add(&confort_cb, confort_error_accum);
 
     // flicker
     aux = lux_measured - 2*lux_measured_t1 + lux_measured_t2;
     flicker_accum += aux > 0 ? aux : -aux;
+    circbuf_add(&flicker_cb, flicker_accum);
 
     nr_samples_collected++;
 }
@@ -270,7 +285,7 @@ void main_send_end_cmd() {
 
 
 void main_switch() {
-    double x;
+    float x;
     short dev_id;
     char *lst[BUF_SPLIT_LEN];
     short numwords;
@@ -427,7 +442,7 @@ void main_switch() {
                 break;
 
             case 'i':
-                // read sensor
+                // read sensor, both in PWM and lux
                 {
                     int ch= 0;
                     if(buf[1]!='\0')
@@ -451,7 +466,7 @@ void main_switch() {
                 break;
 
             case 'D':
-                // delay in milisec
+                // delay in millisec
                 t0= millis() + (unsigned long)atoi(&buf[2]);	
                 while (millis() < t0)
                     ; /* do nothing */
