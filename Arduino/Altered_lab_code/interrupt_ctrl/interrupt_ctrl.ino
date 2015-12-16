@@ -542,9 +542,10 @@ void main_switch() {
 
                 Serial.println("some g command");
 
-                dev_id = atoi(lst[2]);
+                dev_id = atoi(lst[1]);
                 switch(lst[0][0]) {
                     case 'l':
+                        // ask other device for its illuminance
                         Wire.beginTransmission(dev_id);
                         Wire.write('f');
                         Wire.endTransmission();
