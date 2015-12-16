@@ -545,7 +545,13 @@ void main_switch() {
                 dev_id = atoi(lst[1]);
                 switch(lst[0][0]) {
                     case 'l':
-                        // ask other device for its illuminance
+                        // ask device for its illuminance
+                        if(dev_id == wire_my_address)
+                        {
+                            ftoa(adc_to_lux(AnalogReadAvg(analogInPin, NUM_SAMPLES)), buf2);
+                            Serial.println(buf2);
+                            break;
+                        }
                         Wire.beginTransmission(dev_id);
                         Wire.write('f');
                         Wire.endTransmission();
@@ -553,6 +559,22 @@ void main_switch() {
                             ;   // wait for data
                         wire_data_available = false;
                         Serial.println(wire_buf);
+                        break;
+
+                    case 'd':
+                        // ask device for current duty cycle
+                        if(dev_id == wire_my_address)
+                        {
+                            Serial.println(ctrl_u);
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('g');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(ctrl_u);
                         break;
                 }
 

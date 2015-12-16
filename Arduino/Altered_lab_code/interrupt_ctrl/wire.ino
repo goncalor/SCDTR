@@ -67,6 +67,15 @@ void wire_process_incoming(char *str)
             Wire.endTransmission();
             break;
 
+        case 'g':
+            // reply to master with the current duty cycle
+            Wire.beginTransmission(MASTER_ID);
+            noInterrupts();
+            Wire.write(ctrl_u);
+            interrupts();
+            Wire.endTransmission();
+            break;
+
         case 'p':
             // set the reference in PWM value
             // 'p pwm'
