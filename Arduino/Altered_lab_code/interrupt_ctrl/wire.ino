@@ -70,9 +70,63 @@ void wire_process_incoming(char *str)
         case 'g':
             // reply to master with the current duty cycle
             Wire.beginTransmission(MASTER_ID);
-            noInterrupts();
+            disable_controller();
             Wire.write(ctrl_u);
-            interrupts();
+            enable_controller();
+            Wire.endTransmission();
+            break;
+
+        case 'h':
+            // reply to master with the desired illuminance
+            Wire.beginTransmission(MASTER_ID);
+            //noInterrupts();
+            Wire.write(lux_ref);
+            //interrupts();
+            Wire.endTransmission();
+            break;
+
+        case 'i':
+            // reply to master with current reference in lux
+            Wire.beginTransmission(MASTER_ID);
+            disable_controller();
+            Wire.write(adc_to_lux(ctrl_u*4));
+            enable_controller();
+            Wire.endTransmission();
+            break;
+
+        case 'j':
+            // reply to master with instanteneous power consumption
+            Wire.beginTransmission(MASTER_ID);
+            disable_controller();
+            Wire.write(ctrl_u/255.);
+            enable_controller();
+            Wire.endTransmission();
+            break;
+
+        case 'k':
+            // reply to master with energy since restart
+            Wire.beginTransmission(MASTER_ID);
+            disable_controller();
+            Wire.write(energy);
+            enable_controller();
+            Wire.endTransmission();
+            break;
+
+        case 'l':
+            // reply to master with accumulated confort error since restart
+            Wire.beginTransmission(MASTER_ID);
+            disable_controller();
+            Wire.write(confort_error_accum/nr_samples_collected);
+            enable_controller();
+            Wire.endTransmission();
+            break;
+
+        case 'm':
+            // reply to master with accumulated flicker since restart
+            Wire.beginTransmission(MASTER_ID);
+            disable_controller();
+            Wire.write(nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.));
+            enable_controller();
             Wire.endTransmission();
             break;
 
@@ -80,10 +134,10 @@ void wire_process_incoming(char *str)
             // set the reference in PWM value
             // 'p pwm'
             in = atoi(lst[0]);
-            noInterrupts();
+            disable_controller();
             ctrl_mapped_ref = map(in, 0, 255, 0, 1023);
             ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-            interrupts();   
+            enable_controller();
             break;
 
         case 'q':

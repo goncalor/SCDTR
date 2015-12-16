@@ -565,7 +565,9 @@ void main_switch() {
                         // ask device for current duty cycle
                         if(dev_id == wire_my_address)
                         {
+                            disable_controller();
                             Serial.println(ctrl_u);
+                            enable_controller();
                             break;
                         }
                         Wire.beginTransmission(dev_id);
@@ -574,9 +576,118 @@ void main_switch() {
                         while(!wire_data_available)
                             ;   // wait for data
                         wire_data_available = false;
-                        Serial.println(ctrl_u);
+                        Serial.println(wire_buf);
+                        break;
+
+                    case 'L':
+                        // ask device for desired illuminance
+                        if(dev_id == wire_my_address)
+                        {
+                            //disable_controller();
+                            Serial.println(lux_ref);
+                            //enable_controller();
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('h');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
+                        break;
+
+                    case 'r':
+                        // ask device for current reference in lux
+                        if(dev_id == wire_my_address)
+                        {
+                            disable_controller();
+                            Serial.println(adc_to_lux(ctrl_u*4));
+                            enable_controller();
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('i');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
+                        break;
+
+                    case 'p':
+                        // ask device for instantaneous power consumption
+                        if(dev_id == wire_my_address)
+                        {
+                            disable_controller();
+                            Serial.println(ctrl_u/255.);
+                            enable_controller();
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('j');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
+                        break;
+
+                    case 'e':
+                        // ask device for energy since restart
+                        if(dev_id == wire_my_address)
+                        {
+                            disable_controller();
+                            Serial.println(energy);
+                            enable_controller();
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('k');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
+                        break;
+
+                    case 'c':
+                        // ask device for accumulated confort error since restart
+                        if(dev_id == wire_my_address)
+                        {
+                            disable_controller();
+                            Serial.println(confort_error_accum/nr_samples_collected);
+                            enable_controller();
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('l');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
+                        break;
+
+                    case 'v':
+                        // ask device for accumulated flicker since restart
+                        if(dev_id == wire_my_address)
+                        {
+                            disable_controller();
+                            Serial.println(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)));
+                            enable_controller();
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('m');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
                         break;
                 }
+
 
                 break;
 
