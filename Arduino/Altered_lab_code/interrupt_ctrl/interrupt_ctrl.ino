@@ -11,7 +11,7 @@
 #define BUF_LEN_2      10
 #define BUF_WIRE_LEN   40
 #define BUF_SPLIT_LEN  20
-#define BUF_STATS_LEN  21  // use more than what you actually want
+#define BUF_STATS_LEN  61  // use more than what you actually want
 #define BAUDRATE 38400
 #define SAMPLE_TIME 5000    // microseconds
 #define GAIN_K 10
@@ -122,7 +122,9 @@ float adc_to_lux(int adc_val) {
 }
 
 
-int AnalogReadAvg(int pin,int n) {
+/* Returns an averaged measure of the ADC value at pin 'pin'. The return value
+ * will be in the range 0 to 255. */
+int AnalogReadAvg(int pin, int n) {
     int i_local;
     int ReadAvg=0;
     for(i_local=0;i_local<n;i_local++)
@@ -525,15 +527,34 @@ void main_switch() {
                 break;
 
             case 'P':
-                // Toggle Print
+                // toggle Print
                 //Serial.println("\ntime ctrl_u ctrl_y ctrl_e lux");
                 Serial.println("\ntime ctrl_e");
                 enable_print = !enable_print;
                 break;
 
             case 'g':
-                while(circbuf_remove(&energy_cb, &x))
-                    Serial.println(x);
+                // 'g l|d|o|L|O|r|p|e|v dev_id'
+                //while(circbuf_remove(&energy_cb, &x))
+                //    Serial.println(x);
+                if(numwords != 2)
+                    break;
+
+                Serial.println("some g command");
+
+                dev_id = atoi(lst[2]);
+                switch(lst[0][0]) {
+                    case 'l':
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('f');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
+                        break;
+                }
+
                 break;
 
             default:
@@ -594,6 +615,7 @@ void setup() {
     {
         i_am_master = true;
         calibrate();
+        // warn the server that the calibration is done
         Serial.println("D");
     }
 

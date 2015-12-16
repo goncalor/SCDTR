@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 
 /* Turns spaces in 'str' into \0s and and writes a list of pointers to the
@@ -47,3 +48,21 @@ short split(char *str, char **splitlst, short splitlstlen)
     return lstindex;
 }
 
+
+/* Convert a float to a string. Converts the float value from 'val' into an
+ * ASCII representation that will be stored under s. The caller is responsible
+ * for providing sufficient storage in s. Returns 's'.  Note: the string will
+ * have only 2 decimal places */
+char *ftoa(float val, char *s)
+{
+    int integer = (int) val;
+    float fractional = val - integer;
+    short aux;
+
+    itoa(integer, s, 10);
+    aux = strlen(s);
+    s[aux] = '.';
+    itoa(fractional*100, s+aux+1, 10);
+
+    return s;
+}

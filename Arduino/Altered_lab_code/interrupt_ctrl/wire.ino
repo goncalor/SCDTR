@@ -59,6 +59,14 @@ void wire_process_incoming(char *str)
             enable_controller();
             break;
 
+        case 'f':
+            // reply to master with the illuminance in lux
+            Wire.beginTransmission(MASTER_ID);
+            ftoa(adc_to_lux(AnalogReadAvg(analogInPin, NUM_SAMPLES)), itoabuf);
+            Wire.write(itoabuf);
+            Wire.endTransmission();
+            break;
+
         case 'p':
             // set the reference in PWM value
             // 'p pwm'
