@@ -1,4 +1,3 @@
-#include "circbuf.h"
 #include "utils.h"
 #include <avr/interrupt.h>
 #include <EEPROM.h>
@@ -6,13 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEBUG
+//#define DEBUG
 
 #define BUF_LEN       100
 #define BUF_LEN_2      10
 #define BUF_WIRE_LEN   40
 #define BUF_SPLIT_LEN  20
-#define BUF_STATS_LEN  61  // use more than what you actually want
+#define BUF_STATS_LEN  21  // use more than what you actually want
 #define BAUDRATE 38400
 #define SAMPLE_TIME 5000    // microseconds
 #define GAIN_K 10
@@ -35,6 +34,49 @@
 /* Notes:
  *   - in the Uno floats and floats are the same
  */
+
+struct circbuf_t {
+    volatile float *const buf;
+    volatile unsigned head;
+    volatile unsigned tail;
+    const unsigned maxlen;
+};
+
+short circbuf_add(volatile struct circbuf_t *cb, float data)
+{
+    unsigned next = cb->head + 1;
+
+    // wrap around
+    if (next >= cb->maxlen)
+        next = 0;
+
+    // buffer is full
+    if (next == cb->tail)
+        return 0;
+
+    cb->buf[cb->head] = data;
+    cb->head = next;
+    return 1;
+}
+
+short circbuf_remove(volatile struct circbuf_t *cb, float *data)
+{
+    // if the head isn't ahead of the tail, we don't have any characters
+    if (cb->head == cb->tail)
+        return 0;  // quit with an error
+
+    *data = cb->buf[cb->tail];
+    cb->buf[cb->tail] = 0;  // clear the data (optional)
+
+    unsigned next = cb->tail + 1;
+    if(next >= cb->maxlen)
+        next = 0;
+
+    cb->tail = next;
+
+    return 1;
+}
+
 
 const int analogInPin = 0;  // Analog input pin that the LDR is attached to
 int analogOutPin = 5; // Analog output pin that the LED is attached to
@@ -179,13 +221,15 @@ volatile float flicker_accum = 0;
 volatile float flicker_accum_buf[BUF_STATS_LEN];
 
 volatile unsigned long nr_samples_collected = 0;
+volatile unsigned stats_not_saved = 0;
+volatile bool enable_save_stats = true;
 
 volatile float aux;
 
 //TODO move this
-circbuf_t energy_cb = {.buf=(float*)energy_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
-circbuf_t confort_cb = {.buf=(float*)confort_error_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
-circbuf_t flicker_cb = {.buf=(float*)flicker_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
+volatile circbuf_t energy_cb = {.buf=(float*)energy_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
+volatile circbuf_t confort_cb = {.buf=(float*)confort_error_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
+volatile circbuf_t flicker_cb = {.buf=(float*)flicker_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
 
 
 ISR(TIMER1_OVF_vect) {
@@ -223,21 +267,31 @@ ISR(TIMER1_OVF_vect) {
 
     // compute and save metrics
     // energy
-    energy += prev_duty*SAMPLE_TIME/(float)(255*1000000);
+    energy += prev_duty*(SAMPLE_TIME/(float)(255*1000000));
     prev_duty = ctrl_u;
-    circbuf_add(&energy_cb, energy);
 
     // confort error
     lux_measured_t2 = lux_measured_t1;
     lux_measured_t1 = lux_measured;
     lux_measured = adc_to_lux(ctrl_y);
     confort_error_accum += lux_ref > lux_measured ? lux_ref - lux_measured : 0;
-    circbuf_add(&confort_cb, confort_error_accum);
 
     // flicker
     aux = lux_measured - 2*lux_measured_t1 + lux_measured_t2;
     flicker_accum += aux > 0 ? aux : -aux;
-    circbuf_add(&flicker_cb, flicker_accum);
+
+    if(enable_save_stats)
+    {
+        if(stats_not_saved == STATS_PERIOD)
+        {
+            stats_not_saved = 0;
+            circbuf_add(&energy_cb, energy);
+            circbuf_add(&confort_cb, confort_error_accum);
+            circbuf_add(&flicker_cb, flicker_accum);
+        }
+        else
+            stats_not_saved++;
+    }
 
     nr_samples_collected++;
 }
@@ -276,11 +330,6 @@ void config_mode(char *buf) {
         default:
             Serial.println("E inv modecnf");
     }
-}
-
-
-void main_send_end_cmd() {
-    Serial.print("> ");
 }
 
 
@@ -335,7 +384,9 @@ void main_switch() {
                     break;
                 }
 
+                #ifdef DEBUG
                 Serial.println("command for me");
+                #endif
                 x = atof(lst[0]);
                 noInterrupts();
                 lux_ref = x;
@@ -480,13 +531,15 @@ void main_switch() {
                 enable_print = !enable_print;
                 break;
 
+            case 'g':
+                while(circbuf_remove(&energy_cb, &x))
+                    Serial.println(x);
+                break;
+
             default:
                 strcat(buf, " <inv cmd\n");
                 Serial.print(buf);
         }
-
-        //Serial.print("> ");
-        //main_send_end_cmd();
     }
 }
 
@@ -502,9 +555,10 @@ void wireReceiveEvent(int nbytes) {
     while (Wire.available() && i<nbytes) {
         c = Wire.read();
         wire_buf[i++] = c;
-        if(c = '\0')
-            Serial.println("0!");
-        //    break;
+        if(c = '\0') {
+            //Serial.println("0!");
+            break;
+        }
     }
     wire_buf[i] = 0;   // terminate the buffer
     wire_data_available = true;
@@ -540,6 +594,7 @@ void setup() {
     {
         i_am_master = true;
         calibrate();
+        Serial.println("D");
     }
 
 
@@ -586,11 +641,11 @@ void loop() {
 
     if(serial_data_available)
     {
-        main_switch();
         #ifdef DEBUG
         Serial.println("serial data available");
         Serial.println(buf);
         #endif
+        main_switch();
     }
 
     if(print_flag)
@@ -603,9 +658,10 @@ void loop() {
         //Serial.print(" ");
         //Serial.print(lux_measured_t2);
         //Serial.print(" ");
-        Serial.println(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)));
+        //Serial.println(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)));
         //Serial.print(nr_samples_collected);
         //Serial.print(" ");
+        //Serial.println(energy);
         //Serial.println(confort_error_accum);
     }
 
