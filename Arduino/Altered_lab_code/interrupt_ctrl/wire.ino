@@ -6,8 +6,9 @@
 // TODO: distribute O
 // TODO: distribute E
 
-int O_vals[3];
-int E_vals[3][3];
+int O_vals[3] = {3, 1, 3} ;
+int E_vals[3][3] = { {722, 116, 46}, {592, 698, 99}, {304, 579, 664} };
+
 
 void wire_process_incoming(char *str)
 {
@@ -286,6 +287,37 @@ void get_all_readings(int *data, short len)
 }
 
 
+/* Prints 'O_vals' to serial. */
+void print_O()
+{
+    short i;
+
+    for(i=0; i<3; i++)
+    {
+        Serial.print(O_vals[i]);
+        Serial.print(" ");
+    }
+    Serial.println("");
+}
+
+
+/* Prints 'E_vals' to serial. */
+void print_E()
+{
+    short i, j;
+    for(i=0; i<3; i++)
+    {
+        for(j=0; j<3; j++)
+        {
+            Serial.print(E_vals[i][j]);
+            Serial.print(" ");
+        }
+        Serial.println("");
+    }
+}
+
+
+/* Get the O matrix. */
 void get_O()
 {
     // turn the lights off
@@ -296,20 +328,14 @@ void get_O()
     // my own
     analogWrite(analogOutPin, 0);
 
-    delay(1200);    // wait for others to turn off and stabilize
+    delay(2000);    // wait for others to turn off and stabilize
 
     //TODO call 
     get_all_readings(O_vals, 3);
 
     #ifdef DEBUG
-    short i;
     Serial.print("O_vals: ");
-    for(i=0; i<3; i++)
-    {
-        Serial.print(O_vals[i]);
-        Serial.print(" ");
-    }
-    Serial.println("");
+    print_O();
     #endif
 }
 
@@ -370,16 +396,7 @@ void get_E()
                 E_vals[i][j] -= O_vals[j];
 
     #ifdef DEBUG
-    short j;
     Serial.println("E_vals: ");
-    for(i=0; i<3; i++)
-    {
-        for(j=0; j<3; j++)
-        {
-            Serial.print(E_vals[i][j]);
-            Serial.print(" ");
-        }
-        Serial.println("");
-    }
+    print_E();
     #endif
 }

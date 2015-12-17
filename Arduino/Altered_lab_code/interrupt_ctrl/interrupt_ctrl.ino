@@ -371,6 +371,16 @@ void main_switch() {
                 Serial.println("D");
                 break;
 
+            case 'O':
+                // ask device for O
+                print_O();
+                break;
+
+            case 'E':
+                // ask device for E
+                print_E();
+                break;
+
             case 'l':
                 // set lux reference
                 // 'l lux [dev_id]'
