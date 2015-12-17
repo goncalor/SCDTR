@@ -35,7 +35,21 @@ class serial_connection {
                 throw serial_ex;
             }
             wait_for_calibration();
+            boost::asio::write(sp_, boost::asio::buffer("m"));
+            ready_=true;
+            std::cout << "Arduino READY" << std::endl;
+
+            // TODO Call simplex. Actually the arduino should only be done after simplex is run once.
         }
+
+
+        void calibrate(){
+            boost::asio::write(sp_, boost::asio::buffer("F"));
+            wait_for_calibration();
+            ready_=true;
+            std::cout << "Arduino READY" << std::endl;
+        }
+
 
         void read_handler(const boost::system::error_code &ec, size_t nbytes) {
             if (!ec){
@@ -91,8 +105,6 @@ class serial_connection {
                 char c;
                 boost::asio::read(sp_, boost::asio::buffer(&c,1));
                 if(c=='D'){
-                    ready_=true;
-                    std::cout << "READY" << std::endl;
                     break;
                 }
             }
@@ -103,6 +115,8 @@ class serial_connection {
             boost::asio::write(sp_, boost::asio::buffer("r"));
             wait_for_calibration();
         }
+
+
 
 
         //Do answers need to be asynchronous?
