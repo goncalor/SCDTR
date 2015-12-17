@@ -12,28 +12,26 @@
 #define BUF_WIRE_LEN   40
 #define BUF_SPLIT_LEN  20
 //TODO change to 61? be careful with low memory
-#define BUF_STATS_LEN  21  // use more than what you actually want
+#define BUF_STATS_LEN  21  // use one more than what you actually want
 #define BAUDRATE 38400
 #define SAMPLE_TIME 5000    // microseconds
-#define GAIN_K 10
-#define GAIN_D 0.01
-#define GAIN_I 10
+#define GAIN_K 10           // proportional gain
+#define GAIN_D 0.01         // differential gain
+#define GAIN_I 10           // integral gain
 #define GAIN_FEEDFORWARD 0.1
 #define GAIN_ANTIWINDUP 0.05
-#define FEEDFORWARD_GAIN 0.1
 #define PID_A 10
 #define RESISTENCIA 10000.0
 #define LDR_B 4.7782
 #define LDR_A 0.6901
-#define INT_GAIN 10
 #define INTERRUPT_TIME (65536 - (16000000./8)*(SAMPLE_TIME/1000000.))
 #define EEPROM_ID_ADDRESS 0   // the address for this Arduino's ID
 #define NUM_SAMPLES 3   // number of samples used for average of analogRead
-#define MASTER_ID 1  // the ID of the master TODO
-#define STATS_PERIOD 200   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD
+#define MASTER_ID 1  // the default ID of the master
+#define STATS_PERIOD 200   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD. ((int)1/(SAMPLE_TIME/1000000.))
 
 /* Notes:
- *   - in the Uno floats and floats are the same
+ *   - in the Uno floats and doubles are the same
  */
 
 struct circbuf_t {
