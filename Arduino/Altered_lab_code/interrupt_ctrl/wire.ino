@@ -29,22 +29,10 @@ void wire_process_incoming(char *str)
 
     switch(str[0])
     {
-        case 't':
-            // set reference in lux
-            // 't lux'
-            fl = atof(lst[0]);
-            disable_controller();
-            lux_ref = fl;
-            ctrl_ref = lux_to_pwm(fl);
-            ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
-            ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-            enable_controller();
-            break;
-
         case 'a':
             // reply to master with the value on the LDR
             // reply to send 'b my_address ldr'
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             Wire.write("b ");
             itoa(wire_my_address, itoabuf, 10);
             Wire.write(itoabuf);    // send my address
@@ -68,7 +56,7 @@ void wire_process_incoming(char *str)
 
         case 'f':
             // reply to master with the illuminance in lux
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             ftoa(adc_to_lux(AnalogReadAvg(analogInPin, NUM_SAMPLES)), itoabuf);
             Wire.write(itoabuf);
             Wire.endTransmission();
@@ -76,7 +64,7 @@ void wire_process_incoming(char *str)
 
         case 'g':
             // reply to master with the current duty cycle
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             disable_controller();
             in = ctrl_u;
             enable_controller();
@@ -87,7 +75,7 @@ void wire_process_incoming(char *str)
 
         case 'h':
             // reply to master with the desired illuminance
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             //noInterrupts();
             ftoa(lux_ref, itoabuf);
             Wire.write(itoabuf);
@@ -97,7 +85,7 @@ void wire_process_incoming(char *str)
 
         case 'i':
             // reply to master with current reference in lux
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             disable_controller();
             in = ctrl_u;
             enable_controller();
@@ -108,7 +96,7 @@ void wire_process_incoming(char *str)
 
         case 'j':
             // reply to master with instanteneous power consumption
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             disable_controller();
             fl = ctrl_u/255.;
             enable_controller();
@@ -119,7 +107,7 @@ void wire_process_incoming(char *str)
 
         case 'k':
             // reply to master with energy since restart
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             disable_controller();
             fl = energy;
             enable_controller();
@@ -130,7 +118,7 @@ void wire_process_incoming(char *str)
 
         case 'l':
             // reply to master with accumulated confort error since restart
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             disable_controller();
             fl = confort_error_accum/nr_samples_collected;
             enable_controller();
@@ -141,7 +129,7 @@ void wire_process_incoming(char *str)
 
         case 'm':
             // reply to master with accumulated flicker since restart
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             disable_controller();
             ul = nr_samples_collected;
             enable_controller();
@@ -153,7 +141,7 @@ void wire_process_incoming(char *str)
         // TODO fix this
         case 'n':
             // reply to master with external illuminance
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             //disable_controller();
             ftoa(adc_to_lux(O_vals[wire_my_address]), itoabuf);
             Wire.write(itoabuf);
@@ -163,7 +151,7 @@ void wire_process_incoming(char *str)
 
         case 'o':
             // reply to master with occupation status
-            Wire.beginTransmission(MASTER_ID);
+            Wire.beginTransmission(master_id);
             //disable_controller();
             Wire.write(occupied ? "true" : "false");
             //enable_controller();
@@ -198,13 +186,45 @@ void wire_process_incoming(char *str)
             occupied = false;
             break;
 
+        case 't':
+            // set reference in lux
+            // 't lux'
+            fl = atof(lst[0]);
+            disable_controller();
+            lux_ref = fl;
+            ctrl_ref = lux_to_pwm(fl);
+            ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
+            ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+            enable_controller();
+            break;
+
+        case 'u':
+            // a new master has arrived
+            // 'u'
+            master_id = atoi(lst[0]);
+            break;
+
         default:
             break;
     }
 }
 
+
+void change_master(unsigned short new_master_id)
+{
+    char tmp[4];
+
+    Wire.beginTransmission(0);  // broadcast
+    Wire.write("u ");
+    itoa(new_master_id, tmp, 10);
+    Wire.write(tmp);
+    Wire.endTransmission();
+}
+
+
 void calibrate()
 {
+    change_master(wire_my_address);  // the master has the power to calibrate
     disable_all_controllers();
     get_O();
     get_E();
@@ -241,7 +261,7 @@ void get_all_readings(int *data, short len)
 
     for(i=1; i<=len; i++)
     {
-        if(i == MASTER_ID)
+        if(i == wire_my_address)
         {
             // do my own reading
             data[i-1] = AnalogReadAvg(analogInPin, NUM_SAMPLES);
@@ -276,7 +296,7 @@ void get_O()
     // my own
     analogWrite(analogOutPin, 0);
 
-    delay(2000);    // wait for others to turn off and stabilize
+    delay(1200);    // wait for others to turn off and stabilize
 
     //TODO call 
     get_all_readings(O_vals, 3);
@@ -315,7 +335,7 @@ void get_E()
 
     for(i=1; i<=3; i++)
     {
-        if(i == MASTER_ID)
+        if(i == wire_my_address)
         {
             analogWrite(analogOutPin, 255);
             delay(1000);

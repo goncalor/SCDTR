@@ -7,11 +7,12 @@
 
 //#define DEBUG
 
-#define BUF_LEN       100
+#define BUF_LEN        80
 #define BUF_LEN_2      10
 #define BUF_WIRE_LEN   40
 #define BUF_SPLIT_LEN  20
-#define BUF_STATS_LEN  61  // use more than what you actually want
+//TODO change to 61? be careful with low memory
+#define BUF_STATS_LEN  21  // use more than what you actually want
 #define BAUDRATE 38400
 #define SAMPLE_TIME 5000    // microseconds
 #define GAIN_K 10
@@ -89,13 +90,12 @@ extern int O_vals[3];
 extern int E_vals[3][3];
 
 bool enable_print = false;
-bool i_am_master = false;
 bool occupied = false;
 int ctrl_ref=127;	// range 0 - 255
-int loopOutputFlag= 1;
 int ctrl_verbose_flag= 0;
 
 int wire_my_address;
+uint8_t master_id = MASTER_ID;
 volatile bool wire_data_available = false;
 
 // PID variables
@@ -307,16 +307,13 @@ void config_mode(char *buf) {
     Serial.print("-- do cnf: ");
     Serial.println(buf);
     switch (buf[0]) {
-
-        case 'f':
-            loopOutputFlag= 0; break;
-        case 'F':
-            loopOutputFlag= 1; break;
-
         case 'v':
-            ctrl_verbose_flag= 0; break;
+            ctrl_verbose_flag= 0;
+            break;
+
         case 'V':
-            ctrl_verbose_flag= '1'; break;
+            ctrl_verbose_flag= '1';
+            break;
 
         case 'O':
             // config the analog output pin (where to send the step)
@@ -363,7 +360,15 @@ void main_switch() {
         switch (buf[0]) {
 
             case 'm':
-                i_am_master = true;
+                master_id = wire_my_address;
+                change_master(wire_my_address);
+                break;
+
+            case 'F':
+                // server asks for calibration
+                calibrate();
+                // warn the server that the calibration is done
+                Serial.println("D");
                 break;
 
             case 'l':
@@ -820,14 +825,12 @@ void setup() {
     TWAR = (wire_my_address << 1) | 1;  // enable broadcasts to be received
     Wire.onReceive(wireReceiveEvent);
 
-    if(wire_my_address == MASTER_ID)
+    if(wire_my_address == master_id)
     {
-        i_am_master = true;
         calibrate();
-        // warn the server that the calibration is done
-        Serial.println("D");
     }
-
+    // warn the server that the device is ready
+    Serial.println("D");
 
     // save the starting time, to be used in graphs
     t0 = micros();
