@@ -20,7 +20,7 @@ int main() {
         //read(sp, str, ec);
         //if( ec ) {cout << "Error" << ec << endl; return -1;}
         //read_until(sp, str, '>');
-        read_until(sp, str, ' ');
+        read_until(sp, str, '\n');
         cout << &str;
     }
 }

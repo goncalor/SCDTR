@@ -52,13 +52,13 @@ class serial_connection {
                 //std::cout << "Not done, Buf content: " << &read_buf_ << std::endl;
             }
             std::cout << "Writing: " << "i" << std::endl;
-            boost::asio::write(sp_, boost::asio::buffer("i\0\n"));
+            boost::asio::write(sp_, boost::asio::buffer("i"));
             std::this_thread::sleep_for (std::chrono::seconds(1));
             //boost::asio::async_read(sp_,read_buf_, boost::bind(&serial_connection::read_handler, this,_1,_2));
             boost::asio::async_read_until(sp_,read_buf_,'\n',boost::bind(&serial_connection::read_handler, this,_1,_2));
         }
 
-        void check_ready(const boost::system::error_code &ec, size_t nbytes) {
+        /*void check_ready(const boost::system::error_code &ec, size_t nbytes) {
             if(!ec){
                 boost::asio::streambuf::const_buffers_type bufs = read_buf_.data();
                 std::string line(boost::asio::buffers_begin(bufs), boost::asio::buffers_begin(bufs) + nbytes);
@@ -66,16 +66,27 @@ class serial_connection {
                 if(line[0]=='D'){
                     ready_ = true;
                 }else{
-                    boost::asio::async_read_until(sp_,read_buf_,'\n',boost::bind(&serial_connection::check_ready, this,_1,_2));
+                    boost::asio::async_read(sp_,read_buf_,boost::bind(&serial_connection::check_ready, this,_1,_2));
+                    //  boost::asio::async_read_until(sp_,read_buf_,'\n',boost::bind(&serial_connection::check_ready, this,_1,_2));
                 }
             }else{
                 delete this;
             }
-        }
+        }*/
 
         void wait_for_calibration(){
             std::cout << "Waiting for the D" << std::endl;
-            boost::asio::async_read_until(sp_,read_buf_,'\n',boost::bind(&serial_connection::check_ready, this,_1,_2));
+            //boost::asio::async_read_until(sp_,read_buf_,'\n',boost::bind(&serial_connection::check_ready, this,_1,_2));
+            //boost::   asio::async_read(sp_,read_buf_,boost::bind(&serial_connection::check_ready, this,_1,_2));
+            while(true){
+                char c;
+                boost::asio::read(sp_, boost::asio::buffer(&c,1));
+                if(c=='D'){
+                    ready_=true;
+                    std::cout << "READY" << std::endl;
+                    break;
+                }
+            }
         }
 
 
