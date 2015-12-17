@@ -179,12 +179,14 @@ void wire_process_incoming(char *str)
             // set the occupation status to occupied
             // 'r'
             occupied = true;
+            set_reference_lux(ILLUM_OCCUPIED);
             break;
 
         case 's':
             // set the occupation status to occupied
             // 's'
             occupied = false;
+            set_reference_lux(ILLUM_FREE);
             break;
 
         case 't':

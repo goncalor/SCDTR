@@ -29,6 +29,8 @@
 #define NUM_SAMPLES 3   // number of samples used for average of analogRead
 #define MASTER_ID 1  // the default ID of the master
 #define STATS_PERIOD 200   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD. ((int)1/(SAMPLE_TIME/1000000.))
+#define ILLUM_FREE      15.0   // minimum illuminance for non-occupied desk
+#define ILLUM_OCCUPIED  19.0   // minimum illuminance for occupied desk
 
 /* Notes:
  *   - in the Uno floats and doubles are the same
@@ -89,7 +91,7 @@ extern int E_vals[3][3];
 
 bool enable_print = false;
 bool occupied = false;
-int ctrl_ref=127;	// range 0 - 255
+int ctrl_ref = lux_to_pwm(ILLUM_FREE);    // range 0 - 255
 int ctrl_verbose_flag= 0;
 
 int wire_my_address;
@@ -106,16 +108,18 @@ float feedforward_gain = GAIN_FEEDFORWARD, a=PID_A, gain_i=GAIN_I;
  * Returns that value. */ 
 // TODO: optimise this
 int lux_to_pwm(float lux_dado) {
-    float ctrl_ref_novo=0, ldr=0, voltagem=0, resist=RESISTENCIA;
+    float ctrl_ref_novo=0, ldr=0, tensao=0, resist=RESISTENCIA;
+
     ldr = pow(10.0, (-LDR_A*log10(lux_dado) + LDR_B));
-    voltagem = 5/(1 + ldr/resist);
-    ctrl_ref_novo = voltagem*255/5;
-    return ctrl_ref_novo;
+    tensao = 5/(1 + ldr/resist);
+    ctrl_ref_novo = tensao*255/5;
+    return (int) ceil(ctrl_ref_novo);   // round up, so that minimum will be honoured
 }
 
 /* Converts ADC value 'adc_val' (range 0 1023) to a lux value. */
 float adc_to_lux(int adc_val) {
     float ldr_ohms, lux;
+
     ldr_ohms = 1023 * RESISTENCIA/adc_val - RESISTENCIA;
     lux = pow(ldr_ohms, -1/LDR_A)*pow(10, LDR_B/LDR_A);
     return lux;
@@ -214,7 +218,7 @@ volatile short prev_duty = 0;
 
 volatile float confort_error_accum = 0;  // TODO what if the occupation changes?
 volatile float confort_error_accum_buf[BUF_STATS_LEN];
-volatile float lux_ref = adc_to_lux(4*ctrl_ref);
+volatile float lux_ref = ILLUM_FREE;
 volatile float lux_measured = 0;       // lux_measured in t
 volatile float lux_measured_t1 = 0;    // lux_measured in t-1
 volatile float lux_measured_t2 = 0;    // lux_measured in t-2
@@ -404,12 +408,7 @@ void main_switch() {
                 Serial.println("command for me");
                 #endif
                 x = atof(lst[0]);
-                noInterrupts();
-                lux_ref = x;
-                ctrl_ref = lux_to_pwm(x);
-                ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
-                ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-                interrupts();   
+                set_reference_lux(x);
                 break;
 
             case 'T':
@@ -425,12 +424,7 @@ void main_switch() {
                 // set reference
                 // 'R pwmref'
                 x = atof(lst[0]);
-                disable_controller();
-                lux_ref = adc_to_lux(4*x);
-                ctrl_ref = x;
-                ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
-                ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-                enable_controller();
+                set_reference_pwm(x);
                 sprintf(buf, "ref=");
                 itoa(ctrl_ref, buf2, 10);
                 strcat(buf, buf2);
@@ -761,6 +755,10 @@ void main_switch() {
                 if(dev_id == wire_my_address)
                 {
                     occupied = aux;
+                    if(occupied)
+                        set_reference_lux(ILLUM_OCCUPIED);
+                    else
+                        set_reference_lux(ILLUM_FREE);
                     Serial.println("ack");
                     break;
                 }
@@ -947,3 +945,23 @@ void loop() {
     }
 }
 
+
+void set_reference_lux(float lux)
+{
+    disable_controller();
+    lux_ref = lux;
+    ctrl_ref = lux_to_pwm(lux);
+    ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
+    ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+    enable_controller();
+}
+
+void set_reference_pwm(unsigned short pwm)
+{
+    disable_controller();
+    lux_ref = adc_to_lux(4*pwm);
+    ctrl_ref = pwm;
+    ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
+    ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
+    enable_controller();
+}
