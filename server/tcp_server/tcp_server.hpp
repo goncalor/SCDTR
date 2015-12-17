@@ -26,7 +26,10 @@ class tcp_session{
 
         void process_command(const boost::system::error_code& error, size_t bytes_transferred);
 
-        
+        void after_write(const boost::system::error_code& error);
+
+
+
 };
 
 

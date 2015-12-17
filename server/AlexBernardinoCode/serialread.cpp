@@ -16,11 +16,11 @@ int main() {
     sp.set_option(serial_port_base::baud_rate(38400),ec);
     if( ec ) {cout << "Error"; return -1;}
     while(true){
-        boost::asio::streambuf str;
+        char c[12];
         //read(sp, str, ec);
         //if( ec ) {cout << "Error" << ec << endl; return -1;}
         //read_until(sp, str, '>');
-        read_until(sp, str, '\n');
-        cout << &str;
+        read(sp, buffer(c,1));
+        cout << c;
     }
 }
