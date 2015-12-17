@@ -15,6 +15,7 @@ void wire_process_incoming(char *str)
     short numwords;
     float fl;
     int in;
+    unsigned long ul;
     char itoabuf[10];
 
     wire_data_available = false;
@@ -79,7 +80,8 @@ void wire_process_incoming(char *str)
             disable_controller();
             in = ctrl_u;
             enable_controller();
-            Wire.write(in);
+            itoa(in, itoabuf, 10);
+            Wire.write(itoabuf);
             Wire.endTransmission();
             break;
 
@@ -141,9 +143,9 @@ void wire_process_incoming(char *str)
             // reply to master with accumulated flicker since restart
             Wire.beginTransmission(MASTER_ID);
             disable_controller();
-            in = nr_samples_collected;
+            ul = nr_samples_collected;
             enable_controller();
-            ftoa(in * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.), itoabuf);
+            ftoa(flicker_accum / (ul * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)), itoabuf);
             Wire.write(itoabuf);
             Wire.endTransmission();
             break;
@@ -163,7 +165,7 @@ void wire_process_incoming(char *str)
             // reply to master with occupation status
             Wire.beginTransmission(MASTER_ID);
             //disable_controller();
-            Wire.write(occupied);
+            Wire.write(occupied ? "true" : "false");
             //enable_controller();
             Wire.endTransmission();
             break;

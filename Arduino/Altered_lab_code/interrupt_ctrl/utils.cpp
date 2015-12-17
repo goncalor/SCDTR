@@ -53,6 +53,7 @@ short split(char *str, char **splitlst, short splitlstlen)
  * ASCII representation that will be stored under s. The caller is responsible
  * for providing sufficient storage in s. Returns 's'.  Note: the string will
  * have only 2 decimal places */
+// TODO: improve this for big floats and negative floats
 char *ftoa(float val, char *s)
 {
     int integer = (int) val;

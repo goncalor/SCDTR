@@ -31,9 +31,6 @@
 #define MASTER_ID 1  // the ID of the master TODO
 #define STATS_PERIOD 200   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD
 
-extern int O_vals[3];
-extern int E_vals[3][3];
-
 /* Notes:
  *   - in the Uno floats and floats are the same
  */
@@ -88,7 +85,8 @@ char buf[BUF_LEN];
 char buf2[BUF_LEN_2];
 char wire_buf[BUF_WIRE_LEN];
 
-int n;
+extern int O_vals[3];
+extern int E_vals[3][3];
 
 bool enable_print = false;
 bool i_am_master = false;
@@ -414,17 +412,17 @@ void main_switch() {
                 // set reference
                 // 'R pwmref'
                 x = atof(lst[0]);
-                noInterrupts();
+                disable_controller();
                 lux_ref = adc_to_lux(4*x);
                 ctrl_ref = x;
                 ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
                 ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-                interrupts();
+                enable_controller();
                 sprintf(buf, "ref=");
                 itoa(ctrl_ref, buf2, 10);
                 strcat(buf, buf2);
                 strcat(buf, "\n");
-                //Serial.print(buf);
+                Serial.print(buf);
                 break;
 
             case 'c':
@@ -713,7 +711,7 @@ void main_switch() {
                         // ask device for occupation status
                         if(dev_id == wire_my_address)
                         {
-                            Serial.println(occupied);
+                            Serial.println(occupied ? "true" : "false");
                             break;
                         }
                         Wire.beginTransmission(dev_id);
@@ -750,6 +748,7 @@ void main_switch() {
                 if(dev_id == wire_my_address)
                 {
                     occupied = aux;
+                    Serial.println("ack");
                     break;
                 }
                 Wire.beginTransmission(dev_id);
