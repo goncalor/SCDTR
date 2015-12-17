@@ -3,6 +3,12 @@
 
 #define BUF_SPLIT_LEN 15
 
+// TODO: distribute O
+// TODO: distribute E
+
+int O_vals[3];
+int E_vals[3][3];
+
 void wire_process_incoming(char *str)
 {
     char *lst[BUF_SPLIT_LEN];
@@ -22,16 +28,16 @@ void wire_process_incoming(char *str)
 
     switch(str[0])
     {
-        case 'l':
+        case 't':
             // set reference in lux
-            // 'l lux'
+            // 't lux'
             fl = atof(lst[0]);
-            noInterrupts();
+            disable_controller();
             lux_ref = fl;
             ctrl_ref = lux_to_pwm(fl);
             ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
             ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-            interrupts();   
+            enable_controller();
             break;
 
         case 'a':
@@ -71,8 +77,9 @@ void wire_process_incoming(char *str)
             // reply to master with the current duty cycle
             Wire.beginTransmission(MASTER_ID);
             disable_controller();
-            Wire.write(ctrl_u);
+            in = ctrl_u;
             enable_controller();
+            Wire.write(in);
             Wire.endTransmission();
             break;
 
@@ -80,7 +87,8 @@ void wire_process_incoming(char *str)
             // reply to master with the desired illuminance
             Wire.beginTransmission(MASTER_ID);
             //noInterrupts();
-            Wire.write(lux_ref);
+            ftoa(lux_ref, itoabuf);
+            Wire.write(itoabuf);
             //interrupts();
             Wire.endTransmission();
             break;
@@ -89,8 +97,10 @@ void wire_process_incoming(char *str)
             // reply to master with current reference in lux
             Wire.beginTransmission(MASTER_ID);
             disable_controller();
-            Wire.write(adc_to_lux(ctrl_u*4));
+            in = ctrl_u;
             enable_controller();
+            ftoa(adc_to_lux(in*4), itoabuf);
+            Wire.write(itoabuf);
             Wire.endTransmission();
             break;
 
@@ -98,8 +108,10 @@ void wire_process_incoming(char *str)
             // reply to master with instanteneous power consumption
             Wire.beginTransmission(MASTER_ID);
             disable_controller();
-            Wire.write(ctrl_u/255.);
+            fl = ctrl_u/255.;
             enable_controller();
+            ftoa(fl, itoabuf);
+            Wire.write(itoabuf);
             Wire.endTransmission();
             break;
 
@@ -107,8 +119,10 @@ void wire_process_incoming(char *str)
             // reply to master with energy since restart
             Wire.beginTransmission(MASTER_ID);
             disable_controller();
-            Wire.write(energy);
+            fl = energy;
             enable_controller();
+            ftoa(fl, itoabuf);
+            Wire.write(itoabuf);
             Wire.endTransmission();
             break;
 
@@ -116,8 +130,10 @@ void wire_process_incoming(char *str)
             // reply to master with accumulated confort error since restart
             Wire.beginTransmission(MASTER_ID);
             disable_controller();
-            Wire.write(confort_error_accum/nr_samples_collected);
+            fl = confort_error_accum/nr_samples_collected;
             enable_controller();
+            ftoa(fl, itoabuf);
+            Wire.write(itoabuf);
             Wire.endTransmission();
             break;
 
@@ -125,8 +141,30 @@ void wire_process_incoming(char *str)
             // reply to master with accumulated flicker since restart
             Wire.beginTransmission(MASTER_ID);
             disable_controller();
-            Wire.write(nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.));
+            in = nr_samples_collected;
             enable_controller();
+            ftoa(in * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.), itoabuf);
+            Wire.write(itoabuf);
+            Wire.endTransmission();
+            break;
+
+        // TODO fix this
+        case 'n':
+            // reply to master with external illuminance
+            Wire.beginTransmission(MASTER_ID);
+            //disable_controller();
+            ftoa(adc_to_lux(O_vals[wire_my_address]), itoabuf);
+            Wire.write(itoabuf);
+            //enable_controller();
+            Wire.endTransmission();
+            break;
+
+        case 'o':
+            // reply to master with occupation status
+            Wire.beginTransmission(MASTER_ID);
+            //disable_controller();
+            Wire.write(occupied);
+            //enable_controller();
             Wire.endTransmission();
             break;
 
@@ -146,16 +184,22 @@ void wire_process_incoming(char *str)
             analogWrite(analogOutPin, atoi(lst[0]));
             break;
 
+        case 'r':
+            // set the occupation status to occupied
+            // 'r'
+            occupied = true;
+            break;
+
+        case 's':
+            // set the occupation status to occupied
+            // 's'
+            occupied = false;
+            break;
+
         default:
             break;
     }
 }
-
-// TODO: distribute O
-// TODO: distribute E
-
-int O_vals[3];
-int E_vals[3][3];
 
 void calibrate()
 {

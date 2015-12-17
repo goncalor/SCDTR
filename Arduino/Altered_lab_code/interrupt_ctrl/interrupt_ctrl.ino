@@ -31,6 +31,9 @@
 #define MASTER_ID 1  // the ID of the master TODO
 #define STATS_PERIOD 200   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD
 
+extern int O_vals[3];
+extern int E_vals[3][3];
+
 /* Notes:
  *   - in the Uno floats and floats are the same
  */
@@ -89,6 +92,7 @@ int n;
 
 bool enable_print = false;
 bool i_am_master = false;
+bool occupied = false;
 int ctrl_ref=127;	// range 0 - 255
 int loopOutputFlag= 1;
 int ctrl_verbose_flag= 0;
@@ -337,9 +341,8 @@ void config_mode(char *buf) {
 
 void main_switch() {
     float x;
-    short dev_id;
+    short dev_id, numwords, aux;
     char *lst[BUF_SPLIT_LEN];
-    short numwords;
 
     //TODO: take out this if
     if(true) {
@@ -407,9 +410,9 @@ void main_switch() {
                 Serial.println(Ts);
                 break;
 
-            case 'r':
+            case 'R':
                 // set reference
-                // 'r pwmref'
+                // 'R pwmref'
                 x = atof(lst[0]);
                 noInterrupts();
                 lux_ref = adc_to_lux(4*x);
@@ -540,7 +543,9 @@ void main_switch() {
                 if(numwords != 2)
                     break;
 
+                #ifdef DEBUG
                 Serial.println("some g command");
+                #endif
 
                 dev_id = atoi(lst[1]);
                 switch(lst[0][0]) {
@@ -686,9 +691,80 @@ void main_switch() {
                         wire_data_available = false;
                         Serial.println(wire_buf);
                         break;
+
+                    // TODO: fix this
+                    case 'O':
+                        // ask device for external illuminance
+                        if(dev_id == wire_my_address)
+                        {
+                            Serial.println(adc_to_lux(O_vals[wire_my_address]));
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('n');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
+                        break;
+
+                    case 'o':
+                        // ask device for occupation status
+                        if(dev_id == wire_my_address)
+                        {
+                            Serial.println(occupied);
+                            break;
+                        }
+                        Wire.beginTransmission(dev_id);
+                        Wire.write('o');
+                        Wire.endTransmission();
+                        while(!wire_data_available)
+                            ;   // wait for data
+                        wire_data_available = false;
+                        Serial.println(wire_buf);
+                        break;
                 }
 
+                break;  // case g
 
+            case 's':
+                // set occupation of some desk
+                // 's dev_id 0|1'
+                if(numwords != 2)
+                    break;
+
+                #ifdef DEBUG
+                Serial.println("s command");
+                #endif
+
+                dev_id = atoi(lst[0]);
+                aux = atoi(lst[1]);
+                if(aux == 0)
+                    aux = false;
+                else if(aux == 1)
+                    aux = true;
+                else
+                    break;
+
+                if(dev_id == wire_my_address)
+                {
+                    occupied = aux;
+                    break;
+                }
+                Wire.beginTransmission(dev_id);
+                if(aux)
+                    Wire.write('r');    // occupied
+                else
+                    Wire.write('s');    // free
+                Wire.endTransmission();
+                Serial.println("ack");
+                break;
+
+            case 'r':
+                #ifdef DEBUG
+                Serial.println("system reset");
+                #endif
                 break;
 
             default:
