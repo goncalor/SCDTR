@@ -1,3 +1,5 @@
+//g++ -Wall -Wextra -pedantic -std=c++11 -g main.cpp -lpthread -lboost_system  -o serial.out
+
 #include "serial.hpp"
 #include <iostream>
 #include <vector>
