@@ -577,8 +577,9 @@ void main_switch() {
                         if(dev_id == wire_my_address)
                         {
                             disable_controller();
-                            Serial.println(ctrl_u);
+                            aux = ctrl_u;
                             enable_controller();
+                            Serial.println(aux/255.);
                             break;
                         }
                         Wire.beginTransmission(dev_id);
@@ -776,6 +777,10 @@ void main_switch() {
                 #ifdef DEBUG
                 Serial.println("system reset");
                 #endif
+                Wire.beginTransmission(dev_id);
+                Wire.write('v');
+                Wire.endTransmission();
+                //state_reset();
                 soft_reset();
                 break;
 
@@ -833,10 +838,10 @@ void setup() {
     TWAR = (wire_my_address << 1) | 1;  // enable broadcasts to be received
     Wire.onReceive(wireReceiveEvent);
 
-    if(wire_my_address == master_id)
-    {
-        calibrate();
-    }
+    //if(wire_my_address == master_id)
+    //{
+    //    calibrate();
+    //}
     // warn the server that the device is ready
     Serial.println("D");
 
@@ -977,7 +982,6 @@ void wdt_init(void)
 {
     MCUSR = 0;
     wdt_disable();
-
     return;
 }
 
@@ -986,4 +990,30 @@ void soft_reset()
     wdt_enable(WDTO_15MS);
     while(1)
         ;
+}
+
+
+/* Reset 'all variables' mainly those that depend on time. */
+void state_reset()
+{
+    nr_samples_collected = 0;
+    energy = 0;
+    confort_error_accum = 0;
+    flicker_accum = 0;
+    stats_not_saved = 0;
+    set_reference_lux(ILLUM_FREE);
+    occupied = false;
+    energy_cb.head = 0;
+    energy_cb.tail = 0;
+    confort_cb.head = 0;
+    confort_cb.tail = 0;
+    flicker_cb.head = 0;
+    flicker_cb.tail = 0;
+    lux_measured = 0;
+    lux_measured_t1 = 0;
+    lux_measured_t2 = 0;
+    prev_duty = 0;
+    enable_save_stats = true;
+    //O_vals[3] = {3, 1, 3} ;
+    //E_vals[3][3] = { {722, 116, 46}, {592, 698, 99}, {304, 579, 664} };
 }

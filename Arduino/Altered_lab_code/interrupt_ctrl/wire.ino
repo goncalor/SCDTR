@@ -6,7 +6,7 @@
 // TODO: distribute O
 // TODO: distribute E
 
-int O_vals[3] = {3, 1, 3} ;
+int O_vals[3] = {3, 1, 3};
 int E_vals[3][3] = { {722, 116, 46}, {592, 698, 99}, {304, 579, 664} };
 
 
@@ -69,7 +69,7 @@ void wire_process_incoming(char *str)
             disable_controller();
             in = ctrl_u;
             enable_controller();
-            itoa(in, itoabuf, 10);
+            ftoa(in/255., itoabuf);
             Wire.write(itoabuf);
             Wire.endTransmission();
             break;
@@ -193,18 +193,20 @@ void wire_process_incoming(char *str)
             // set reference in lux
             // 't lux'
             fl = atof(lst[0]);
-            disable_controller();
-            lux_ref = fl;
-            ctrl_ref = lux_to_pwm(fl);
-            ctrl_mapped_ref = map(ctrl_ref, 0, 255, 0, 1023);
-            ref_feedfoward = ctrl_mapped_ref * feedforward_gain;
-            enable_controller();
+            set_reference_lux(fl);
             break;
 
         case 'u':
             // a new master has arrived
             // 'u'
             master_id = atoi(lst[0]);
+            break;
+
+        case 'v':
+            // system reset
+            // 'v'
+            //state_reset();
+            soft_reset();
             break;
 
         default:
