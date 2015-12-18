@@ -133,11 +133,10 @@ float feedforward_gain = GAIN_FEEDFORWARD, a=PID_A, gain_i=GAIN_I;
 
 /* Converts a lux value 'lux_dado' to a PMW duty cycle value (0 to 255).
  * Returns that value. */ 
-// TODO: optimise this
 int lux_to_pwm(float lux_dado) {
     float ctrl_ref_novo=0, ldr=0, tensao=0, resist=RESISTENCIA;
 
-    ldr = pow(10.0, (-LDR_A*log10(lux_dado) + LDR_B));
+    ldr = pow(lux_dado, -LDR_A) * pow(10.0, LDR_B);
     tensao = 5/(1 + ldr/resist);
     ctrl_ref_novo = tensao*255/5;
     return (int) ceil(ctrl_ref_novo);   // round up, so that minimum will be honoured
@@ -258,7 +257,6 @@ volatile unsigned stats_not_saved = 0;
 
 volatile float aux;
 
-//TODO move this
 volatile circbuf_t energy_cb = {.buf=(float*)energy_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
 volatile circbuf_t confort_cb = {.buf=(float*)confort_error_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
 volatile circbuf_t flicker_cb = {.buf=(float*)flicker_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
@@ -734,7 +732,7 @@ void main_switch() {
                         Serial.println(wire_buf);
                         break;
 
-                    // TODO: fix this
+                    // TODO: improve this
                     case 'O':
                         // ask device for external illuminance
                        // if(dev_id == wire_my_address)

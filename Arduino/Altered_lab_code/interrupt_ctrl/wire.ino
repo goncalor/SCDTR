@@ -139,7 +139,6 @@ void wire_process_incoming(char *str)
             Wire.endTransmission();
             break;
 
-        // TODO fix this
         case 'n':
             // reply to master with external illuminance
             Wire.beginTransmission(master_id);
@@ -368,8 +367,6 @@ void get_O()
     analogWrite(analogOutPin, 0);
 
     delay(2000);    // wait for others to turn off and stabilize
-
-    //TODO call 
     get_all_readings(O_vals, 3);
 
     #ifdef DEBUG
