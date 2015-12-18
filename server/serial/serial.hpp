@@ -45,12 +45,11 @@ class Serial_connection {
             }
             wait_for_calibration();
             boost::asio::write(sp_, boost::asio::buffer("m"));
-            //calibrate();
             ready_ = true;
             busy_ = false;
 
-            //calibrate();
-            //run_simplex();
+            calibrate();
+            run_simplex();
 
             std::cout << "Arduino READY" << std::endl;
         }
@@ -376,6 +375,108 @@ class Serial_connection {
             busy_ = false;
         }
 
+        void get_minute_energy_at(int i,boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "e " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            std::string s;
+            for(int i=0;i<MIN_SAMPLES;i++){
+                s = read_line();
+                std::cout << "E[t-" << (MIN_SAMPLES-i)*(60/MIN_SAMPLES) <<"] = " << s <<std::endl;
+            }
+            std::string s1("ack");
+            boost::asio::write(to, boost::asio::buffer(s1 + '\n',100));
+            std::cout << "Sent" << std::endl;
+            busy_ = false;
+        }
+
+        void get_minute_confort_at(int i,boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "n " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            std::string s;
+            for(int i=0;i<MIN_SAMPLES;i++){
+                s = read_line();
+                std::cout << "Ce[t-" << (MIN_SAMPLES-i)*(60/MIN_SAMPLES) <<"] = " << s <<std::endl;
+            }
+            std::string s1("ack");
+            boost::asio::write(to, boost::asio::buffer(s1 + '\n',100));
+            busy_ = false;
+        }
+
+        void get_minute_flicker_at(int i,boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "f " + std::to_string(i);
+            //std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            std::string s;
+            for(int i=0;i<MIN_SAMPLES;i++){
+                s = read_line();
+                std::cout << "Cv[t-" << (MIN_SAMPLES-i)*(60/MIN_SAMPLES) <<"] = " << s <<std::endl;
+            }
+            boost::asio::write(to, boost::asio::buffer("ack" + '\n',100));
+            busy_ = false;
+        }
+
+        void get_stream_energy_at(int i,boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            std::string a = "g e " + std::to_string(i);
+            std::string s;
+            for(int i=0;i<100;i++){
+                boost::asio::write(sp_, boost::asio::buffer(a));
+                s = read_line();
+                std::cout << "E = " << s << std::endl;
+                std::this_thread::sleep_for (std::chrono::seconds(1));
+            }
+            std::string s1("ack");
+            boost::asio::write(to, boost::asio::buffer(s1 + '\n',100));
+            std::cout << "Sent" << std::endl;
+            busy_ = false;
+        }
+
+        void get_stream_confort_at(int i,boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            std::string a = "g c " + std::to_string(i);
+            std::string s;
+            for(int i=0;i<100;i++){
+                boost::asio::write(sp_, boost::asio::buffer(a));
+                s = read_line();
+                std::cout << "C = " << s << std::endl;
+                std::this_thread::sleep_for (std::chrono::seconds(1));
+            }
+            std::string s1("ack");
+            boost::asio::write(to, boost::asio::buffer(s1 + '\n',100));
+            std::cout << "Sent" << std::endl;
+            busy_ = false;
+        }
+
+        void get_stream_flicker_at(int i,boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            std::string a = "g v " + std::to_string(i);
+            std::string s;
+            for(int i=0;i<100;i++){
+                boost::asio::write(sp_, boost::asio::buffer(a));
+                s = read_line();
+                std::cout << "V = " << s << std::endl;
+                std::this_thread::sleep_for (std::chrono::seconds(1));
+            }
+            std::string s1("ack");
+            boost::asio::write(to, boost::asio::buffer(s1 + '\n',100));
+            std::cout << "Sent" << std::endl;
+            busy_ = false;
+        }
+
         void run_simplex(){
             wait_ready();
             busy_ = true;
@@ -431,58 +532,6 @@ class Serial_connection {
             busy_ = false;
         }
 
-
-        void get_minute_energy_at(int i,boost::asio::ip::tcp::socket& to){
-            wait_ready();
-            busy_ = true;
-            //std::cout << "Sending to Arduino:" << i << std::endl;
-            std::string a = "e " + std::to_string(i);
-            std::cout << "Sending to Arduino:" << a << std::endl;
-            boost::asio::write(sp_, boost::asio::buffer(a));
-            std::string s;
-            for(int i=0;i<MIN_SAMPLES;i++){
-                s = read_line();
-                std::cout << "E[t-" << (MIN_SAMPLES-i)*(60/MIN_SAMPLES) <<"] = " << s <<std::endl;
-            }
-            std::string s1("ack");
-            boost::asio::write(to, boost::asio::buffer(s1 + '\n',100));
-            std::cout << "Sent" << std::endl;
-            busy_ = false;
-        }
-
-        void get_minute_confort_at(int i,boost::asio::ip::tcp::socket& to){
-            wait_ready();
-            busy_ = true;
-            //std::cout << "Sending to Arduino:" << i << std::endl;
-            std::string a = "n " + std::to_string(i);
-            std::cout << "Sending to Arduino:" << a << std::endl;
-            boost::asio::write(sp_, boost::asio::buffer(a));
-            std::string s;
-            for(int i=0;i<MIN_SAMPLES;i++){
-                s = read_line();
-                std::cout << "Ce[t-" << (MIN_SAMPLES-i)*(60/MIN_SAMPLES) <<"] = " << s <<std::endl;
-            }
-            std::string s1("ack");
-            boost::asio::write(to, boost::asio::buffer(s1 + '\n',100));
-            busy_ = false;
-        }
-
-        void get_minute_flicker_at(int i,boost::asio::ip::tcp::socket& to){
-            wait_ready();
-            busy_ = true;
-            //std::cout << "Sending to Arduino:" << i << std::endl;
-            std::string a = "f " + std::to_string(i);
-            //std::cout << "Sending to Arduino:" << a << std::endl;
-            boost::asio::write(sp_, boost::asio::buffer(a));
-            std::string s;
-            for(int i=0;i<MIN_SAMPLES;i++){
-                s = read_line();
-                std::cout << "Cv[t-" << (MIN_SAMPLES-i)*(60/MIN_SAMPLES) <<"] = " << s <<std::endl;
-            }
-            boost::asio::write(to, boost::asio::buffer("ack" + '\n',100));
-            busy_ = false;
-        }
-
     private:
         std::string read_line(){
             boost::system::error_code error;
@@ -514,8 +563,6 @@ class Serial_connection {
             //std::cout << "Sending to client:" << s + '\n' << std::endl;
             boost::asio::write(to, boost::asio::buffer(s + '\n',100));
         }
-
-
 
 };
 

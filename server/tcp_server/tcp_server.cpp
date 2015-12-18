@@ -118,6 +118,21 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
                         std::cout << "Get last minute confort variance at desk: " << e << std::endl;
                         sc_.get_minute_flicker_at(e,socket_);
                         break;
+                    case 'E':
+                        e = atoi(arg3);
+                        std::cout << "Get stream energy at desk: " << e << std::endl;
+                        sc_.get_stream_energy_at(e,socket_);
+                        break;
+                    case 'C':
+                        e = atoi(arg3);
+                        std::cout << "Get last minute confort at desk: " << e << std::endl;
+                        sc_.get_stream_confort_at(e,socket_);
+                        break;
+                    case 'V':
+                        e = atoi(arg3);
+                        std::cout << "Get last minute confort variance at desk: " << e << std::endl;
+                        sc_.get_stream_flicker_at(e,socket_);
+                        break;
                 }
             }
         }
