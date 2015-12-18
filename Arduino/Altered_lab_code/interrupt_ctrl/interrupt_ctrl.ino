@@ -797,7 +797,7 @@ void main_switch() {
                         set_reference_lux(ILLUM_OCCUPIED);
                     else
                         set_reference_lux(ILLUM_FREE);
-                    Serial.println("ack");
+                    //Serial.println("ack");
                     break;
                 }
                 Wire.beginTransmission(dev_id);
@@ -806,7 +806,7 @@ void main_switch() {
                 else
                     Wire.write('s');    // free
                 Wire.endTransmission();
-                Serial.println("ack");
+                //Serial.println("ack");
                 break;
 
             case 'r':
