@@ -366,564 +366,561 @@ void main_switch() {
     char *lst[BUF_SPLIT_LEN];
     unsigned long ul;
 
-    //TODO: take out this if
-    if(true) {
 
-        #ifdef SNIFF
-        Wire.beginTransmission(0);
-        Wire.write("z ");
-        Wire.write(buf);
-        Wire.endTransmission();
-        #endif
+    #ifdef SNIFF
+    Wire.beginTransmission(0);
+    Wire.write("z ");
+    Wire.write(buf);
+    Wire.endTransmission();
+    #endif
 
-        // ignore the firts byte (command)
-        numwords = split(buf+1, lst, BUF_SPLIT_LEN);
+    // ignore the firts byte (command)
+    numwords = split(buf+1, lst, BUF_SPLIT_LEN);
 
-        #ifdef DEBUG
-        Serial.print("numwords ");
-        Serial.println(numwords);
-        Serial.print("lst ");
-        for(i=0; i < numwords; i++)
-        {
-            Serial.print(lst[i]);
-            Serial.print(" ");
-        }
-        Serial.println("");
-        #endif
+    #ifdef DEBUG
+    Serial.print("numwords ");
+    Serial.println(numwords);
+    Serial.print("lst ");
+    for(i=0; i < numwords; i++)
+    {
+        Serial.print(lst[i]);
+        Serial.print(" ");
+    }
+    Serial.println("");
+    #endif
 
 
-        switch (buf[0]) {
+    switch (buf[0]) {
 
-            case 'm':
-                master_id = wire_my_address;
-                change_master(wire_my_address);
-                break;
+        case 'm':
+            master_id = wire_my_address;
+            change_master(wire_my_address);
+            break;
 
-            case 'F':
-                // server asks for calibration
-                calibrate();
-                // warn the server that the calibration is done
-                Serial.println("D");
-                break;
+        case 'F':
+            // server asks for calibration
+            calibrate();
+            // warn the server that the calibration is done
+            Serial.println("D");
+            break;
 
-            case 'O':
-                // ask device for O
-                print_O();
-                break;
+        case 'O':
+            // ask device for O
+            print_O();
+            break;
 
-            case 'E':
-                // ask device for E
-                print_E();
-                break;
+        case 'E':
+            // ask device for E
+            print_E();
+            break;
 
-            case 'l':
-                // set lux reference
-                // 'l lux [dev_id]'
+        case 'l':
+            // set lux reference
+            // 'l lux [dev_id]'
 
-                if(numwords == 2)
-                {
-                    x = atof(lst[0]);
-                    dev_id = atoi(lst[1]);
-                    Wire.beginTransmission(dev_id);
-                    Wire.write("l ");
-                    Wire.write(lst[0]);
-                    //Wire.write(0);
-                    Wire.endTransmission();
-                    #ifdef DEBUG
-                    Serial.print("command for other Arduino.\nID:");
-                    Serial.println(dev_id);
-                    Serial.println(x);
-                    #endif
-                    break;
-                }
-
-                #ifdef DEBUG
-                Serial.println("command for me");
-                #endif
+            if(numwords == 2)
+            {
                 x = atof(lst[0]);
-                set_reference_lux(x);
-                break;
-
-            case 'T':
-                // define the sampling period
-                // 'T sampleperiod'
-                Ts= atoi(lst[0]);
-                Ts_sec = (float) Ts/1000000.0;
-                Serial.print("Ts[us]=");
-                Serial.println(Ts);
-                break;
-
-            case 'R':
-                // set reference
-                // 'R pwmref'
-                x = atof(lst[0]);
-                set_reference_pwm(x);
-                sprintf(buf, "ref=");
-                itoa(ctrl_ref, buf2, 10);
-                strcat(buf, buf2);
-                strcat(buf, "\n");
-                Serial.print(buf);
-                break;
-
-            case 'c':
-                // config the controller
-                // 'c x parameter'
-                switch (buf[2]) {
-                    case '0': 
-                        x= atof(lst[1]); 
-                        noInterrupts();
-                        gain_k= x;
-                        gain_k_i = gain_i*gain_k;
-                        gain_k_a = gain_k * a;
-                        Ts_gain_k_i = Ts_sec * gain_k_i;
-                        interrupts();
-
-                        break;
-                    case '1': 
-                        noInterrupts();
-                        x= atof(lst[1]); 
-                        gain_i= x; 
-                        gain_k_i = gain_i*gain_k;
-                        Ts_gain_k_i = Ts_sec * gain_k_i;
-                        interrupts();
-                        break;
-                    case '2': 
-                        noInterrupts();
-                        x= atof(lst[1]); 
-                        gain_d= x; 
-                        derivative_const = gain_d /(gain_d + a*Ts_sec);
-                        gain_d_Ts = gain_d/Ts_sec;
-                        interrupts();
-                        break;
-                    case '3': 
-                        x= atof(lst[1]); 
-                        noInterrupts();
-                        feedforward_gain = x;
-                        ref_feedfoward = ctrl_mapped_ref * feedforward_gain; 
-                        interrupts();
-                        break;
-                    case '4': 
-                        x= atof(lst[1]);
-                        noInterrupts();
-                        ctrl_wind_gain = x; 
-                        interrupts();
-                        break;
-                    case '5': 
-                        x= atof(lst[1]); 
-                        noInterrupts();
-                        a = x; 
-                        gain_k_a = gain_k * a;
-                        derivative_const = gain_d /(gain_d + a*Ts_sec);
-                        interrupts();
-                        break;
-
-                    default:
-                        x=0.0;
-                        Serial.print('E');
-                }
-                Serial.print("x="); Serial.println(x);
-                break;
-
-            case 'C':
-                // get the current controller
-                Serial.print("Proportional gain: ");Serial.println(gain_k);
-                Serial.print("Integral gain: ");Serial.println(gain_i);
-                Serial.print("Differential gain: "); Serial.println(gain_d);
-                Serial.print("Feedforward gain: "); Serial.println(feedforward_gain);
-                Serial.print("AntiWindup gain: "); Serial.println(ctrl_wind_gain);
-                Serial.print("Filter gain A: "); Serial.println(a);
-
-                break;
-
-            case 'i':
-                // read sensor, both in PWM and lux
-                {
-                    int ch= 0;
-                    if(buf[1]!='\0')
-                        ch= buf[1]-'0';
-                    int v = analogRead(ch);
-
-                    Serial.print("i = ");
-                    Serial.println(v);		
-                    Serial.print("lux = ");
-                    Serial.println(adc_to_lux(v));		
-                }
-                break;
-
-            case 'p':
-                // pwm config
-                if (buf[1]>='1' & buf[1]<='5')
-                    pwm_config(buf[1]-'0');
-                else
-                    buf[0]= 'E';
-                Serial.print(buf);
-                break;
-
-            case 'D':
-                // delay in millisec
-                t0= millis() + (unsigned long)atoi(&buf[2]);	
-                while (millis() < t0)
-                    ; /* do nothing */
-                Serial.print(buf);
-                break;
-
-            case 'P':
-                // toggle Print
-                //Serial.println("\ntime ctrl_u ctrl_y ctrl_e lux");
-                Serial.println("\ntime ctrl_e");
-                enable_print = !enable_print;
-                break;
-
-            case 'g':
-                // 'g l|d|o|L|O|r|p|e|v dev_id'
-                if(numwords != 2)
-                {
-                    Serial.println("inv");
-                    break;
-                }
-
-                #ifdef DEBUG
-                Serial.println("some g command");
-                #endif
-
                 dev_id = atoi(lst[1]);
-                switch(lst[0][0]) {
-                    case 'l':
-                        // ask device for its illuminance
-                        if(dev_id == wire_my_address)
-                        {
-                            ftoa(adc_to_lux(AnalogReadAvg(analogInPin, NUM_SAMPLES)), buf2);
-                            Serial.println(buf2);
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('f');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
-                        break;
+                Wire.beginTransmission(dev_id);
+                Wire.write("l ");
+                Wire.write(lst[0]);
+                //Wire.write(0);
+                Wire.endTransmission();
+                #ifdef DEBUG
+                Serial.print("command for other Arduino.\nID:");
+                Serial.println(dev_id);
+                Serial.println(x);
+                #endif
+                break;
+            }
 
-                    case 'd':
-                        // ask device for current duty cycle
-                        if(dev_id == wire_my_address)
-                        {
-                            disable_controller();
-                            aux = ctrl_u;
-                            enable_controller();
-                            Serial.println(aux/255.);
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('g');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
-                        break;
+            #ifdef DEBUG
+            Serial.println("command for me");
+            #endif
+            x = atof(lst[0]);
+            set_reference_lux(x);
+            break;
 
-                    case 'L':
-                        // ask device for desired illuminance
-                        if(dev_id == wire_my_address)
-                        {
-                            //disable_controller();
-                            Serial.println(lux_ref);
-                            //enable_controller();
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('h');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
-                        break;
+        case 'T':
+            // define the sampling period
+            // 'T sampleperiod'
+            Ts= atoi(lst[0]);
+            Ts_sec = (float) Ts/1000000.0;
+            Serial.print("Ts[us]=");
+            Serial.println(Ts);
+            break;
 
-                    case 'r':
-                        // ask device for current reference in lux
-                        if(dev_id == wire_my_address)
-                        {
-                            disable_controller();
-                            Serial.println(adc_to_lux(ctrl_u*4));
-                            enable_controller();
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('i');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
-                        break;
+        case 'R':
+            // set reference
+            // 'R pwmref'
+            x = atof(lst[0]);
+            set_reference_pwm(x);
+            sprintf(buf, "ref=");
+            itoa(ctrl_ref, buf2, 10);
+            strcat(buf, buf2);
+            strcat(buf, "\n");
+            Serial.print(buf);
+            break;
 
-                    case 'p':
-                        // ask device for instantaneous power consumption
-                        if(dev_id == wire_my_address)
-                        {
-                            disable_controller();
-                            Serial.println(ctrl_u/255.);
-                            enable_controller();
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('j');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
-                        break;
+        case 'c':
+            // config the controller
+            // 'c x parameter'
+            switch (buf[2]) {
+                case '0': 
+                    x= atof(lst[1]); 
+                    noInterrupts();
+                    gain_k= x;
+                    gain_k_i = gain_i*gain_k;
+                    gain_k_a = gain_k * a;
+                    Ts_gain_k_i = Ts_sec * gain_k_i;
+                    interrupts();
 
-                    case 'e':
-                        // ask device for energy since restart
-                        if(dev_id == wire_my_address)
-                        {
-                            disable_controller();
-                            Serial.println(energy);
-                            enable_controller();
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('k');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
-                        break;
+                    break;
+                case '1': 
+                    noInterrupts();
+                    x= atof(lst[1]); 
+                    gain_i= x; 
+                    gain_k_i = gain_i*gain_k;
+                    Ts_gain_k_i = Ts_sec * gain_k_i;
+                    interrupts();
+                    break;
+                case '2': 
+                    noInterrupts();
+                    x= atof(lst[1]); 
+                    gain_d= x; 
+                    derivative_const = gain_d /(gain_d + a*Ts_sec);
+                    gain_d_Ts = gain_d/Ts_sec;
+                    interrupts();
+                    break;
+                case '3': 
+                    x= atof(lst[1]); 
+                    noInterrupts();
+                    feedforward_gain = x;
+                    ref_feedfoward = ctrl_mapped_ref * feedforward_gain; 
+                    interrupts();
+                    break;
+                case '4': 
+                    x= atof(lst[1]);
+                    noInterrupts();
+                    ctrl_wind_gain = x; 
+                    interrupts();
+                    break;
+                case '5': 
+                    x= atof(lst[1]); 
+                    noInterrupts();
+                    a = x; 
+                    gain_k_a = gain_k * a;
+                    derivative_const = gain_d /(gain_d + a*Ts_sec);
+                    interrupts();
+                    break;
 
-                    case 'c':
-                        // ask device for accumulated confort error since restart
-                        if(dev_id == wire_my_address)
-                        {
-                            disable_controller();
-                            Serial.println(confort_error_accum/nr_samples_collected);
-                            enable_controller();
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('l');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
-                        break;
+                default:
+                    x=0.0;
+                    Serial.print('E');
+            }
+            Serial.print("x="); Serial.println(x);
+            break;
 
-                    case 'v':
-                        // ask device for accumulated flicker since restart
-                        if(dev_id == wire_my_address)
-                        {
-                            disable_controller();
-                            Serial.println(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)));
-                            enable_controller();
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('m');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
+        case 'C':
+            // get the current controller
+            Serial.print("Proportional gain: ");Serial.println(gain_k);
+            Serial.print("Integral gain: ");Serial.println(gain_i);
+            Serial.print("Differential gain: "); Serial.println(gain_d);
+            Serial.print("Feedforward gain: "); Serial.println(feedforward_gain);
+            Serial.print("AntiWindup gain: "); Serial.println(ctrl_wind_gain);
+            Serial.print("Filter gain A: "); Serial.println(a);
+
+            break;
+
+        case 'i':
+            // read sensor, both in PWM and lux
+            {
+                int ch= 0;
+                if(buf[1]!='\0')
+                    ch= buf[1]-'0';
+                int v = analogRead(ch);
+
+                Serial.print("i = ");
+                Serial.println(v);		
+                Serial.print("lux = ");
+                Serial.println(adc_to_lux(v));		
+            }
+            break;
+
+        case 'p':
+            // pwm config
+            if (buf[1]>='1' & buf[1]<='5')
+                pwm_config(buf[1]-'0');
+            else
+                buf[0]= 'E';
+            Serial.print(buf);
+            break;
+
+        case 'D':
+            // delay in millisec
+            t0= millis() + (unsigned long)atoi(&buf[2]);	
+            while (millis() < t0)
+                ; /* do nothing */
+            Serial.print(buf);
+            break;
+
+        case 'P':
+            // toggle Print
+            //Serial.println("\ntime ctrl_u ctrl_y ctrl_e lux");
+            Serial.println("\ntime ctrl_e");
+            enable_print = !enable_print;
+            break;
+
+        case 'g':
+            // 'g l|d|o|L|O|r|p|e|v dev_id'
+            if(numwords != 2)
+            {
+                Serial.println("inv");
+                break;
+            }
+
+            #ifdef DEBUG
+            Serial.println("some g command");
+            #endif
+
+            dev_id = atoi(lst[1]);
+            switch(lst[0][0]) {
+                case 'l':
+                    // ask device for its illuminance
+                    if(dev_id == wire_my_address)
+                    {
+                        ftoa(adc_to_lux(AnalogReadAvg(analogInPin, NUM_SAMPLES)), buf2);
+                        Serial.println(buf2);
                         break;
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('f');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                    break;
+
+                case 'd':
+                    // ask device for current duty cycle
+                    if(dev_id == wire_my_address)
+                    {
+                        disable_controller();
+                        aux = ctrl_u;
+                        enable_controller();
+                        Serial.println(aux/255.);
+                        break;
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('g');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                    break;
+
+                case 'L':
+                    // ask device for desired illuminance
+                    if(dev_id == wire_my_address)
+                    {
+                        //disable_controller();
+                        Serial.println(lux_ref);
+                        //enable_controller();
+                        break;
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('h');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                    break;
+
+                case 'r':
+                    // ask device for current reference in lux
+                    if(dev_id == wire_my_address)
+                    {
+                        disable_controller();
+                        Serial.println(adc_to_lux(ctrl_u*4));
+                        enable_controller();
+                        break;
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('i');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                    break;
+
+                case 'p':
+                    // ask device for instantaneous power consumption
+                    if(dev_id == wire_my_address)
+                    {
+                        disable_controller();
+                        Serial.println(ctrl_u/255.);
+                        enable_controller();
+                        break;
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('j');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                    break;
+
+                case 'e':
+                    // ask device for energy since restart
+                    if(dev_id == wire_my_address)
+                    {
+                        disable_controller();
+                        Serial.println(energy);
+                        enable_controller();
+                        break;
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('k');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                    break;
+
+                case 'c':
+                    // ask device for accumulated confort error since restart
+                    if(dev_id == wire_my_address)
+                    {
+                        disable_controller();
+                        Serial.println(confort_error_accum/nr_samples_collected);
+                        enable_controller();
+                        break;
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('l');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                    break;
+
+                case 'v':
+                    // ask device for accumulated flicker since restart
+                    if(dev_id == wire_my_address)
+                    {
+                        disable_controller();
+                        Serial.println(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)));
+                        enable_controller();
+                        break;
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('m');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                    break;
 
                     // TODO: improve this
-                    case 'O':
-                        // ask device for external illuminance
-                       // if(dev_id == wire_my_address)
-                       // {
-                       //     Serial.println(adc_to_lux(O_vals[wire_my_address]));
-                       //     break;
-                       // }
-                       // Wire.beginTransmission(dev_id);
-                       // Wire.write('n');
-                       // Wire.endTransmission();
-                       // while(!wire_data_available)
-                       //     ;   // wait for data
-                       // wire_data_available = false;
-                       // Serial.println(wire_buf);
-                        Serial.println(adc_to_lux(O_vals[dev_id]));
+                case 'O':
+                    // ask device for external illuminance
+                    // if(dev_id == wire_my_address)
+                    // {
+                    //     Serial.println(adc_to_lux(O_vals[wire_my_address]));
+                    //     break;
+                    // }
+                    // Wire.beginTransmission(dev_id);
+                    // Wire.write('n');
+                    // Wire.endTransmission();
+                    // while(!wire_data_available)
+                    //     ;   // wait for data
+                    // wire_data_available = false;
+                    // Serial.println(wire_buf);
+                    Serial.println(adc_to_lux(O_vals[dev_id]));
+                    break;
+
+                case 'o':
+                    // ask device for occupation status
+                    if(dev_id == wire_my_address)
+                    {
+                        Serial.println(occupied ? "true" : "false");
                         break;
-
-                    case 'o':
-                        // ask device for occupation status
-                        if(dev_id == wire_my_address)
-                        {
-                            Serial.println(occupied ? "true" : "false");
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('o');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
-                        break;
-                }
-
-                break;  // case g
-
-            case 's':
-                // set occupation of some desk
-                // 's dev_id 0|1'
-                if(numwords != 2)
+                    }
+                    Wire.beginTransmission(dev_id);
+                    Wire.write('o');
+                    Wire.endTransmission();
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
                     break;
+            }
 
-                #ifdef DEBUG
-                Serial.println("s command");
-                #endif
+            break;  // case g
 
-                dev_id = atoi(lst[0]);
-                aux = atoi(lst[1]);
-                if(aux == 0)
-                    aux = false;
-                else if(aux == 1)
-                    aux = true;
+        case 's':
+            // set occupation of some desk
+            // 's dev_id 0|1'
+            if(numwords != 2)
+                break;
+
+            #ifdef DEBUG
+            Serial.println("s command");
+            #endif
+
+            dev_id = atoi(lst[0]);
+            aux = atoi(lst[1]);
+            if(aux == 0)
+                aux = false;
+            else if(aux == 1)
+                aux = true;
+            else
+                break;
+
+            if(dev_id == wire_my_address)
+            {
+                occupied = aux;
+                if(occupied)
+                    set_reference_lux(ILLUM_OCCUPIED);
                 else
-                    break;
-
-                if(dev_id == wire_my_address)
-                {
-                    occupied = aux;
-                    if(occupied)
-                        set_reference_lux(ILLUM_OCCUPIED);
-                    else
-                        set_reference_lux(ILLUM_FREE);
-                    //Serial.println("ack");
-                    break;
-                }
-                Wire.beginTransmission(dev_id);
-                if(aux)
-                    Wire.write('r');    // occupied
-                else
-                    Wire.write('s');    // free
-                Wire.endTransmission();
+                    set_reference_lux(ILLUM_FREE);
                 //Serial.println("ack");
                 break;
+            }
+            Wire.beginTransmission(dev_id);
+            if(aux)
+                Wire.write('r');    // occupied
+            else
+                Wire.write('s');    // free
+            Wire.endTransmission();
+            //Serial.println("ack");
+            break;
 
-            case 'r':
-                #ifdef DEBUG
-                Serial.println("system reset");
-                #endif
-                Wire.beginTransmission(dev_id);
-                Wire.write('v');
+        case 'r':
+            #ifdef DEBUG
+            Serial.println("system reset");
+            #endif
+            Wire.beginTransmission(dev_id);
+            Wire.write('v');
+            Wire.endTransmission();
+            //state_reset();
+            soft_reset();
+            break;
+
+        case 'e':
+            // send stored energy
+            if(numwords != 1)
+                Serial.println("inv");
+            dev_id = atoi(lst[0]);
+
+            if(dev_id == wire_my_address)
+            {
+                circbuf_print(&energy_cb, 1.);
+                break;
+            }
+            Wire.beginTransmission(dev_id);
+            Wire.write('w');
+            Wire.endTransmission();
+
+            for(aux=0; aux<BUF_STATS_LEN; aux++)
+            {
+                while(!wire_data_available)
+                    ;   // wait for data
+                wire_data_available = false;
+                Serial.println(wire_buf);
+            }
+            break;
+
+        case 'n':
+            // send stored confort
+            if(numwords != 1)
+                Serial.println("inv");
+            dev_id = atoi(lst[0]);
+
+            if(dev_id == wire_my_address)
+            {
+                disable_controller();
+                ul = nr_samples_collected;
+                enable_controller();
+                circbuf_print(&confort_cb, 1./ul);
+                break;
+            }
+            Wire.beginTransmission(dev_id);
+            Wire.write('x');
+            Wire.endTransmission();
+
+            for(aux=0; aux<BUF_STATS_LEN; aux++)
+            {
+                while(!wire_data_available)
+                    ;   // wait for data
+                wire_data_available = false;
+                Serial.println(wire_buf);
+            }
+            break;
+
+        case 'f':
+            // send stored flicker
+            if(numwords != 1)
+                Serial.println("inv");
+            dev_id = atoi(lst[0]);
+
+            if(dev_id == wire_my_address)
+            {
+                disable_controller();
+                ul = nr_samples_collected;
+                enable_controller();
+                circbuf_print(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
+                break;
+            }
+            Wire.beginTransmission(dev_id);
+            Wire.write('y');
+            Wire.endTransmission();
+
+            for(aux=0; aux<BUF_STATS_LEN; aux++)
+            {
+                while(!wire_data_available)
+                    ;   // wait for data
+                wire_data_available = false;
+                Serial.println(wire_buf);
+            }
+            break;
+
+        case 'h':
+            // use parameters given by simplex
+            if(numwords != 3)
+            {
+                Serial.println("inv");
+                break;
+            }
+
+            disable_all_controllers();
+            for(aux=1; aux<=3; aux++)
+            {
+                if(aux == wire_my_address)
+                {
+                    analogWrite(analogOutPin, atoi(lst[aux-1]));
+                    continue;
+                }
+                Wire.beginTransmission(aux);
+                Wire.write("q ");
+                Wire.write(lst[aux-1]);
                 Wire.endTransmission();
-                //state_reset();
-                soft_reset();
-                break;
+            }
+            delay(2);
+            enable_all_controllers();
+            break;
 
-            case 'e':
-                // send stored energy
-                if(numwords != 1)
-                    Serial.println("inv");
-                dev_id = atoi(lst[0]);
-
-                if(dev_id == wire_my_address)
-                {
-                    circbuf_print(&energy_cb, 1.);
-                    break;
-                }
-                Wire.beginTransmission(dev_id);
-                Wire.write('w');
-                Wire.endTransmission();
-
-                for(aux=0; aux<BUF_STATS_LEN; aux++)
-                {
-                    while(!wire_data_available)
-                        ;   // wait for data
-                    wire_data_available = false;
-                    Serial.println(wire_buf);
-                }
-                break;
-
-            case 'n':
-                // send stored confort
-                if(numwords != 1)
-                    Serial.println("inv");
-                dev_id = atoi(lst[0]);
-
-                if(dev_id == wire_my_address)
-                {
-                    disable_controller();
-                    ul = nr_samples_collected;
-                    enable_controller();
-                    circbuf_print(&confort_cb, 1./ul);
-                    break;
-                }
-                Wire.beginTransmission(dev_id);
-                Wire.write('x');
-                Wire.endTransmission();
-
-                for(aux=0; aux<BUF_STATS_LEN; aux++)
-                {
-                    while(!wire_data_available)
-                        ;   // wait for data
-                    wire_data_available = false;
-                    Serial.println(wire_buf);
-                }
-                break;
-
-            case 'f':
-                // send stored flicker
-                if(numwords != 1)
-                    Serial.println("inv");
-                dev_id = atoi(lst[0]);
-
-                if(dev_id == wire_my_address)
-                {
-                    disable_controller();
-                    ul = nr_samples_collected;
-                    enable_controller();
-                    circbuf_print(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
-                    break;
-                }
-                Wire.beginTransmission(dev_id);
-                Wire.write('y');
-                Wire.endTransmission();
-
-                for(aux=0; aux<BUF_STATS_LEN; aux++)
-                {
-                    while(!wire_data_available)
-                        ;   // wait for data
-                    wire_data_available = false;
-                    Serial.println(wire_buf);
-                }
-                break;
-
-            case 'h':
-                // use parameters given by simplex
-                if(numwords != 3)
-                {
-                    Serial.println("inv");
-                    break;
-                }
-
-                disable_all_controllers();
-                for(aux=1; aux<=3; aux++)
-                {
-                    if(aux == wire_my_address)
-                    {
-                        analogWrite(analogOutPin, atoi(lst[aux-1]));
-                        continue;
-                    }
-                    Wire.beginTransmission(aux);
-                    Wire.write("q ");
-                    Wire.write(lst[aux-1]);
-                    Wire.endTransmission();
-                }
-                delay(2);
-                enable_all_controllers();
-                break;
-
-            default:
-                Serial.print("inv");
-        }
+        default:
+            Serial.print("inv");
     }
 }
 
