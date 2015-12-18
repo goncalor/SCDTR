@@ -245,6 +245,15 @@ class Serial_connection {
                     std::cout << "ERROR: "  << std::endl;
                     throw std::runtime_error("Error reading serial port\n");
                 }
+                if( read_buf_.size()<=2){
+                    read_buf_.consume(2);
+                    boost::asio::read_until(sp_,read_buf_,'\n', error);
+                    if(error){
+                        std::cout << "ERROR: "  << std::endl;
+                        throw std::runtime_error("Error reading serial port\n");
+                    }
+                    //std::cout << "Size of buf: " << read_buf_.size() << std::endl;
+                }
                 std::istream str(&read_buf_);
                 std::string s;
                 str >> s;
@@ -258,15 +267,117 @@ class Serial_connection {
             boost::asio::write(to, boost::asio::buffer(std::to_string(accum) + '\n',100));
             busy_ = false;
         }
-/*
-        void get_total_energy(int i, boost::asio::ip::tcp::socket& to){
+
+        void get_total_energy( boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            double accum = 0;
+            std::cout << "Received: "  << std::endl;
+            for(int j = 1; j<=3;j++){
+                std::string a = "g e " + std::to_string(j);
+                boost::asio::write(sp_, boost::asio::buffer(a));
+                boost::system::error_code error;
+                boost::asio::read_until(sp_,read_buf_,'\n', error);
+                if(error){
+                    std::cout << "ERROR: "  << std::endl;
+                    throw std::runtime_error("Error reading serial port\n");
+                }
+                if( read_buf_.size()<=2){
+                    read_buf_.consume(2);
+                    boost::asio::read_until(sp_,read_buf_,'\n', error);
+                    if(error){
+                        std::cout << "ERROR: "  << std::endl;
+                        throw std::runtime_error("Error reading serial port\n");
+                    }
+                    //std::cout << "Size of buf: " << read_buf_.size() << std::endl;
+                }
+                std::istream str(&read_buf_);
+                std::string s;
+                str >> s;
+                std::cout << s << std::endl;
+                std::cout << std::stod(s) << std::endl;
+                accum += std::stod(s);
+                std::cout << std::to_string(accum) << std::endl;
+
+
+            }
+            boost::asio::write(to, boost::asio::buffer(std::to_string(accum) + '\n',100));
+            busy_ = false;
         }
 
-        void get_total_confort(int i, boost::asio::ip::tcp::socket& to){
+        void get_total_confort(boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            double accum = 0;
+            std::cout << "Received: "  << std::endl;
+            for(int j = 1; j<=3;j++){
+                std::string a = "g c " + std::to_string(j);
+                boost::asio::write(sp_, boost::asio::buffer(a));
+                boost::system::error_code error;
+                boost::asio::read_until(sp_,read_buf_,'\n', error);
+                if(error){
+                    std::cout << "ERROR: "  << std::endl;
+                    throw std::runtime_error("Error reading serial port\n");
+                }
+                if( read_buf_.size()<=2){
+                    read_buf_.consume(2);
+                    boost::asio::read_until(sp_,read_buf_,'\n', error);
+                    if(error){
+                        std::cout << "ERROR: "  << std::endl;
+                        throw std::runtime_error("Error reading serial port\n");
+                    }
+                    //std::cout << "Size of buf: " << read_buf_.size() << std::endl;
+                }
+                std::istream str(&read_buf_);
+                std::string s;
+                str >> s;
+                std::cout << s << std::endl;
+                std::cout << std::stod(s) << std::endl;
+                accum += std::stod(s);
+                std::cout << std::to_string(accum) << std::endl;
+
+
+            }
+            boost::asio::write(to, boost::asio::buffer(std::to_string(accum) + '\n',100));
+            busy_ = false;
         }
 
-        void get_total_flicker(int i, boost::asio::ip::tcp::socket& to){
-        }*/
+        void get_total_flicker(boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            double accum = 0;
+            std::cout << "Received: "  << std::endl;
+            for(int j = 1; j<=3;j++){
+                std::string a = "g v " + std::to_string(j);
+                boost::asio::write(sp_, boost::asio::buffer(a));
+                boost::system::error_code error;
+                boost::asio::read_until(sp_,read_buf_,'\n', error);
+                if(error){
+                    std::cout << "ERROR: "  << std::endl;
+                    throw std::runtime_error("Error reading serial port\n");
+                }
+                if( read_buf_.size()<=2){
+                    read_buf_.consume(2);
+                    boost::asio::read_until(sp_,read_buf_,'\n', error);
+                    if(error){
+                        std::cout << "ERROR: "  << std::endl;
+                        throw std::runtime_error("Error reading serial port\n");
+                    }
+                    //std::cout << "Size of buf: " << read_buf_.size() << std::endl;
+                }
+                std::istream str(&read_buf_);
+                std::string s;
+                str >> s;
+                std::cout << s << std::endl;
+                std::cout << std::stod(s) << std::endl;
+                accum += std::stod(s);
+                std::cout << std::to_string(accum) << std::endl;
+
+
+            }
+            boost::asio::write(to, boost::asio::buffer(std::to_string(accum) + '\n',100));
+            busy_ = false;
+        }
 
         void answer_to_socket(boost::asio::ip::tcp::socket& to){
             std::cout << "Received: "  << std::endl;
@@ -275,6 +386,16 @@ class Serial_connection {
             if(error){
                 std::cout << "ERROR: "  << std::endl;
                 throw std::runtime_error("Error reading serial port\n");
+            }
+            //std::cout << "Size of buf: " << read_buf_.size() << std::endl;
+            if( read_buf_.size()<=2){
+                read_buf_.consume(2);
+                boost::asio::read_until(sp_,read_buf_,'\n', error);
+                if(error){
+                    std::cout << "ERROR: "  << std::endl;
+                    throw std::runtime_error("Error reading serial port\n");
+                }
+                //std::cout << "Size of buf: " << read_buf_.size() << std::endl;
             }
             std::istream str(&read_buf_);
             std::string s;

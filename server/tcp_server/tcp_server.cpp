@@ -68,7 +68,7 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
                         break;
                     case 'e':
                         if(arg3[0]=='T'){
-
+                            sc_.get_total_energy(socket_);
                         }else{
                             e = atoi(arg3);
                             std::cout << "Get energy at desk: " << e << std::endl;
@@ -77,6 +77,7 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
                         break;
                     case 'c':
                         if(arg3[0]=='T'){
+                            sc_.get_total_confort(socket_);
 
                         }else{
                             e = atoi(arg3);
@@ -86,7 +87,7 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
                         break;
                     case 'v':
                         if(arg3[0]=='T'){
-
+                            sc_.get_total_flicker(socket_);
                         }else{
                             e = atoi(arg3);
                             std::cout << "Get confort variance at desk: " << e << std::endl;
