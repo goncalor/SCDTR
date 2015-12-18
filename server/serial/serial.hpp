@@ -120,7 +120,7 @@ class Serial_connection {
             busy_ = false;
         }
 
-       void get_illuminance_at(int i, boost::asio::ip::tcp::socket& to){
+        void get_illuminance_at(int i, boost::asio::ip::tcp::socket& to){
             wait_ready();
             busy_ = true;
             //std::cout << "Sending to Arduino:" << i << std::endl;
@@ -130,6 +130,143 @@ class Serial_connection {
             answer_to_socket(to);
             busy_ = false;
         }
+
+        void get_duty_cycle_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g d " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+        void get_occupancy_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g o " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+        void get_desired_lux_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g L " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+        void get_external_illuminance_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g O " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+        void get_ref_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g r " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+        void get_power_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g p " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+        void get_energy_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g e " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+        void get_confort_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g c " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+        void get_flicker_at(int i, boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            //std::cout << "Sending to Arduino:" << i << std::endl;
+            std::string a = "g v " + std::to_string(i);
+            std::cout << "Sending to Arduino:" << a << std::endl;
+            boost::asio::write(sp_, boost::asio::buffer(a));
+            answer_to_socket(to);
+            busy_ = false;
+        }
+
+
+        void get_total_power(boost::asio::ip::tcp::socket& to){
+            wait_ready();
+            busy_ = true;
+            double accum = 0;
+            std::cout << "Received: "  << std::endl;
+            for(int j = 1; j<=3;j++){
+                std::string a = "g p " + std::to_string(j);
+                boost::asio::write(sp_, boost::asio::buffer(a));
+                boost::system::error_code error;
+                boost::asio::read_until(sp_,read_buf_,'\n', error);
+                if(error){
+                    std::cout << "ERROR: "  << std::endl;
+                    throw std::runtime_error("Error reading serial port\n");
+                }
+                std::istream str(&read_buf_);
+                std::string s;
+                str >> s;
+                std::cout << s << std::endl;
+                std::cout << std::stod(s) << std::endl;
+                accum += std::stod(s);
+                std::cout << std::to_string(accum) << std::endl;
+
+
+            }
+            boost::asio::write(to, boost::asio::buffer(std::to_string(accum) + '\n',100));
+            busy_ = false;
+        }
+/*
+        void get_total_energy(int i, boost::asio::ip::tcp::socket& to){
+        }
+
+        void get_total_confort(int i, boost::asio::ip::tcp::socket& to){
+        }
+
+        void get_total_flicker(int i, boost::asio::ip::tcp::socket& to){
+        }*/
 
         void answer_to_socket(boost::asio::ip::tcp::socket& to){
             std::cout << "Received: "  << std::endl;

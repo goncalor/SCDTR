@@ -34,30 +34,36 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
                         break;
                     case 'd':
                         e = atoi(arg3);
-
+                        std::cout << "Get duty_cycle at desk: " << e << std::endl;
+                        sc_.get_duty_cycle_at(e,socket_);
                         break;
                     case 'o':
                         e = atoi(arg3);
-
+                        std::cout << "Get occupancy at desk: " << e << std::endl;
+                        sc_.get_occupancy_at(e,socket_);
                         break;
                     case 'L':
                         e = atoi(arg3);
-
+                        std::cout << "Get desired lux at desk: " << e << std::endl;
+                        sc_.get_desired_lux_at(e,socket_);
                         break;
                     case 'O':
                         e = atoi(arg3);
-
+                        std::cout << "Get external illuminance at desk: " << e << std::endl;
+                        sc_.get_external_illuminance_at(e,socket_);
                         break;
                     case 'r':
                         e = atoi(arg3);
-
+                        std::cout << "Get reference at desk: " << e << std::endl;
+                        sc_.get_ref_at(e,socket_);
                         break;
                     case 'p':
                         if(arg3[0]=='T'){
-
+                            sc_.get_total_power(socket_);
                         }else{
                             e = atoi(arg3);
-
+                            std::cout << "Get power at desk: " << e << std::endl;
+                            sc_.get_power_at(e,socket_);
                         }
                         break;
                     case 'e':
@@ -65,6 +71,8 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
 
                         }else{
                             e = atoi(arg3);
+                            std::cout << "Get energy at desk: " << e << std::endl;
+                            sc_.get_energy_at(e,socket_);
                         }
                         break;
                     case 'c':
@@ -72,7 +80,8 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
 
                         }else{
                             e = atoi(arg3);
-
+                            std::cout << "Get confort at desk: " << e << std::endl;
+                            sc_.get_confort_at(e,socket_);
                         }
                         break;
                     case 'v':
@@ -80,7 +89,8 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
 
                         }else{
                             e = atoi(arg3);
-
+                            std::cout << "Get confort variance at desk: " << e << std::endl;
+                            sc_.get_flicker_at(e,socket_);
                         }
                         break;
                 }
