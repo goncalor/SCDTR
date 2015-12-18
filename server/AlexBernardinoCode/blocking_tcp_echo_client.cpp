@@ -47,12 +47,18 @@ int main(int argc, char* argv[])
     size_t request_length = strlen(request);
     boost::asio::write(s, boost::asio::buffer(request, request_length));
 
-    char reply[max_length];
-    size_t reply_length = boost::asio::read(s,
-        boost::asio::buffer(reply, request_length));
-    std::cout << "Reply is: ";
+    //char reply[max_length];
+    //size_t reply_length = boost::asio::read(s,boost::asio::buffer(reply, max_length));
+    boost::asio::streambuf read_buf_;
+
+    boost::asio::read_until(s, read_buf_,'\n');
+    std::istream str(&read_buf_);
+    std::string tmp;
+    str >> tmp;
+    std::cout << tmp  << std::endl;
+    /*std::cout << "Reply is: ";
     std::cout.write(reply, reply_length);
-    std::cout << "\n";
+    std::cout << "\n";*/
   }
   catch (std::exception& e)
   {

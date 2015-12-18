@@ -1,4 +1,5 @@
-//#pragma once
+#ifndef SIMPLEX_HPP
+#define SIMPLEX_HPP
 
 #include <vector>
 #include <set>
@@ -38,3 +39,5 @@ private:
     pivot_struct internal_struct;
     bool simplex_ended(pivot_struct to_test);
 };
+
+#endif

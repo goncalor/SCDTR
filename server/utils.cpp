@@ -1,5 +1,7 @@
 #include <vector>
 #include "utils.hpp"
+#include <math.h>  
+
 
 lp_struct generate_linear_programm(std::vector<std::vector<float>> E, std::vector<float> O, std::vector<float> L){
     lp_struct out;
@@ -27,4 +29,12 @@ lp_struct generate_linear_programm(std::vector<std::vector<float>> E, std::vecto
     }
 
     return out;
+}
+
+int lux_to_pwm(float lux) {
+    float ctrl_ref_novo=0, ldr=0, voltage=0, resist=RESISTENCIA;
+    ldr = pow(10.0, (-LDR_A*log10(lux) + LDR_B));
+    voltage = 5/(1 + ldr/resist);
+    ctrl_ref_novo = voltage*255/5;
+    return ctrl_ref_novo;
 }

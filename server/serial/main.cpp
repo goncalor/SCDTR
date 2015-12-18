@@ -13,7 +13,7 @@ int main(){
   try{
 
     boost::asio::io_service io_service;
-    serial_connection sc(io_service, "/dev/ttyACM0", 38400);
+    Serial_connection sc(io_service, "/dev/ttyACM0", 38400);
     //std::this_thread::sleep_for (std::chrono::seconds(15));
     sc.read_lux_to_screen();
     io_service.run();
