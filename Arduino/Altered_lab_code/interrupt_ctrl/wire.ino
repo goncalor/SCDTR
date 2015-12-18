@@ -3,9 +3,6 @@
 
 #define BUF_SPLIT_LEN 15
 
-// TODO: distribute O
-// TODO: distribute E
-
 int O_vals[3] = {3, 1, 3};
 int E_vals[3][3] = { {722, 116, 46}, {592, 698, 99}, {304, 579, 664} };
 
