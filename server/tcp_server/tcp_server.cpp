@@ -22,8 +22,11 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
 
         if (e!=-1){
             if (arg1[0]=='r'){
-                sc_.send_reset();
+                sc_.send_reset(socket_);
             }else if(arg1[0]=='s'){
+                e = atoi(arg2);
+                int aux = atoi(arg3);
+                sc_.set_occupancy_at(e,socket_, (bool) aux);
 
             }else if(arg1[0]=='g'){
                 switch (arg2[0]){

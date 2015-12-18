@@ -7,6 +7,8 @@
 #include <thread>
 #include <chrono>
 #include <stdlib.h>
+#include "../utils.hpp"
+#include "../cpp_simplex/simplex.hpp"
 
 /*class serial_exception: public std::exception {
     virtual const char* what() const throw(){
@@ -45,6 +47,11 @@ class Serial_connection {
             //calibrate();
             ready_ = true;
             busy_ = false;
+
+            calibrate();
+
+            run_simplex();
+
             std::cout << "Arduino READY" << std::endl;
 
             // TODO Call simplex. Actually the arduino should only be done after simplex is run once.
@@ -112,11 +119,27 @@ class Serial_connection {
         }
 
         // This will also be blocking
-        void send_reset(){
+        void send_reset(boost::asio::ip::tcp::socket& to){
             wait_ready();
             busy_ = true;
             boost::asio::write(sp_, boost::asio::buffer("r"));
+            std::string s("ack");
+            boost::asio::write(to, boost::asio::buffer(s + '\n',100));
             wait_for_calibration();
+            busy_ = false;
+        }
+
+
+        void set_occupancy_at(int i, boost::asio::ip::tcp::socket& to, bool new_state){
+            wait_ready();
+            busy_ = true;
+            if(new_state){
+                boost::asio::write(sp_, boost::asio::buffer("s " + std::to_string(i) + " 1"));
+            }else{
+                boost::asio::write(sp_, boost::asio::buffer("s " + std::to_string(i) + " 0"));
+            }
+            std::string s("ack");
+            boost::asio::write(to, boost::asio::buffer(s + '\n',100));
             busy_ = false;
         }
 
@@ -379,8 +402,65 @@ class Serial_connection {
             busy_ = false;
         }
 
-        void answer_to_socket(boost::asio::ip::tcp::socket& to){
-            std::cout << "Received: "  << std::endl;
+
+        void run_simplex(){
+            wait_ready();
+            busy_ = true;
+            //TODO Simplex
+
+            std::vector<std::vector<float>> E;
+            std::vector<float> O;
+            std::vector<float> L;
+            std::string s;
+            E.push_back(std::vector<float>());
+            E.push_back(std::vector<float>());
+            E.push_back(std::vector<float>());
+
+            boost::asio::write(sp_, boost::asio::buffer("O"));
+            s = read_line();
+            int aux1, aux2, aux3;
+            sscanf(s.c_str(),"%d %d %d", &aux1, &aux2, &aux3);
+            O.push_back(aux1*1.0/1024);
+            O.push_back(aux2*1.0/1024);
+            O.push_back(aux3*1.0/1024);
+
+            boost::asio::write(sp_, boost::asio::buffer("E"));
+            for(int i = 0; i<3; i++){
+                s = read_line();
+                sscanf(s.c_str(),"%d %d %d", &aux1, &aux2, &aux3);
+                E[i].push_back(aux1*1.0/1024);
+                E[i].push_back(aux2*1.0/1024);
+                E[i].push_back(aux3*1.0/1024);
+            }
+            float aux4;
+            for(int i = 0; i<3; i++){
+                boost::asio::write(sp_, boost::asio::buffer("g L " + std::to_string(i+1)));
+                s = read_line();
+                sscanf(s.c_str(),"%f", &aux4);
+                aux4=lux_to_pwm(aux4);
+                L.push_back(aux4*1.0/255);
+            }
+
+            lp_struct lp = generate_linear_programm(E,O,L);
+
+            Simplex to_solve = Simplex(lp.A,lp.b,lp.c);
+
+            std::vector<float> x = to_solve.solve();
+            std::cout << "Simplex Solution: " << std::endl;
+            for(unsigned int i=0; i<x.size();i++){
+                std::cout << "x = " << round(x[i]*255) << std::endl;
+                x[i] = round(x[i]*255);
+            }
+            char temp[100];
+            sprintf(temp, "h %d %d %d", (int) x[0], (int) x[1], (int) x[2]);
+            std::string t(temp);
+            boost::asio::write(sp_, boost::asio::buffer(t));
+
+            busy_ = false;
+        }
+
+    private:
+        std::string read_line(){
             boost::system::error_code error;
             boost::asio::read_until(sp_,read_buf_,'\n', error);
             if(error){
@@ -399,7 +479,14 @@ class Serial_connection {
             }
             std::istream str(&read_buf_);
             std::string s;
-            str >> s;
+            std::getline(str, s);
+            std::cout << "Received: "  << std::endl;
+            std::cout << s << std::endl;
+            return s;
+        }
+
+        void answer_to_socket(boost::asio::ip::tcp::socket& to){
+            std::string s = read_line();
             std::cout << "Sending to client:" << s + '\n' << std::endl;
             boost::asio::write(to, boost::asio::buffer(s + '\n',100));
         }
@@ -407,5 +494,7 @@ class Serial_connection {
 
 
 };
+
+
 
 #endif

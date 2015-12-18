@@ -2,7 +2,7 @@
 
 Creates a serial connection to the arduino and then a tcp server.
 
-g++ -Wall -Wextra -pedantic -std=c++11 -g tcp_server/tcp_server.cpp main.cpp -lpthread -lboost_system  -o teste_server.out
+g++ -Wall -Wextra -pedantic -std=c++11 -g utils.cpp cpp_simplex/simplex.cpp tcp_server/tcp_server.cpp main.cpp -lpthread -lboost_system  -o teste_server.out
 
 */
 
@@ -25,7 +25,7 @@ int main(int argc, char* argv[]){
           return 1;
         }
         boost::asio::io_service io_service;
-        Serial_connection sc(io_service, "/dev/ttyACM0", 38400);
+        Serial_connection sc(io_service, "/dev/ttyACM0", 19200);
         std::cout << "Connectied to serial port" << std::endl;
         //sc.calibrate();
         //sc.send_reset();
