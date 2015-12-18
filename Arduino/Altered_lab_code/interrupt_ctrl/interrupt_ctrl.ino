@@ -13,8 +13,7 @@
 #define BUF_LEN_2      10
 #define BUF_WIRE_LEN   40
 #define BUF_SPLIT_LEN  20
-//TODO change to 61? be careful with low memory
-#define BUF_STATS_LEN  21  // use one more than what you actually want
+#define BUF_STATS_LEN  20   //TODO change to 60? be careful with low memory
 #define BAUDRATE 38400
 #define SAMPLE_TIME 5000    // microseconds
 #define GAIN_K 10           // proportional gain
@@ -30,7 +29,7 @@
 #define EEPROM_ID_ADDRESS 0   // the address for this Arduino's ID
 #define NUM_SAMPLES 3   // number of samples used for average of analogRead
 #define MASTER_ID 1  // the default ID of the master
-#define STATS_PERIOD 200   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD. ((int)1/(SAMPLE_TIME/1000000.))
+#define STATS_PERIOD ((int)((60./BUF_STATS_LEN)/(SAMPLE_TIME/1000000.)))   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD.
 #define ILLUM_FREE      15.0   // minimum illuminance for non-occupied desk
 #define ILLUM_OCCUPIED  19.0   // minimum illuminance for occupied desk
 
@@ -45,7 +44,9 @@ struct circbuf_t {
     const unsigned maxlen;
 };
 
-short circbuf_add(volatile struct circbuf_t *cb, float data)
+volatile bool enable_save_stats = true;
+
+void circbuf_add(volatile struct circbuf_t *cb, float data)
 {
     // save data to the buffer
     cb->buf[cb->head] = data;
@@ -53,32 +54,33 @@ short circbuf_add(volatile struct circbuf_t *cb, float data)
     cb->head++;
     if(cb->head == cb->maxlen)
         cb->head = 0;
-
-    // buffer full. advance tail
-    if(cb->head == cb->tail)
-    {
-        cb->tail++;
-        if(cb->tail == cb->maxlen)
-            cb->tail = 0;
-        return 1;
-    }
-    return 0;
 }
 
-short circbuf_remove(volatile struct circbuf_t *cb, float *data)
+void circbuf_clear(volatile struct circbuf_t *cb)
 {
-    // buffer is empty
-    if(cb->head == cb->tail)
-        return 0;
+    unsigned i;
 
-    // retrieve data from the buffer
-    *data = cb->buf[cb->tail];
+    enable_save_stats = false;
+    cb->head = 0;
+    for(i=0; i<(cb->maxlen); i++)
+        cb->buf[i] = 0;
+    enable_save_stats = true;
+}
 
-    cb->tail++;
-    if(cb->tail == cb->maxlen)
-        cb->tail = 0;
+void circbuf_print(volatile struct circbuf_t *cb, float scaling)
+{
+    unsigned i = cb->head;
 
-    return 1;
+    enable_save_stats = false;
+    do
+    {
+        Serial.println(cb->buf[i]*scaling);
+        i++;
+        if(i == cb->maxlen)
+            i = 0;
+    }
+    while(i != cb->head);
+    enable_save_stats = true;
 }
 
 
@@ -231,7 +233,6 @@ volatile float flicker_accum_buf[BUF_STATS_LEN];
 
 volatile unsigned long nr_samples_collected = 0;
 volatile unsigned stats_not_saved = 0;
-volatile bool enable_save_stats = true;
 
 volatile float aux;
 
@@ -343,6 +344,7 @@ void main_switch() {
     float x;
     short dev_id, numwords, aux;
     char *lst[BUF_SPLIT_LEN];
+    unsigned long ul;
 
     //TODO: take out this if
     if(true) {
@@ -555,7 +557,10 @@ void main_switch() {
             case 'g':
                 // 'g l|d|o|L|O|r|p|e|v dev_id'
                 if(numwords != 2)
+                {
+                    Serial.println("inv");
                     break;
+                }
 
                 #ifdef DEBUG
                 Serial.println("some g command");
@@ -793,13 +798,28 @@ void main_switch() {
                 break;
 
             case 'e':
-                while(circbuf_remove(&energy_cb, &x))
-                    Serial.println(x);
+                // send stored energy
+                circbuf_print(&energy_cb, 1.);
+                break;
+
+            case 'n':
+                // send stored confort
+                disable_controller();
+                ul = nr_samples_collected;
+                enable_controller();
+                circbuf_print(&confort_cb, 1./ul);
+                break;
+
+            case 'f':
+                // send stored flicker
+                disable_controller();
+                ul = nr_samples_collected;
+                enable_controller();
+                circbuf_print(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
                 break;
 
             default:
-                strcat(buf, " <inv cmd\n");
-                Serial.print(buf);
+                Serial.print("inv");
         }
     }
 }
@@ -829,6 +849,7 @@ void wireReceiveEvent(int nbytes) {
 
 // --------------------------------------------------
 void setup() {
+    noInterrupts();
     // start serial port at BAUDRATE bps:
     Serial.begin(BAUDRATE);
     pinMode(analogInPin, INPUT);
@@ -851,18 +872,21 @@ void setup() {
     TWAR = (wire_my_address << 1) | 1;  // enable broadcasts to be received
     Wire.onReceive(wireReceiveEvent);
 
+    circbuf_clear(&energy_cb);
+    circbuf_clear(&confort_cb);
+    circbuf_clear(&flicker_cb);
     //if(wire_my_address == master_id)
     //{
     //    calibrate();
     //}
     // warn the server that the device is ready
     Serial.println("D");
+    Serial.println(STATS_PERIOD);
 
     // save the starting time, to be used in graphs
     t0 = micros();
 
     // setup interrupts
-    noInterrupts();
     // reset timer control registers
     TCCR1A = 0;
     TCCR1B = 0;
