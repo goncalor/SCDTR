@@ -27,7 +27,10 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
                 e = atoi(arg2);
                 int aux = atoi(arg3);
                 sc_.set_occupancy_at(e,socket_, (bool) aux);
-
+            }else if(arg1[0]=='S'){
+                sc_.run_simplex();
+            }else if(arg1[0]=='C'){
+                sc_.calibrate();
             }else if(arg1[0]=='g'){
                 switch (arg2[0]){
                     case 'l':
@@ -96,6 +99,24 @@ void Tcp_session::process_command(const boost::system::error_code& error, size_t
                             std::cout << "Get confort variance at desk: " << e << std::endl;
                             sc_.get_flicker_at(e,socket_);
                         }
+                        break;
+                }
+            }else if(arg1[0]=='G'){
+                switch (arg2[0]){
+                    case 'e':
+                        e = atoi(arg3);
+                        std::cout << "Get last minute energy at desk: " << e << std::endl;
+                        sc_.get_minute_energy_at(e,socket_);
+                        break;
+                    case 'c':
+                        e = atoi(arg3);
+                        std::cout << "Get last minute confort at desk: " << e << std::endl;
+                        sc_.get_minute_confort_at(e,socket_);
+                        break;
+                    case 'v':
+                        e = atoi(arg3);
+                        std::cout << "Get last minute confort variance at desk: " << e << std::endl;
+                        sc_.get_minute_flicker_at(e,socket_);
                         break;
                 }
             }
