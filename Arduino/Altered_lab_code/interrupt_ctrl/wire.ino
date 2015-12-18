@@ -209,6 +209,30 @@ void wire_process_incoming(char *str)
             soft_reset();
             break;
 
+        case 'w':
+            // reply to master with energy in the last minute
+            // 'w'
+            circbuf_print_i2c(&energy_cb, 1.);
+            break;
+
+        case 'x':
+            // reply to master with confort in the last minute
+            // 'x'
+            disable_controller();
+            ul = nr_samples_collected;
+            enable_controller();
+            circbuf_print_i2c(&confort_cb, 1./ul);
+            break;
+
+        case 'y':
+            // reply to master with flicker in the last minute
+            // 'y'
+            disable_controller();
+            ul = nr_samples_collected;
+            enable_controller();
+            circbuf_print_i2c(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
+            break;
+
             #ifdef SNIFF
         case 'z':
             for(in=0; in < numwords; in++)

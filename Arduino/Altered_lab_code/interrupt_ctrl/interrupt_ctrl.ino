@@ -83,6 +83,29 @@ void circbuf_print(volatile struct circbuf_t *cb, float scaling)
     enable_save_stats = true;
 }
 
+uint8_t master_id = MASTER_ID;
+
+void circbuf_print_i2c(volatile struct circbuf_t *cb, float scaling)
+{
+    unsigned i = cb->head;
+    char tmp[12];
+
+    enable_save_stats = false;
+    do
+    {
+        Wire.beginTransmission(master_id);
+        ftoa(cb->buf[i]*scaling, tmp);
+        Wire.write(tmp);
+        Wire.endTransmission();
+        delay(10);
+        i++;
+        if(i == cb->maxlen)
+            i = 0;
+    }
+    while(i != cb->head);
+    enable_save_stats = true;
+}
+
 
 const int analogInPin = 0;  // Analog input pin that the LDR is attached to
 int analogOutPin = 5; // Analog output pin that the LED is attached to
@@ -100,7 +123,6 @@ int ctrl_ref = lux_to_pwm(ILLUM_FREE);    // range 0 - 255
 int ctrl_verbose_flag= 0;
 
 int wire_my_address;
-uint8_t master_id = MASTER_ID;
 volatile bool wire_data_available = false;
 
 // PID variables
@@ -715,18 +737,19 @@ void main_switch() {
                     // TODO: fix this
                     case 'O':
                         // ask device for external illuminance
-                        if(dev_id == wire_my_address)
-                        {
-                            Serial.println(adc_to_lux(O_vals[wire_my_address]));
-                            break;
-                        }
-                        Wire.beginTransmission(dev_id);
-                        Wire.write('n');
-                        Wire.endTransmission();
-                        while(!wire_data_available)
-                            ;   // wait for data
-                        wire_data_available = false;
-                        Serial.println(wire_buf);
+                       // if(dev_id == wire_my_address)
+                       // {
+                       //     Serial.println(adc_to_lux(O_vals[wire_my_address]));
+                       //     break;
+                       // }
+                       // Wire.beginTransmission(dev_id);
+                       // Wire.write('n');
+                       // Wire.endTransmission();
+                       // while(!wire_data_available)
+                       //     ;   // wait for data
+                       // wire_data_available = false;
+                       // Serial.println(wire_buf);
+                        Serial.println(adc_to_lux(O_vals[dev_id]));
                         break;
 
                     case 'o':
@@ -799,26 +822,84 @@ void main_switch() {
 
             case 'e':
                 // send stored energy
-                circbuf_print(&energy_cb, 1.);
+                if(numwords != 1)
+                    Serial.println("inv");
+                dev_id = atoi(lst[0]);
+
+                if(dev_id == wire_my_address)
+                {
+                    circbuf_print(&energy_cb, 1.);
+                    break;
+                }
+                Wire.beginTransmission(dev_id);
+                Wire.write('w');
+                Wire.endTransmission();
+
+                for(aux=0; aux<BUF_STATS_LEN; aux++)
+                {
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                }
                 break;
 
             case 'n':
                 // send stored confort
-                disable_controller();
-                ul = nr_samples_collected;
-                enable_controller();
-                circbuf_print(&confort_cb, 1./ul);
+                if(numwords != 1)
+                    Serial.println("inv");
+                dev_id = atoi(lst[0]);
+
+                if(dev_id == wire_my_address)
+                {
+                    disable_controller();
+                    ul = nr_samples_collected;
+                    enable_controller();
+                    circbuf_print(&confort_cb, 1./ul);
+                    break;
+                }
+                Wire.beginTransmission(dev_id);
+                Wire.write('x');
+                Wire.endTransmission();
+
+                for(aux=0; aux<BUF_STATS_LEN; aux++)
+                {
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                }
                 break;
 
             case 'f':
                 // send stored flicker
-                disable_controller();
-                ul = nr_samples_collected;
-                enable_controller();
-                circbuf_print(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
+                if(numwords != 1)
+                    Serial.println("inv");
+                dev_id = atoi(lst[0]);
+
+                if(dev_id == wire_my_address)
+                {
+                    disable_controller();
+                    ul = nr_samples_collected;
+                    enable_controller();
+                    circbuf_print(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
+                    break;
+                }
+                Wire.beginTransmission(dev_id);
+                Wire.write('y');
+                Wire.endTransmission();
+
+                for(aux=0; aux<BUF_STATS_LEN; aux++)
+                {
+                    while(!wire_data_available)
+                        ;   // wait for data
+                    wire_data_available = false;
+                    Serial.println(wire_buf);
+                }
                 break;
 
             case 'h':
+                // use parameters given by simplex
                 if(numwords != 3)
                 {
                     Serial.println("inv");
