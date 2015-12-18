@@ -14,7 +14,7 @@
 #define BUF_WIRE_LEN   40
 #define BUF_SPLIT_LEN  20
 #define BUF_STATS_LEN  20   //TODO change to 60? be careful with low memory
-#define BAUDRATE 38400
+#define BAUDRATE 19200
 #define SAMPLE_TIME 5000    // microseconds
 #define GAIN_K 10           // proportional gain
 #define GAIN_D 0.01         // differential gain
@@ -818,6 +818,30 @@ void main_switch() {
                 circbuf_print(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
                 break;
 
+            case 'h':
+                if(numwords != 3)
+                {
+                    Serial.println("inv");
+                    break;
+                }
+
+                disable_all_controllers();
+                for(aux=1; aux<=3; aux++)
+                {
+                    if(aux == wire_my_address)
+                    {
+                        analogWrite(analogOutPin, atoi(lst[aux-1]));
+                        continue;
+                    }
+                    Wire.beginTransmission(aux);
+                    Wire.write("q ");
+                    Wire.write(lst[aux-1]);
+                    Wire.endTransmission();
+                }
+                delay(2);
+                enable_all_controllers();
+                break;
+
             default:
                 Serial.print("inv");
         }
@@ -881,7 +905,6 @@ void setup() {
     //}
     // warn the server that the device is ready
     Serial.println("D");
-    Serial.println(STATS_PERIOD);
 
     // save the starting time, to be used in graphs
     t0 = micros();
