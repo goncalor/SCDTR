@@ -46,35 +46,36 @@ struct circbuf_t {
 
 short circbuf_add(volatile struct circbuf_t *cb, float data)
 {
-    unsigned next = cb->head + 1;
-
-    // wrap around
-    if (next >= cb->maxlen)
-        next = 0;
-
-    // buffer is full
-    if (next == cb->tail)
-        return 0;
-
+    // save data to the buffer
     cb->buf[cb->head] = data;
-    cb->head = next;
-    return 1;
+
+    cb->head++;
+    if(cb->head == cb->maxlen)
+        cb->head = 0;
+
+    // buffer full. advance tail
+    if(cb->head == cb->tail)
+    {
+        cb->tail++;
+        if(cb->tail == cb->maxlen)
+            cb->tail = 0;
+        return 1;
+    }
+    return 0;
 }
 
 short circbuf_remove(volatile struct circbuf_t *cb, float *data)
 {
-    // if the head isn't ahead of the tail, we don't have any characters
-    if (cb->head == cb->tail)
-        return 0;  // quit with an error
+    // buffer is empty
+    if(cb->head == cb->tail)
+        return 0;
 
+    // retrieve data from the buffer
     *data = cb->buf[cb->tail];
-    cb->buf[cb->tail] = 0;  // clear the data (optional)
 
-    unsigned next = cb->tail + 1;
-    if(next >= cb->maxlen)
-        next = 0;
-
-    cb->tail = next;
+    cb->tail++;
+    if(cb->tail == cb->maxlen)
+        cb->tail = 0;
 
     return 1;
 }
@@ -544,8 +545,6 @@ void main_switch() {
 
             case 'g':
                 // 'g l|d|o|L|O|r|p|e|v dev_id'
-                //while(circbuf_remove(&energy_cb, &x))
-                //    Serial.println(x);
                 if(numwords != 2)
                     break;
 
@@ -782,6 +781,11 @@ void main_switch() {
                 Wire.endTransmission();
                 //state_reset();
                 soft_reset();
+                break;
+
+            case 'e':
+                while(circbuf_remove(&energy_cb, &x))
+                    Serial.println(x);
                 break;
 
             default:
