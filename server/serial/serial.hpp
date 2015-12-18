@@ -479,8 +479,7 @@ class Serial_connection {
                 s = read_line();
                 std::cout << "Cv[t-" << (MIN_SAMPLES-i)*(60/MIN_SAMPLES) <<"] = " << s <<std::endl;
             }
-            std::string s1("ack");
-            boost::asio::write(to, boost::asio::buffer(s1 + '\n',100));
+            boost::asio::write(to, boost::asio::buffer("ack" + '\n',100));
             busy_ = false;
         }
 

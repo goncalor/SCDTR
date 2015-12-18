@@ -207,16 +207,16 @@ void Simplex::init_Simplex(){
         while(!simplex_ended(aux_programm)){
 
             for(auto N_iter : aux_programm.N){
-            std::cout << "c[" << N_iter << "] = " << aux_programm.c[N_iter] << std::endl;
+            //std::cout << "c[" << N_iter << "] = " << aux_programm.c[N_iter] << std::endl;
                 if(aux_programm.c[N_iter]>APPROX_ZERO){
                     e=N_iter;
                     break;
                 }
             }
-            std::cout << "e = " << e << std::endl;
+            //std::cout << "e = " << e << std::endl;
 
             for(auto i : aux_programm.B){
-                std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
+                //std::cout << "A[" << i<< "]["<<e<<"] = "<< aux_programm.A[i][e] << std::endl;
                 if(aux_programm.A[i][e]>APPROX_ZERO){
                     //delta[i] = aux_programm.b[i]/aux_programm.A[i][e];
                     if(aux_programm.b[i] > APPROX_ZERO || aux_programm.b[i] < -APPROX_ZERO ){
@@ -227,7 +227,7 @@ void Simplex::init_Simplex(){
                 } else {
                     delta[i] = INF;
                 }
-                std::cout << "Delta [" << i << "] = " << delta[i] << std::endl;
+                //std::cout << "Delta [" << i << "] = " << delta[i] << std::endl;
             }
 
             l = *aux_programm.B.begin();
@@ -301,7 +301,7 @@ void Simplex::init_Simplex(){
 
                 if(aux_programm.B.find(i)!=aux_programm.B.end()){
                     std::cout << "v: adding inter_c["<< i<<"]*aux_b[" << i << "] = " << internal_struct.c[i] * aux_programm.b[i] <<std::endl;
-                    aux_programm.v = internal_struct.c[i] * aux_programm.b[i]; 
+                    aux_programm.v = internal_struct.c[i] * aux_programm.b[i];
                     std::cout << "aux_v = " << aux_programm.v << std::endl;
                 }/*else{
                     aux_programm.c[i]+=internal_struct.c[i];
