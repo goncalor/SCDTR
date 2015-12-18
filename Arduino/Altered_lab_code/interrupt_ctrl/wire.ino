@@ -209,6 +209,17 @@ void wire_process_incoming(char *str)
             soft_reset();
             break;
 
+            #ifdef SNIFF
+        case 'z':
+            for(in=0; in < numwords; in++)
+            {
+                Serial.print(lst[in]);
+                Serial.print(" ");
+            }
+            Serial.println("");
+            break;
+            #endif
+
         default:
             break;
     }

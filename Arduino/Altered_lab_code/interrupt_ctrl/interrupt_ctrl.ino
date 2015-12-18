@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 //#define DEBUG
+#define SNIFF
 
 #define BUF_LEN        80
 #define BUF_LEN_2      10
@@ -346,6 +347,13 @@ void main_switch() {
     //TODO: take out this if
     if(true) {
 
+        #ifdef SNIFF
+        Wire.beginTransmission(0);
+        Wire.write("z ");
+        Wire.write(buf);
+        Wire.endTransmission();
+        #endif
+
         // ignore the firts byte (command)
         numwords = split(buf+1, lst, BUF_SPLIT_LEN);
 
@@ -360,6 +368,7 @@ void main_switch() {
         }
         Serial.println("");
         #endif
+
 
         switch (buf[0]) {
 
