@@ -1,0 +1,49 @@
+% From first report:
+
+%Os seguintes pontos descrevem o que é implementado no código actual:
+%Controlador com componentes proporcional, derivativa e integral
+%Anti-windup
+%Feedforward
+%Derivador à saída
+%Temporização do controlador através de interrupções
+%Dar referências em lux
+%Medir iluminância em lux
+%Alterar parâmetros do controlador
+%Alterar tempo de amostragem
+%Implementamos um filtro passa-baixo para o derivador para diminuir o ruído. Não chegámos a afinar a constante desse filtro, pelo que o temos comentado.
+%Os parâmetros do controlador foram encontrados com afinação manual e são os seguintes:
+%Ganho proporcional: 10
+%Ganho diferencial: 0.01
+%Ganho integral: 10
+%Ganho do feedforward: 0.1
+%Ganho do anti-windup: 0.05
+%Tempo de amostragem: 1500 µs
+%Todos os cálculos do controlador são feitos com valores de 0 a 1023, sendo convertidos quando necessário: para 0 a 255 para actuar o LED; e para lux quando são pedidos valores de iluminância.
+
+\section{Local Controller}
+\label{sec:LocalController}
+
+The local controller consists of a Proportional-Integral-Derivative Controller (PID) that receives as input a integer reference value from 0 to 1023 and outputs the PWM duty cycle in the range 0 to 255.
+
+The block diagram of the local controller is on Figure~\ref{fig:pid_block_diagramm}.  
+
+\subsection{Proportional Component}
+\label{sub:ProportionalComponent}
+
+\subsection{Integral Component}
+\label{sub:IntegralComponent}
+
+\subsection{Derivative Component}
+\label{sub:Derivative Component}
+
+\subsection{Anti-Windup}
+\label{sub:AntiWindup}
+
+\subsection{Feedforward}
+\label{sub:Feedforward}
+
+\subsection{Implementation Details}
+\label{sub:Implementation Details}
+
+\subsection{Parameters}
+\label{sub:Parameters}
