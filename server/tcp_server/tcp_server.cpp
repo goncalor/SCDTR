@@ -13,7 +13,6 @@ void Tcp_session::start(){
 void Tcp_session::process_command(const boost::system::error_code& error, size_t bytes_transferred){
     if (!error){
         std::cout << "Received data: " << data_ << "  of len: " << bytes_transferred << std::endl;
-        //boost::asio::async_write(socket_, boost::asio::buffer(data_, bytes_transferred),  boost::bind(&Tcp_session::handle_write, this, _1));
         char arg1[max_length];
         char arg2[max_length];
         char arg3[max_length];
