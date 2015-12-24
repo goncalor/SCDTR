@@ -23,12 +23,14 @@
 \subsection{Local Controller}
 \label{sec:LocalController}
 
-The local controller consists of a Proportional-Integral-Derivative Controller (PID) that receives as input a integer reference value from 0 to 1023 and outputs the PWM duty cycle in the range 0 to 255.
+The local controller consists of a Proportional-Integral-Derivative Controller (PID) that receives as input a integer reference value (\emph{r}) from 0 to 1023, the LDR readings from 0 to 1023 and has as output the PWM duty cycle (\emph{u}) in the range 0 to 255.
 
-The block diagram of the local controller is on Figure~\ref{fig:pid_block_diagramm}.
+The block diagram of the local controller is on Figure~\ref{fig:pid_block_diagramm}. The error(\emph{e}) is defined as $e = r - u$.
 
 \subsubsection{Proportional Component}
 \label{sub:ProportionalComponent}
+
+The proportional component of the controller is just a gain multiplied (\emph{$K_p$}) by \emph{e}.
 
 \subsubsection{Integral Component}
 \label{sub:IntegralComponent}
