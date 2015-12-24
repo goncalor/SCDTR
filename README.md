@@ -3,13 +3,3 @@ This project is a demonstration of the local illumination control for the first 
 
 This repo contains the files used to solve the labs and project of this course.
 
-## Things  left to do:
-
-* At setup get E and O matrices;
-* Implement Simplex in MATLAB;
-* Implement Simplex in Arduino;
-* Implement Distributed simplex or similar algorithm to solve linear program
-* Put the global controler working with simplex
-* Implement responses to change in response to changes in O
- 
-
