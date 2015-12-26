@@ -54,6 +54,11 @@ This component is calculated with signal \emph{y} instead of \emph{u} to avoid d
 \subsubsection{Anti-Windup}
 \label{sub:AntiWindup}
 
+The output of the integral component of the controller can be outside the range of values acceptable by the Arduino output.
+This would lead the integrator to accumulate an error that would only disappear with the error being negative for multiple samples.
+This causes a poor performance on the system.
+To counter this effect we implemented a Anti-Windup block. This block uses the difference
+
 \subsubsection{Feedforward}
 \label{sub:Feedforward}
 
@@ -71,12 +76,13 @@ The gains of the controller were tuned by hand.
 Following the guidelines from \emph{PID Without a PhD} \cite{PIDWhitoutPhD} we set the coarse values for each of them.
 Then we a set of tests to both the step response and the incremental response we fined tuned the parameters.
 The sampling time was chosen experimentally as the lowest value that allowed the rest of the code in the Arduino to exectude between each controller update.
+
 The final values we use are:
 \begin{description}
     \item[Proportional Gain] $K_P = 10$;
     \item[Derivative Gain] $K_D = 0.01$;
     \item[Integral Gain] $K_I = 10$;
     \item[Feedforward Gain] $K_FF = 0.1$;
-    \item[AntiWindup Gain] $K_W = 0.05$;
+    \item[Anti-Windup Gain] $K_W = 0.05$;
     \item[Sampling Time] $T_s = 1500 \mu s$;
 \end{description}
