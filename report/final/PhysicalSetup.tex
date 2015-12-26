@@ -1,10 +1,50 @@
 \subsection{Physical Setup}
 \label{sec:PhysicalSetup}
 
-For the physical setup a wooden box was used. This was preferred to a cardboard box because of the increased sturdiness. The inside of the box models an empty room with the luminaires on the ceiling. Each luminaire is assumed to include both the LED lights and a light sensor.
 
-Since the controllers (Arduinos) are too big to be included inside the luminaires in our model they were put on the outside of the box, on top of it. Tight holes were made to pass the wires needed to light the LED and read the sensor. On the inside only the LEDs and LDRs are present where they are soldered to the incoming wires. All the wiring is done outside the box using a breadboard. Both the breadboard and the Arduinos are screwed to the box preventing them to move, which could easily disconnect the jumpers.
+The setup must model a room with luminaires on its ceiling. Each luminaire has a controller that keeps the light below it above some standard level of illuminance. For this project it was pre-established that the room contained three luminaires.
 
-In order to increase the light reflection inside the box --- so that the LDR senses more light --- a white sheet of paper was placed on the bottom of the box.
+For the physical setup a wooden box was used. This was preferred to a cardboard box because of the increased sturdiness. Since the controllers (Arduinos) are too big to be included inside the luminaires in our model they were put on the outside of the box,  and all the wiring is done outside the box using a breadboard (see \autoref{fig:setup_box_closed}). Both the breadboard and the Arduinos are screwed to the box preventing them to move, which could easily disconnect the jumpers. Tight holes were made to pass the wires needed to light the LED and read the sensor, while preventing light from entering the box (see \autoref{fig:setup_arduino_connections}).
 
-The assignment requires that the model has a window. The used box has hinges and the top of the box can be opened. Therefore this was used as an window. The top should only be opened in small angles so that we can consider (by approximation) that the LDR is still facing the ground and that the light of the LED is mostly reflected back at the LDR.
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/setup_box_closed}
+        \caption{Arduinos and breadboard on top of the box}
+        \label{fig:setup_box_closed}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/setup_arduino_connections.jpg}
+        \caption{Detail showing the connections on the Arduino and one hole in the box}
+        \label{fig:setup_arduino_connections}
+    \end{subfigure}
+    \caption{The ouside of the box}
+    \label{fig:setup_box_outside}
+\end{figure}
+
+
+On the inside of the box only the luminaires are present. Each luminaire is assumed to include both a LED light and a light sensor (LDR). The LED and the LDR are separated by a piece of cardboard so that the light from the LED does not directly affect the LDR reading (\autoref{fig:setup_box_open}). Only reflected light should be read. In order to increase the light reflection inside the box --- so that the LDR senses more light --- a white sheet of paper was placed on the bottom of the box (see \autoref{fig:setup_LDR_LED}).
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/setup_box_open}
+        \caption{Luminaires on the ceiling and white sheet on the floor}
+        \label{fig:setup_box_open}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.49\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{img/setup_LDR_LED}
+        \caption{Detail of a luminaire. The LDR on top, LED on botom and cardboard in between}
+        \label{fig:setup_LDR_LED}
+    \end{subfigure}
+    \caption{The inside of the box}
+    \label{fig:setup_box_inside}
+\end{figure}
+
+The assignment requires that the model has a window. The used box has hinges and the top of the box can be opened (see \autoref{fig:setup_LDR_LED}). Therefore this was used as an window. The top should only be opened in small angles so that we can consider (by approximation) that the LDR is still facing the ground and that the light of the LED is mostly reflected back at the LDR.
+
+% include a schematic of the LDR circuit
