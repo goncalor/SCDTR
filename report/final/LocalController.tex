@@ -1,25 +1,3 @@
-% From first report:
-
-%Os seguintes pontos descrevem o que é implementado no código actual:
-%Controlador com componentes proporcional, derivativa e integral
-%Anti-windup
-%Feedforward
-%Derivador à saída
-%Temporização do controlador através de interrupções
-%Dar referências em lux
-%Medir iluminância em lux
-%Alterar parâmetros do controlador
-%Alterar tempo de amostragem
-%Implementamos um filtro passa-baixo para o derivador para diminuir o ruído. Não chegámos a afinar a constante desse filtro, pelo que o temos comentado.
-%Os parâmetros do controlador foram encontrados com afinação manual e são os seguintes:
-%Ganho proporcional: 10
-%Ganho diferencial: 0.01
-%Ganho integral: 10
-%Ganho do feedforward: 0.1
-%Ganho do anti-windup: 0.05
-%Tempo de amostragem: 1500 µs
-%Todos os cálculos do controlador são feitos com valores de 0 a 1023, sendo convertidos quando necessário: para 0 a 255 para actuar o LED; e para lux quando são pedidos valores de iluminância.
-
 \subsection{Local Controller}
 \label{sec:LocalController}
 
@@ -37,18 +15,18 @@ The block diagram of the local controller is on Figure~\ref{fig:pid_block_diagra
 \subsubsection{Proportional Component}
 \label{sub:ProportionalComponent}
 
-The proportional component of the controller is just a gain multiplied (\emph{$K_p$}) by \emph{e}. $ P = K_p * e$.
+The proportional component (\emph{P}) of the controller is just a gain multiplied (\emph{$K_p$}) by \emph{e}. $ P = K_p * e$.
 
 \subsubsection{Integral Component}
 \label{sub:IntegralComponent}
 
-To approximate the integral of the error we use the formula $ I_k = I_{k-1} + \frac{e_k-e_{k-1}}{2} * T_s$ .
+To approximate the integral of the error (\emph{I}) at sample \emph{k} we use the formula $ I_k = I_{k-1} + \frac{e_k-e_{k-1}}{2} * T_s$ .
 We need to make this approximation as we don't have the continuous time values for the error.
 
 \subsubsection{Derivative Component}
 \label{sub:Derivative Component}
 
-The derivative component is calculated as $ D = - K_d/T_s * (y_{k}-y_{k-1})$.
+The derivative component (\emph{D}) is calculated as $ D = - K_d/T_s * (y_{k}-y_{k-1})$.
 This component is calculated with signal \emph{y} instead of \emph{u} to avoid differentiating discontinuities, which would cause the signal \emph{u} to saturate.
 
 \subsubsection{Anti-Windup}
@@ -57,10 +35,13 @@ This component is calculated with signal \emph{y} instead of \emph{u} to avoid d
 The output of the integral component of the controller can be outside the range of values acceptable by the Arduino output.
 This would lead the integrator to accumulate an error that would only disappear with the error being negative for multiple samples.
 This causes a poor performance on the system.
-To counter this effect we implemented a Anti-Windup block. This block uses the difference
+To counter this effect we implemented a Anti-Windup block.
+This block uses the difference between the expected controller output and the constrained value multiplied by a gain ($K_W$) to clean the integrator.
 
 \subsubsection{Feedforward}
 \label{sub:Feedforward}
+
+The feedforward term(\emph{F}) depends only on the reference and is used to speed up the controller. It is calculated as $F = r * K_{FF}$, where $K_{FF}$ is the feedforward gain.
 
 \subsubsection{Implementation Details}
 \label{sub:Implementation Details}
@@ -68,6 +49,8 @@ To counter this effect we implemented a Anti-Windup block. This block uses the d
 The readings from the sensor are done with the average of three samples.
 
 This controller was implemented as a interrupt routine to guarantee its execution in fixed intervals.
+
+Todos os cálculos do controlador são feitos com valores de 0 a 1023, sendo convertidos quando necessário: para 0 a 255 para actuar o LED; e para lux quando são pedidos valores de iluminância.
 
 \subsubsection{Parameters}
 \label{sub:Parameters}
