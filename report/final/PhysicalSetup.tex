@@ -1,2 +1,10 @@
 \subsection{Physical Setup}
 \label{sec:PhysicalSetup}
+
+For the physical setup a wooden box was used. This was preferred to a cardboard box because of the increased sturdiness. The inside of the box models an empty room with the luminaires on the ceiling. Each luminaire is assumed to include both the LED lights and a light sensor.
+
+Since the controllers (Arduinos) are too big to be included inside the luminaires in our model they were put on the outside of the box, on top of it. Tight holes were made to pass the wires needed to light the LED and read the sensor. On the inside only the LEDs and LDRs are present where they are soldered to the incoming wires. All the wiring is done outside the box using a breadboard. Both the breadboard and the Arduinos are screwed to the box preventing them to move, which could easily disconnect the jumpers.
+
+In order to increase the light reflection inside the box --- so that the LDR senses more light --- a white sheet of paper was placed on the bottom of the box.
+
+The assignment requires that the model has a window. The used box has hinges and the top of the box can be opened. Therefore this was used as an window. The top should only be opened in small angles so that we can consider (by approximation) that the LDR is still facing the ground and that the light of the LED is mostly reflected back at the LDR.
