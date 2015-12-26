@@ -23,20 +23,22 @@
 \subsection{Local Controller}
 \label{sec:LocalController}
 
-The local controller consists of a Proportional-Integral-Derivative Controller (PID) that receives as input a integer reference value (\emph{r}) from 0 to 1023, the LDR readings from 0 to 1023 and has as output the PWM duty cycle (\emph{u}) in the range 0 to 255.
+The local controller consists of a Proportional-Integral-Derivative Controller (PID) that receives as input a integer reference value (\emph{r}) from 0 to 1023, the LDR readings from 0 to 1023 (\emph{y}) and has as output the PWM duty cycle (\emph{u}) in the range 0 to 255.
 
-The block diagram of the local controller is on Figure~\ref{fig:pid_block_diagramm}. The error(\emph{e}) is defined as $e = r - u$.
+The block diagram of the local controller is on Figure~\ref{fig:pid_block_diagramm}. The error(\emph{e}) is defined as $e = r - y$. The signal \emph{u} is calculated as the sum of the proportional, integral and derivative components and the feedforward term.
 
 \subsubsection{Proportional Component}
 \label{sub:ProportionalComponent}
 
-The proportional component of the controller is just a gain multiplied (\emph{$K_p$}) by \emph{e}.
+The proportional component of the controller is just a gain multiplied (\emph{$K_p$}) by \emph{e}. $ P = K_p * e$.
 
 \subsubsection{Integral Component}
 \label{sub:IntegralComponent}
 
 \subsubsection{Derivative Component}
 \label{sub:Derivative Component}
+
+The derivative component is calculated as $ D = - K_d/T_s * (y_{t}-y_{t-1})$. This component is calculated with signal \emph{y} instead of \emph{u} to avoid differentiating discontinuities, which would cause the signal \emph{u} to saturate.
 
 \subsubsection{Anti-Windup}
 \label{sub:AntiWindup}
@@ -46,6 +48,8 @@ The proportional component of the controller is just a gain multiplied (\emph{$K
 
 \subsubsection{Implementation Details}
 \label{sub:Implementation Details}
+
+This controller was implemented as a interrupt routine to guarantee its execution in fixed intervals.
 
 \subsubsection{Parameters}
 \label{sub:Parameters}
