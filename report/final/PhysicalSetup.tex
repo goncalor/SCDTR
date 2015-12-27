@@ -48,3 +48,25 @@ On the inside of the box only the luminaires are present. Each luminaire is assu
 The assignment requires that the model has a window. The used box has hinges and the top of the box can be opened (see \autoref{fig:setup_LDR_LED}). Therefore this was used as an window. The top should only be opened in small angles so that we can consider (by approximation) that the LDR is still facing the ground and that the light of the LED is mostly reflected back at the LDR.
 
 % include a schematic of the LDR circuit
+
+\begin{figure}[h]
+    \centering
+    \begin{circuitikz} \draw
+        %\ctikzset { label/align = rotate }
+        (0,0) node[sground] {}
+        to[resistor, l=\mbox{$R_2 = \SI{10}{\kilo\ohm}$}] (0,2)
+        to[photoresistor, l=$R_1$] (0,4)
+        to[short, -o] (0,4.5)
+        node[right]{$V_S = 5 V$}
+
+        (1,0) node[sground] {}
+        to[polar capacitor, l_=\mbox{$C_1 = \SI{1}{\micro\farad}$}] (1,2)
+        (0,2) -- (1,2)
+
+        (1,2) to[short, -o] ++(2,0)
+        node[right]{\texttt{A0}}
+        ;
+    \end{circuitikz}
+    \caption{}
+    \label{fig:}
+\end{figure}
