@@ -5,9 +5,11 @@ The Simplex algorithms solves Linear programms, it finds the optimal solution if
 We implemented the simplex following the pseudo-code on the book \emph{Introduction to Algorithms} \cite{Cormen}.
 This implementation solves Linear programms of the form:
 
-$$ min $$
+$$ \text{max }c*x $$
+$$    A*x \geq b, $$
+$$    x \geq 0 $$
 
-
+We can describe the problem as a Linear programm of this form. First we define \emph{O} as the array with the external illuminance at each \emph{desk}, \emph{l} as the array with the desired illuminance for each \emph{desk} and \emph{E} as the  3 by 3 matrix of influence between each light. The problem we want to solve is to find the minimal values for \emph{d}, the PWM values normalized from 0 to 1, that make the illuminance be equal to \emph{l}.
 
 
 Note: To throughly test the Simplex implementation a series of simple unit tests were constructed using the \emph{Boost Test} Library.
