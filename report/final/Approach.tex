@@ -1,6 +1,13 @@
 \section{Approach}
 
-How we approached the problem.
+In the next section we describe our solution for the distributed lighting problem. The main components of our system are the Local Controller, used to maintain the illuminance at each desk at the desired reference, the Simplex Algorithm, that calculates the optimal solution to the linear programm that describes this problem, and the TCP/IP Server, which serves as an intermediary between the clients and the system. An overview of the system is depicted on Figure \ref{fig:global_system}.
+
+\begin{figure}[!ht]
+    \centering
+        \includegraphics[scale=0.8]{img/GlobalSystem}
+    \caption{Block diagram of the implemented system}\label{fig:global_system}
+\end{figure}
+
 \input{PhysicalSetup}
 \input{SystemCharacteristics}
 \input{LocalController}
