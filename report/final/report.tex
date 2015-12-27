@@ -14,6 +14,7 @@
 \usepackage{indentfirst} % indent first paragraph in section
 \usepackage{geometry}	% margins
 \usepackage[siunitx]{circuitikz}	 % draw circuits
+\usepackage{setspace}
 
 % magic for listings (make them beautiful)
 \usepackage{color}
@@ -71,6 +72,8 @@
 \restoregeometry
 \newgeometry{left=2.5cm,right=2.5cm}
 
+\onehalfspacing
+
 \tableofcontents
 \pagenumbering{gobble}
 
@@ -78,7 +81,6 @@
 
 \pagenumbering{arabic}
 \setcounter{page}{1}
-
 
 \input{Abstract}
 \input{Introduction}

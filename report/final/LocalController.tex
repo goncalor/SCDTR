@@ -5,11 +5,11 @@ The function of the Local controller is to maintain the illuminance at each \emp
 
 The local controller consists of a Proportional-Integral-Derivative Controller (PID) that receives as input a integer reference value (\emph{r}) from 0 to 1023, the LDR readings from 0 to 1023 (\emph{y}) and has as output the PWM duty cycle (\emph{u}) in the range 0 to 255.
 
-The block diagram of the local controller is on Figure~\ref{fig:pid_block_diagram}. The error(\emph{e}) is defined as $e = r - y$. The signal \emph{u} is calculated as the sum of the proportional, integral and derivative components and the feedforward term.
+The block diagram of the local controller is on Figure~\ref{fig:pid_block_diagram}. The error (\emph{e}) is defined as $e = r - y$. The signal \emph{u} is calculated as the sum of the proportional, integral and derivative components and the feedforward term.
 
 \begin{figure}[!ht]
     \centering
-        \includegraphics[scale=0.8]{img/pid_block_diagram}
+        \includegraphics[scale=\textwidhth]{img/pid_block_diagram}
     \caption{Local controller block diagram}\label{fig:pid_block_diagram}
 \end{figure}
 
