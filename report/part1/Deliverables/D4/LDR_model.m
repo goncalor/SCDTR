@@ -1,3 +1,5 @@
+# This is Octave
+
 pt1 = [1, 60e3];  % lux, LDR resistance
 pt2 = [100, 2.5e3];
 
@@ -15,9 +17,10 @@ lux = logspace(pt1_log(1), pt2_log(1));
 
 r = 10.^(a*log10(lux) + b);
 
-loglog(lux, r, 'k')
+#figure('visible', 'off');
+loglog(lux, r)
 grid on
-title('LDR Characteristic');
+#title('LDR Characteristic');
 xlabel('Illuminance (lx)');
-ylabel('Resistance ($\Omega$)', 'Interpreter', 'LaTex');
-print('LDR_model', '-dpdf');
+ylabel('Resistance ($\Omega$)');
+print('LDR_model', '-depslatex', '-mono');
