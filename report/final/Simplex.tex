@@ -1,15 +1,67 @@
 \subsection{Simplex}
 \label{sec:Simplex}
 
-The Simplex algorithms solves Linear programms, it finds the optimal solution if it exists.
+The Simplex algorithms solves Linear programms (LP's), it finds a optimal solution if it exists.
 We implemented the simplex following the pseudo-code on the book \emph{Introduction to Algorithms} \cite{Cormen}.
 This implementation solves Linear programms of the form:
 
 $$ \text{max }c*x $$
 $$    A*x \geq b, $$
-$$    x \geq 0 $$
+$$    x \geq 0 $$.
 
-We can describe the problem as a Linear programm of this form. First we define \emph{O} as the array with the external illuminance at each \emph{desk}, \emph{l} as the array with the desired illuminance for each \emph{desk} and \emph{E} as the  3 by 3 matrix of influence between each light. The problem we want to solve is to find the minimal values for \emph{d}, the PWM values normalized from 0 to 1, that make the illuminance be equal to \emph{l}.
+We can describe the problem as a Linear programm of this form. First we define \emph{O} as the array with the external illuminance at each \emph{desk}, \emph{l} as the array with the desired illuminance for each \emph{desk} and \emph{E} as the  3 by 3 matrix of influence between each light.
+The problem we want to solve is to find values for \emph{d}, the PWM values normalized from 0 to 1,  minimizing the energy spent and that make the illuminance be equal or greater than \emph{l}.
+This can be formalized as:
 
+$$ \text{min }\sum{d} $$
+$$    E*d \geq l-O, $$
+$$    d \geq 0, $$
+$$    d \leq 1 $$.
 
-Note: To throughly test the Simplex implementation a series of simple unit tests were constructed using the \emph{Boost Test} Library.
+If we define  $c = [-1, -1, -1]$ we get:
+
+$$ \text{max }c*d $$
+$$    E*d \geq l-O, $$
+$$    d \geq 0, $$
+$$    d \leq 1 $$.
+
+And to remove the last condition we concatenate an identity matrix to the matrix E and an array of 1's to the \emph{l-O} array and get:
+
+??????????????
+%TODO: Write the final problem form
+
+I don't know how to write matrices in LaTex and I don't have Internet.
+
+??????????
+
+$$ \text{max }c*d $$
+$$    E*d \geq l-O, $$
+$$    d \geq 0 $$
+
+With this form we can apply our Simplex algorithm directly.
+
+The Simplex has three possible outcomes.
+It may find one of the optimal solutions, the ideal case.
+It may detect that there is no possible solution that satisfies all constrains, this happens in our case when we have the illuminance lower than \emph{l} at at least one desk even if all ligths are set to their maximum value.
+Or it may declare the problem to be unbounded, where the objective function can have an infinite value, this won't happen in our problem as the maximum value for the objective function would be 0, when all lights are turned off.
+
+Our Simplex implementation has three main routines similarly to the pseudo-code in \cite{Cormen}. The main \emph{Simplex} routine, the \emph{Initialize-Simplex} routine and the \emph{Pivot} routine.
+
+The main routine calls the \emph{Initialize-Simplex} to generate a feasible solution and evaluates it, then makes successive calls to the \emph{Pivot} until it reaches an optimal solution.
+
+The \emph{Initialize-Simplex} routine tests if the initial basic solution (setting \emph{x} to all zero's) is feasible, if not it creates an auxiliary Linear Programm that if it has a solution there is a solution to the initial LP, it then solves the auxiliar LP.
+
+The \emph{Pivot} operation transforms the problem generating a new the solution.
+
+The \emph{Initialize-Simplex} is responsible for detecting if the problem is impossible while the main \emph{Simplex} routine is responsible for detecting if it is unbounded.
+
+Our implementation was able to solve all LP we tested it with, even impossible and unbounded LP's. The results were compared to the \emph{MATLAB: Linear Programming Toolbox}.
+
+\subsubsection{Simplex Implementation Details}
+\label{subs:SimplexImplementationDetails}
+
+The Standard C++ library was used widely in the implementation. %TODO: Cite the C++ Standard Library.
+
+Due to possible numerical problems all comparisons within the Simplex implementation are done within a defined \emph{delta}.
+
+To throughly test the Simplex implementation a series of simple unit tests were constructed using the \emph{Boost Test} Library.
