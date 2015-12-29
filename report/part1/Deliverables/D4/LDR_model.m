@@ -21,6 +21,8 @@ r = 10.^(a*log10(lux) + b);
 loglog(lux, r)
 grid on
 #title('LDR Characteristic');
-xlabel('Illuminance (lx)');
-ylabel('Resistance ($\Omega$)');
-print('LDR_model', '-depslatex', '-mono');
+#xlabel('Illuminance (lx)');
+#ylabel('Resistance ($\Omega$)');
+xlabel('xx');
+ylabel('yy');
+print('LDR_model', '-deps2', '-tight');

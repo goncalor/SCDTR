@@ -6,14 +6,18 @@
 
 \begin{figure}[h]
     \centering
-    \resizebox{\textwidth}{!}{\input{img/steady_state}}
+    \psfrag{xx}[Bc]{PWM values (0--255)}
+    \psfrag{yy}[Bc]{Voltage at pin \texttt{A0} (\si{\volt})}
+    \includegraphics[width=.9\textwidth]{img/steady_state.eps}
     \caption{}
     \label{fig:}
 \end{figure}
 
 \begin{figure}[h]
     \centering
-    \resizebox{\textwidth}{!}{\input{img/LDR_model}}
+    \psfrag{xx}[Bc]{Illuminance (\si{\lux})}
+    \psfrag{yy}[Bc]{LDR resistance (\si{\volt})}
+    \includegraphics[width=.9\textwidth]{img/LDR_model}
     \caption{}
     \label{fig:}
 \end{figure}
@@ -29,8 +33,14 @@
 
 \begin{figure}[h]
     \centering
-    \resizebox{\textwidth}{!}{\input{img/pwm_to_lux}}
+    \psfrag{xx}[Bc]{PWM values (0--255)}
+    \psfrag{yy}[Bc]{Measured illuminance (\si{\lux})}
+    \includegraphics[width=.9\textwidth]{img/pwm_to_lux}
     \caption{}
     \label{fig:}
 \end{figure}
 
+%a =
+%   -0.6901
+%b =
+%   4.7782
