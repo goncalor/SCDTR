@@ -17,10 +17,53 @@ A graph of the acquired data can be seen in \autoref{fig:steady_state}. We concl
     \label{fig:steady_state}
 \end{figure}
 
+\subsubsection{Modeling the LDR}
+\label{subsubsec:LDR_model}
+
+Since the steady state plot in \autoref{fig:steady_state} reveals that the system is nonlinear it is useful to understand why. The main sources from nonlinearity should result from the LED, the LDR or a combination of both.
+
+% TODO put full datasheet in an annex?
+
+With that in mind the LDR datasheet was analysed. On it the graph in \autoref{fig:LDR_datasheet} can be found. This graph gives a range of values for the resistance of the LDR for each value of incident illuminance. To produce an equation that models the LDR resistance as a function of illuminance the resistance value used for the model is the mean of the maximum and minimum values given for each illuminance. The final result should be a function which produces a line that crosses the middle of the dark region in \autoref{fig:LDR_datasheet}. Note the axis of the figure are both in logarithmic scale. The considered points to obtain this linear function (in a log-log reference) were $(L_1, R_1) = (\SI{100}{\lux}; \SI{2.5}{\kilo\ohm})$ and $(L_2, R_2) = (\SI{1}{\lux}; \SI{60}{\kilo\ohm})$. The model will be an equation in the form
+\begin{equation} \label{eq:log-log_line}
+    \log_{10} R = a \log_{10} L + b.
+\end{equation}
+
+We can substitute $(L_1, R_1)$ and $(L_2, R_2)$ in \eqref{eq:log-log_line} to obtain the system of equations
+\begin{equation} \label{eq:log-log_line_system}
+    \begin{bmatrix}
+	\log_{10}R_1 \\ \log_{10}R_2
+    \end{bmatrix}
+    =
+    \begin{bmatrix}
+	\log_{10}L_1  &  1 \\
+	\log_{10}L_2  &  1
+    \end{bmatrix}
+    \begin{bmatrix}
+	a \\ b
+    \end{bmatrix}.
+\end{equation}
+By solving the system the values $a \approx -0.6901$ and $b \approx 4.7782$ are obtained for this case.
+
+With the values for $a$ and $b$ and \eqref{eq:log-log_line} it is possible to plot the graph in \autoref{fig:LDR_model} which models the LDR characteristic, as desired.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.4\textwidth]{img/LDR_datasheet}
+    \caption{LDR resistence as a function of illuminance \\ according to the GL5528's datasheet}
+    \label{fig:LDR_datasheet}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \resizebox{\textwidth}{!}{\input{img/LDR_model}}
+    \caption{Resistance of the LDR as function of the incident illuminance}
+    \label{fig:LDR_model}
+\end{figure}
+
+
 \subsubsection{Step Response}
 \label{sub:StepResponse}
-
-
 
 \begin{figure}[h]
     \centering
@@ -44,23 +87,6 @@ A graph of the acquired data can be seen in \autoref{fig:steady_state}. We concl
     \includegraphics[width=.85\textwidth]{img/incstep_response}
     \caption{}
     \label{fig:incstep_response}
-\end{figure}
-
-\subsubsection{Modeling the LDR}
-\label{subsubsec:LDR_model}
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=.4\textwidth]{img/LDR_datasheet}
-    \caption{}
-    \label{fig:LDR_datasheet}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-    \resizebox{\textwidth}{!}{\input{img/LDR_model}}
-    \caption{Resistance of the LRD as function of the incident illuminance}
-    \label{fig:LDR_model}
 \end{figure}
 
 \subsubsection{LDR to Lux}
