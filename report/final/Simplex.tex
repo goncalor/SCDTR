@@ -4,27 +4,21 @@
 The Simplex algorithms solves Linear programms (LP's), it finds a optimal solution if it exists.
 We implemented the simplex following the pseudo-code on the book \emph{Introduction to Algorithms} \cite{Cormen}.
 This implementation solves Linear programms of the form:
-
 $$ \text{max }c*x $$
 $$    A*x \geq b, $$
 $$    x \geq 0 $$.
-
 We can describe the problem as a Linear programm of this form. First we define \emph{O} as the array with the external illuminance at each \emph{desk}, \emph{l} as the array with the desired illuminance for each \emph{desk} and \emph{E} as the  3 by 3 matrix of influence between each light.
 The problem we want to solve is to find values for \emph{d}, the PWM values normalized from 0 to 1,  minimizing the energy spent and that make the illuminance be equal or greater than \emph{l}.
 This can be formalized as:
-
 $$ \text{min }\sum{d} $$
 $$    E*d \geq l-O, $$
 $$    d \geq 0, $$
 $$    d \leq 1 $$.
-
 If we define  $c = [-1, -1, -1]$ we get:
-
 $$ \text{max }c*d $$
 $$    E*d \geq l-O, $$
 $$    d \geq 0, $$
 $$    d \leq 1 $$.
-
 And to remove the last condition we concatenate an identity matrix to the matrix E and an array of 1's to the \emph{l-O} array and get:
 
 ??????????????
@@ -33,11 +27,9 @@ And to remove the last condition we concatenate an identity matrix to the matrix
 I don't know how to write matrices in LaTex and I don't have Internet.
 
 ??????????
-
 $$ \text{max }c*d $$
 $$    E*d \geq l-O, $$
 $$    d \geq 0 $$
-
 With this form we can apply our Simplex algorithm directly.
 
 The Simplex has three possible outcomes.
