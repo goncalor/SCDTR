@@ -8,7 +8,7 @@ The steady state response of the system was determined by setting the duty cycle
 
 % explain R_2's value above?
 
-A graph of the acquired data can be seen in \autoref{fig:steady_state}. We conclude that the resistance of the LDR does not vary linearly with the duty cycle on the LED.
+A graph of the acquired data can be seen in \autoref{fig:steady_state}. We conclude that the resistance of the LDR does not vary linearly with the duty cycle on the LED. Nonetheless it is possible to obtain a linear function relating the input an output of the system, as described in \ref{subsubsec:LDR_model}.
 
 \begin{figure}[h]
     \centering
@@ -26,8 +26,15 @@ Since the steady state plot in \autoref{fig:steady_state} reveals that the syste
 
 With that in mind the LDR datasheet was analysed. On it the graph in \autoref{fig:LDR_datasheet} can be found. This graph gives a range of values for the resistance of the LDR for each value of incident illuminance. To produce an equation that models the LDR resistance as a function of illuminance the resistance value used for the model is the mean of the maximum and minimum values given for each illuminance. The final result should be a function which produces a line that crosses the middle of the dark region in \autoref{fig:LDR_datasheet}. Note the axis of the figure are both in logarithmic scale. The considered points to obtain this linear function (in a log-log reference) were $(L_1, R_1) = (\SI{100}{\lux}; \SI{2.5}{\kilo\ohm})$ and $(L_2, R_2) = (\SI{1}{\lux}; \SI{60}{\kilo\ohm})$. The model will be an equation in the form
 \begin{equation} \label{eq:log-log_line}
-    \log_{10} R = a \log_{10} L + b.
+    \log_{10} R_{LDR} = a \log_{10} L + b.
 \end{equation}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=.4\textwidth]{img/LDR_datasheet}
+    \caption{LDR resistance as a function of illuminance \\ according to the GL5528's datasheet}
+    \label{fig:LDR_datasheet}
+\end{figure}
 
 We can substitute $(L_1, R_1)$ and $(L_2, R_2)$ in \eqref{eq:log-log_line} to obtain the system of equations
 \begin{equation} \label{eq:log-log_line_system}
@@ -45,20 +52,28 @@ We can substitute $(L_1, R_1)$ and $(L_2, R_2)$ in \eqref{eq:log-log_line} to ob
 \end{equation}
 By solving the system the values $a \approx -0.6901$ and $b \approx 4.7782$ are obtained for this case.
 
-With the values for $a$ and $b$ and \eqref{eq:log-log_line} it is possible to plot the graph in \autoref{fig:LDR_model} which models the LDR characteristic, as desired.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=.4\textwidth]{img/LDR_datasheet}
-    \caption{LDR resistence as a function of illuminance \\ according to the GL5528's datasheet}
-    \label{fig:LDR_datasheet}
-\end{figure}
+With the values for $a$ and $b$ and \eqref{eq:log-log_line} it is possible to plot the graph in \autoref{fig:LDR_model} which models the LDR characteristic, as desired. Using \eqref{eq:log-log_line} it is possible to obtain the incident illuminance ($L$) from the resistance of the LDR $R_{LDR}$
+\begin{equation} \label{eq:Rldr_to_lux}
+    L = 10^{\frac{a}{b}} R_{LDR}^{-a} .
+\end{equation}
+And since in a steady state
+\begin{equation} \label{eq:VA0_to_Rldr}
+    R_{LDR} = \frac{V_S R_3}{V_{\texttt{A0}}} - R_3 ,
+\end{equation}
+we can substitute \eqref{eq:VA0_to_Rldr} in \eqref{eq:Rldr_to_lux} and apply the new equation to the plot in \autoref{fig:steady_state} to produce the plot in \autoref{fig:pwm_to_lux} which relates the duty cycle of the LED to the illuminance measured by the LDR. We can conclude that the illuminance varies linearly with the duty cycle applied to the LED.
 
 \begin{figure}[h]
     \centering
     \resizebox{\textwidth}{!}{\input{img/LDR_model}}
-    \caption{Resistance of the LDR as function of the incident illuminance}
+    \caption{Model for the resistance of the LDR as function of the incident illuminance}
     \label{fig:LDR_model}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \resizebox{\textwidth}{!}{\input{img/pwm_to_lux}}
+    \caption{Illuminance detected by the LDR in function of the duty cycle of the LED}
+    \label{fig:pwm_to_lux}
 \end{figure}
 
 
@@ -87,15 +102,5 @@ With the values for $a$ and $b$ and \eqref{eq:log-log_line} it is possible to pl
     \includegraphics[width=.85\textwidth]{img/incstep_response}
     \caption{}
     \label{fig:incstep_response}
-\end{figure}
-
-\subsubsection{LDR to Lux}
-\label{sub:LDRtoLux}
-
-\begin{figure}[h]
-    \centering
-    \resizebox{\textwidth}{!}{\input{img/pwm_to_lux}}
-    \caption{Illuminance detected by the LDR in function of the duty cycle of the LED}
-    \label{fig:pwm_to_lux}
 \end{figure}
 
