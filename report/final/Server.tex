@@ -1,2 +1,18 @@
 \subsection{Server}
 \label{sec:Server}
+
+The Server in this system has 3 main goals:
+\begin{itemize}
+    \item Allow a client to send commands and change the state of the lights.
+    \item Allow a client to inspect the system, sending them statistics about energy consumption and confort of the user.
+    \item Run the Simplex implementation and send the results as commands to each arduino.
+\end{itemize}
+
+The Server is an interface between clients and the arduinos controlling each light, with the clients it communicates via TCP/IP and with the arduinos it uses a serial connection using the I$^2$C/TWI protocol.
+
+
+
+
+
+
+The Server was implemented in C++ using the C++ Standard Library and the \emph{Boost ASIO} Library \cite{BoostSite}
