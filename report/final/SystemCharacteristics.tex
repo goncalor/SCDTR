@@ -54,7 +54,7 @@ By solving the system the values $a \approx -0.6901$ and $b \approx 4.7782$ are 
 
 With the values for $a$ and $b$ and \eqref{eq:log-log_line} it is possible to plot the graph in \autoref{fig:LDR_model} which models the LDR characteristic, as desired. Using \eqref{eq:log-log_line} it is possible to obtain the incident illuminance ($L$) from the resistance of the LDR $R_{LDR}$
 \begin{equation} \label{eq:Rldr_to_lux}
-    L = 10^{\frac{a}{b}} R_{LDR}^{-a} .
+    L = 10^{-\frac{b}{a}} R_{LDR}^{\frac{1}{a}} .
 \end{equation}
 And since in a steady state
 \begin{equation} \label{eq:VA0_to_Rldr}
@@ -89,7 +89,7 @@ Assuming that the system can be approximated to a first order system of the form
 \begin{figure}[h]
     \centering
     \includegraphics[width=.85\textwidth]{img/step_response}
-    \caption{Step response applied to the system at \SI{20}{\milli\second}}
+    \caption{Response of the system to a step with 50\% duty cycle applied at time \SI{20}{\milli\second}}
     \label{fig:step_response}
 \end{figure}
 
