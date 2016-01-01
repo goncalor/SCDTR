@@ -84,24 +84,41 @@ To plot the step response of the system an Arduino program was written that to p
 
 An inflection point can be perceived early in the step response. From this follows that the system's order must be at least second degree. The detector in \autoref{fig:setup_LDR_circuit} includes a capacitor, which must introduce a pole. Therefore an experiment was made which consisted simply in removing the capacitor and acquiring the step response again. The result is shown in \autoref{fig:step_response_no_capacitor} where it can be seen that the aforementioned inflection does not exist. It is also noticable that introducing the capacitor does filter high frequency noise, as expected. Therefore introducing the capacitor improves the readings but makes the system order increase. Nonethess the capacitor value can be changed allowing to control the pole position and cutoff frequency.
 
-Assuming that the system can be approximated to a first order system of the form $G(s) = K_0/(1+s\tau)$ the system can be modelled by finding the static gain $K_0$ and the time constant $\tau$. $K_0$ is calculated as the ratio of the output and the input under steady state; the time constant is the time the system takes to reach $1-e^{-1} \approx 63 \%$ of its final value. Therefore for \autoref{fig:step_response} the static gain is $3.08/2.5 = 1.232$ and the time constant is approximately $\SI{42}{\milli\second}.
+Assuming that the system can be approximated to a first order system of the form $G(s) = K_0/(1+s\tau)$ the system can be modelled by finding the static gain $K_0$ and the time constant $\tau$. $K_0$ is calculated as the ratio of the output and the input under steady state; the time constant is the time the system takes to reach $1-e^{-1} \approx 63 \%$ of its final value. Therefore for \autoref{fig:step_response} the static gain is $3.08/2.5 = 1.232$ and the time constant is approximately $\SI{42}{\milli\second}$.
+
+If the system is linearised by using the transformation presented in \ref{subsubsec:LDR_model} \autoref{fig:step_response_linearised} is obtained. In this case the static gain is $26.4/2.5 = 10.6$ and the time constant is approximately $\SI{66}{\milli\second}$.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=.85\textwidth]{img/step_response}
+    \begin{subfigure}[h]{0.49\textwidth}
+	\centering
+	\includegraphics[width=.95\textwidth]{img/step_response}
+	\caption{With capacitor, not linearised}
+	\label{fig:step_response}
+    \end{subfigure}
+    \begin{subfigure}[h]{0.49\textwidth}
+	\centering
+	\includegraphics[width=.95\textwidth]{img/step_response_linearised}
+	\caption{With capacitor, linear}
+	\label{fig:step_response_linearised}
+    \end{subfigure}
+
+    \begin{subfigure}[h]{0.49\textwidth}
+	\centering
+	\includegraphics[width=.95\textwidth]{img/step_response_no_capacitor}
+	\caption{No capacitor, not linearised}
+	\label{fig:step_response_no_capacitor}
+    \end{subfigure}
     \caption{Response of the system to a step with 50\% duty cycle applied at time \SI{20}{\milli\second}}
-    \label{fig:step_response}
-\end{figure}
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=.85\textwidth]{img/step_response_no_capacitor}
-    \caption{}
-    \label{fig:step_response_no_capacitor}
+    \label{fig:}
 \end{figure}
 
 \subsubsection{Incremental Response}
 \label{sub:IncrementalResponse}
+
+An incremental step response was also produced (\autoref{fig:incstep_response}). For this incremental steps of 10 PWM units (3.92 \% duty cycle) were used every \SI{400}{\milli\second}. A sample was acquired approximately every \SI{1.35}{\milli\second}.
+
+The acquired data is noisy and
 
 \begin{figure}[h]
     \centering

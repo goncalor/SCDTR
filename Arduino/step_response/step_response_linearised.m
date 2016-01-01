@@ -12,7 +12,7 @@ data(:,2) = (10^(-b/a)) .* ((5.*r./data(:,2).-r).^(1/a));
 %plot(data(:,1), data(:,2), data(:,1), data(:,3))
 plot(data(:,1), data(:,2))
 xlabel('Time (ms)');
-ylabel('Voltage at pin A0 (V)');
+ylabel('Measured illuminance (lx)');
 axis([0, data(end,1)]);
 grid on
 print('step_response_linearised', '-depsc2', '-mono', '-tight');
