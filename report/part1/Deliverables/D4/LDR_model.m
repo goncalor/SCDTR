@@ -17,10 +17,11 @@ lux = logspace(pt1_log(1), pt2_log(1));
 
 r = 10.^(a*log10(lux) + b);
 
+graphics_toolkit("gnuplot");
 #figure('visible', 'off');
 loglog(lux, r)
 grid on
 #title('LDR Characteristic');
-xlabel('Illuminance (\si{\lux})');
-ylabel('Resistance (\si{\ohm})');
-print('LDR_model', '-depslatex', '-mono', '-tight');
+xlabel('Illuminance (lx)');
+ylabel('Resistance (\Omega)');
+print('LDR_model', '-depsc2', '-mono', '-tight', '-FHelvetica');
