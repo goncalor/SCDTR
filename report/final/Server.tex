@@ -23,3 +23,5 @@ As the assignment didn't specify how to change between these modes we implemente
 To indicate last minute or stream mode a character \emph{'G'} was added before each command and then if the letters were capital it would mean stream and last minute otherwise.
 
 At each received command over TCP/IP the server would send exaclty the same command to the Arduino it was connected. That Arduino would then be responsible for retrieving the information from the system. If it didn't have the information then it would communicate with it's neighbours via  I\textsuperscript{2}C/TWI to collect it.
+
+When there is a change in the occupancy state of the server runs the Simplex algorithm with the new configuration. It then takes the results and sends them to the arduinos. They turn off the controller take the results and apply them directly on the LEDs and only after that they change the references and restart the controllers.
