@@ -20,15 +20,16 @@ $$    E*d \geq l-O, $$
 $$    d \geq 0, $$
 $$    d \leq 1 $$.
 And to remove the last condition we concatenate an identity matrix to the matrix E and an array of 1's to the \emph{l-O} array and get:
-
-??????????????
-%TODO: Write the final problem form
-
-I don't know how to write matrices in LaTex and I don't have Internet.
-
-??????????
 $$ \text{max }c*d $$
-$$    E*d \geq l-O, $$
+$$
+\begin{bmatrix}
+    E \\ I_3%1, 0, 0 \\ 0, 1, 0 \\ 0, 0, 1
+\end{bmatrix}
+*d \geq
+\begin{bmatrix}
+    l-O \\ 1 \\ 1 \\ 1
+\end{bmatrix}
+$$
 $$    d \geq 0 $$
 With this form we can apply our Simplex algorithm directly.
 
