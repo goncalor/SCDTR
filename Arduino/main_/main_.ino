@@ -349,7 +349,7 @@ void config_mode(char *buf) {
             else if ('a'<=tmp && tmp<='d')
                 tmp= tmp-'a';
             else {
-                Serial.println('E inv outpin');
+                Serial.println("E inv outpin");
                 return;
             }
             analogOutPin= tmp;
@@ -819,7 +819,10 @@ void main_switch() {
         case 'e':
             // send stored energy
             if(numwords != 1)
+            {
                 Serial.println("inv");
+                break;
+            }
             dev_id = atoi(lst[0]);
 
             if(dev_id == wire_my_address)
@@ -843,7 +846,10 @@ void main_switch() {
         case 'n':
             // send stored confort
             if(numwords != 1)
+            {
                 Serial.println("inv");
+                break;
+            }
             dev_id = atoi(lst[0]);
 
             if(dev_id == wire_my_address)
@@ -870,7 +876,10 @@ void main_switch() {
         case 'f':
             // send stored flicker
             if(numwords != 1)
+            {
                 Serial.println("inv");
+                break;
+            }
             dev_id = atoi(lst[0]);
 
             if(dev_id == wire_my_address)
@@ -920,7 +929,7 @@ void main_switch() {
             break;
 
         default:
-            Serial.print("inv");
+            Serial.println("inv");
     }
 }
 
