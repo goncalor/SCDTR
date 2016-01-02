@@ -208,7 +208,7 @@ void wire_process_incoming(char *str)
         case 'w':
             // reply to master with energy in the last minute
             // 'w'
-            circbuf_print_i2c(&energy_cb, 1.);
+            stats_print_i2c(&energy_cb, 1., 0);
             break;
 
         case 'x':
@@ -217,7 +217,7 @@ void wire_process_incoming(char *str)
             disable_controller();
             ul = nr_samples_collected;
             enable_controller();
-            circbuf_print_i2c(&confort_cb, 1./ul);
+            stats_print_i2c(&confort_cb, 1., ul);
             break;
 
         case 'y':
@@ -226,7 +226,7 @@ void wire_process_incoming(char *str)
             disable_controller();
             ul = nr_samples_collected;
             enable_controller();
-            circbuf_print_i2c(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
+            stats_print_i2c(&flicker_cb, 1./((SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)), ul);
             break;
 
             #ifdef SNIFF

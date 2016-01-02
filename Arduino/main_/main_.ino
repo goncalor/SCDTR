@@ -40,7 +40,6 @@
 struct circbuf_t {
     volatile float *const buf;
     volatile unsigned head;
-    volatile unsigned tail;
     const unsigned maxlen;
 };
 
@@ -67,15 +66,23 @@ void circbuf_clear(volatile struct circbuf_t *cb)
     enable_save_stats = true;
 }
 
-void circbuf_print(volatile struct circbuf_t *cb, float scaling)
+/* Prints the stats buffer 'cb' to serial. The buffer is multiplied by 'scaling'. 'nr_samps_col' should be the current number of samples collected or 0 if that number does not affect scaling for the stats to be printed. */
+void stats_print(volatile struct circbuf_t *cb, float scaling, long nr_samps_col)
 {
     unsigned i = cb->head;
+    nr_samps_col -= nr_samps_col % STATS_PERIOD;  // correct nr samples to a multiple of STATS_PERIOD
+    long nr_samps = nr_samps_col - STATS_PERIOD * (BUF_STATS_LEN - 1);
 
     enable_save_stats = false;
     do
     {
-        Serial.println(cb->buf[i]*scaling);
+        if(nr_samps <= 0)
+            Serial.println(cb->buf[i]*scaling);
+        else
+            Serial.println(cb->buf[i]*scaling/nr_samps);
+
         i++;
+        nr_samps += STATS_PERIOD;
         if(i == cb->maxlen)
             i = 0;
     }
@@ -85,20 +92,26 @@ void circbuf_print(volatile struct circbuf_t *cb, float scaling)
 
 uint8_t master_id = MASTER_ID;
 
-void circbuf_print_i2c(volatile struct circbuf_t *cb, float scaling)
+void stats_print_i2c(volatile struct circbuf_t *cb, float scaling, long nr_samps_col)
 {
     unsigned i = cb->head;
+    nr_samps_col -= nr_samps_col % STATS_PERIOD;  // correct nr samples to a multiple of STATS_PERIOD
+    long nr_samps = nr_samps_col - STATS_PERIOD * (BUF_STATS_LEN - 1);
     char tmp[12];
 
     enable_save_stats = false;
     do
     {
         Wire.beginTransmission(master_id);
-        ftoa(cb->buf[i]*scaling, tmp);
+        if(nr_samps <= 0)
+            ftoa(cb->buf[i]*scaling, tmp);
+        else
+            ftoa(cb->buf[i]*scaling/nr_samps, tmp);
         Wire.write(tmp);
         Wire.endTransmission();
         delay(10);
         i++;
+        nr_samps += STATS_PERIOD;
         if(i == cb->maxlen)
             i = 0;
     }
@@ -257,9 +270,9 @@ volatile unsigned stats_not_saved = 0;
 
 volatile float aux;
 
-volatile circbuf_t energy_cb = {.buf=(float*)energy_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
-volatile circbuf_t confort_cb = {.buf=(float*)confort_error_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
-volatile circbuf_t flicker_cb = {.buf=(float*)flicker_accum_buf, .head=0, .tail=0, .maxlen=BUF_STATS_LEN};
+volatile circbuf_t energy_cb = {.buf=(float*)energy_buf, .head=0, .maxlen=BUF_STATS_LEN};
+volatile circbuf_t confort_cb = {.buf=(float*)confort_error_accum_buf, .head=0, .maxlen=BUF_STATS_LEN};
+volatile circbuf_t flicker_cb = {.buf=(float*)flicker_accum_buf, .head=0, .maxlen=BUF_STATS_LEN};
 
 
 ISR(TIMER1_OVF_vect) {
@@ -827,7 +840,7 @@ void main_switch() {
 
             if(dev_id == wire_my_address)
             {
-                circbuf_print(&energy_cb, 1.);
+                stats_print(&energy_cb, 1., 0);
                 break;
             }
             Wire.beginTransmission(dev_id);
@@ -857,7 +870,7 @@ void main_switch() {
                 disable_controller();
                 ul = nr_samples_collected;
                 enable_controller();
-                circbuf_print(&confort_cb, 1./ul);
+                stats_print(&confort_cb, 1., ul);
                 break;
             }
             Wire.beginTransmission(dev_id);
@@ -887,7 +900,7 @@ void main_switch() {
                 disable_controller();
                 ul = nr_samples_collected;
                 enable_controller();
-                circbuf_print(&flicker_cb, 1./(flicker_accum / (nr_samples_collected * (SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.))));
+                stats_print(&flicker_cb, 1./((SAMPLE_TIME/1000000.) * (SAMPLE_TIME/1000000.)), ul);
                 break;
             }
             Wire.beginTransmission(dev_id);
@@ -1149,11 +1162,8 @@ void state_reset()
     set_reference_lux(ILLUM_FREE);
     occupied = false;
     energy_cb.head = 0;
-    energy_cb.tail = 0;
     confort_cb.head = 0;
-    confort_cb.tail = 0;
     flicker_cb.head = 0;
-    flicker_cb.tail = 0;
     lux_measured = 0;
     lux_measured_t1 = 0;
     lux_measured_t2 = 0;
