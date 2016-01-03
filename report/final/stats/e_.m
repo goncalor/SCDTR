@@ -8,5 +8,5 @@ xlabel('Time (s)');
 ylabel('Energy (J)');
 axis([0, 6-sample_period]);
 grid on
-legend ({'Dev 1', 'Dev 2', 'Dev 3'}, 'location', 'east');
+legend ({'Lum 1', 'Lum 2', 'Lum 3'}, 'location', 'east');
 print('e_', '-depsc2', '-tight');
