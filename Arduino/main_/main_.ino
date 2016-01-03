@@ -373,7 +373,7 @@ void config_mode(char *buf) {
 }
 
 
-void main_switch() {
+void serial_process_incoming() {
     float x;
     short dev_id, numwords, aux;
     char *lst[BUF_SPLIT_LEN];
@@ -1050,7 +1050,7 @@ void loop() {
         Serial.println("serial data available");
         Serial.println(buf);
         #endif
-        main_switch();
+        serial_process_incoming();
     }
 
     if(print_flag)
