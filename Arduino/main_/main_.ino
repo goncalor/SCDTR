@@ -13,7 +13,7 @@
 #define BUF_LEN_2      10
 #define BUF_WIRE_LEN   40
 #define BUF_SPLIT_LEN  20
-#define BUF_STATS_LEN  20   //TODO change to 60? be careful with low memory
+#define BUF_STATS_LEN  40   //TODO change to 60? be careful with low memory
 #define BAUDRATE 19200
 #define SAMPLE_TIME 5000    // microseconds
 #define GAIN_K 10           // proportional gain
@@ -29,9 +29,9 @@
 #define EEPROM_ID_ADDRESS 0   // the address for this Arduino's ID
 #define NUM_SAMPLES 3   // number of samples used for average of analogRead
 #define MASTER_ID 1  // the default ID of the master
-#define STATS_PERIOD ((int)((60./BUF_STATS_LEN)/(SAMPLE_TIME/1000000.)))   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD.
+#define STATS_PERIOD ((int)((6./BUF_STATS_LEN)/(SAMPLE_TIME/1000000.)))   // stats will be buffered every SAMPLE_TIME * STATS_PERIOD.
 #define ILLUM_FREE      15.0   // minimum illuminance for non-occupied desk
-#define ILLUM_OCCUPIED  19.0   // minimum illuminance for occupied desk
+#define ILLUM_OCCUPIED  30.0   // minimum illuminance for occupied desk
 
 /* Notes:
  *   - in the Uno floats and doubles are the same

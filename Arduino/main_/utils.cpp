@@ -63,7 +63,13 @@ char *ftoa(float val, char *s)
     itoa(integer, s, 10);
     aux = strlen(s);
     s[aux] = '.';
-    itoa(fractional*100, s+aux+1, 10);
+//    itoa((int)fractional*100, s+aux+1, 10);
+
+    integer = fractional*100;
+    s[aux+2] = integer % 10 + '0';
+    integer /= 10;
+    s[aux+1] = integer + '0';
+    s[aux+3] = 0;
 
     return s;
 }
