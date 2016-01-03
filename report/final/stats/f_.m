@@ -1,4 +1,4 @@
-data = dlmread('f_closed.csv', ',');
+data = dlmread('f_.csv', ',');
 data = data(2:end,:);    % get rid of first line
 
 sample_period = 6/40;
@@ -11,4 +11,4 @@ ylabel('Confort Variance (lx/s^2)');
 axis([0, 6-sample_period]);
 grid on
 legend ({'Dev 1', 'Dev 2', 'Dev 3'}, 'location', 'east');
-print('f_closed', '-depsc2', '-tight', '-FHelvetica');
+print('f_', '-depsc2', '-tight', '-FHelvetica');
