@@ -918,6 +918,7 @@ void serial_process_incoming() {
 
         case 'h':
             // use parameters given by simplex
+            // 'h pwm1 pwm2 pwm3'
             if(numwords != 3)
             {
                 Serial.println("inv");

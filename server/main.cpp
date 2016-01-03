@@ -26,7 +26,7 @@ int main(int argc, char* argv[]){
         }
         boost::asio::io_service io_service;
         Serial_connection sc(io_service, "/dev/ttyACM0", 19200);
-        std::cout << "Connectied to serial port" << std::endl;
+        std::cout << "Connected to serial port" << std::endl;
         //sc.calibrate();
         //sc.send_reset();
         Tcp_server s(io_service, std::atoi(argv[1]), sc);
