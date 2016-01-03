@@ -2,19 +2,19 @@
 
 To analyze the resulting system 3 metrics were implemented (as specified on the assignment):
 \begin{itemize}
-    \item Energy: the energy consumed at each desk assuming 1W power.
+    \item Energy: the energy consumed at each desk assuming each LED has a nominal power of 1W
 %$$ E = \sum_{i=2}^{N} d_{i-1}(t_{i-1}-t_i) $$
 
-    \item Confort error: the average error between the reference illuminance and the measured
-illuminance for the periods when the measured illuminance is below the reference.
+    \item Comfort error: the average error between the reference illuminance and the measured
+illuminance for the periods when the measured illuminance is below the reference
 
-    \item Confort variance: the average variation of the illuminance during periods of constant occupation computed by and approximation to the second derivative of the illuminance.
+    \item Comfort variance: the average variation of the illuminance during periods of constant occupation computed by and approximation to the second derivative of the illuminance.
 \end{itemize}
 
-We used these metrics to evaluate system performance on our experiments. First to test the Local Controller operation with multiple arduinos working simultaneously we ran two experiments. The results of these experiments are presented and discussed on section \ref{results}.
+We used these metrics to evaluate the system's performance on our experiments. First to test the Local Controller operation with multiple Arduinos working simultaneously we ran two experiments. The results of these experiments are presented and discussed on \autoref{results}.
 
-With the box closed (no external lighting) and with all desks set as unoccupied (reference of 15 lux) we analyzed the 3 metrics on the first 5 seconds after system startup.
+With the box closed (no external lighting) and with all desks set as unoccupied (reference of \SI{15}{\lux}) we analyzed the three metrics on the first 6 seconds after system startup.
 
-With the box slightly open (some external lighting) and with the 1st and the 3rd desks set as occupied (reference of 30 lux) we analyzed the metrics in the same way.
+With the box slightly open (some external lighting) and with the first and the third desks set as occupied (reference of \SI{30}{\lux}) we analyzed the metrics in the same way.
 
-The values for the occupied and unoccupied reference were chosen taking into consideration Figure \ref{fig:pwm_to_lux}.
+The values for the occupied and unoccupied reference were chosen taking into consideration \autoref{fig:pwm_to_lux}.
