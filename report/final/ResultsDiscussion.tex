@@ -63,8 +63,61 @@ The first figure corresponds to the system without external light and with all t
 %e o 3 para além de lhe faltar um bocado de papel por baixo é o unico que o LDR nao recebe luz directa do lado direito
 %E dizer que a iluminação está lá (até está demais) o sensor é que não a apanha
 
-On Figure~\ref{fig:open_o101} we see some similarities on the behaviour of the metrics. The energy for luminaires 1 and 3 rises linearly however energy spent by luminaire 2 is approximillarly 0. This means that the second LED is off and that it isn't necessary to reach the desired illuminance. The main difference in this result is that the confort error for the luminaire 3 doesn't converge to 0, but to 6. This means that the even with the luminaire at it's maximum intensity the sensor can't read the 30 lux value, only 24. This might seem weird, but there are many reasons to explain this. First the steady state plot on Figure~\ref{fig:steady_state} was taken for luminaire 1 and not 3 that might have different characteristics such as the reflection of the light. Also the 3rd LDR is the only one that doesn't have a LED to it's right. The most important factor is the fact that the box is slightly open, this causes the LED and the LDR to not be directly in their reflection path. 
+On Figure~\ref{fig:open_o101} we see some similarities on the behaviour of the metrics. The energy for luminaires 1 and 3 rises linearly however energy spent by luminaire 2 is approximillarly 0. This means that the second LED is off and that it isn't necessary to reach the desired illuminance. The main difference in this result is that the confort error for the luminaire 3 doesn't converge to 0, but to 6. This means that the even with the luminaire at it's maximum intensity the sensor can't read the 30 lux value, only 24. This might seem weird, but there are many reasons to explain this. First the steady state plot on Figure~\ref{fig:steady_state} was taken for luminaire 1 and not 3 that might have different characteristics such as the reflection of the light. Also the 3rd LDR is the only one that doesn't have a LED to it's right. The most important factor is the fact that the box is slightly open, this causes the LED and the LDR to not be directly in their reflection path.
 
+With the simplex already in use we ran another experiment with the results displayed on Figure~\ref{fig:res_simplex}. This experiement was run with the box closed and with desk 1 and 3 set as occupied.
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=.95\textwidth]{img/e_}
+    \caption{Energy over time of the 3 luminaires.}
+    \label{fig:e_}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=.95\textwidth]{img/f_}
+    \caption{Comfort variance over time of the 3 luminaires.}
+    \label{fig:f_}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=.95\textwidth]{img/n_}
+    \caption{Comfort error over time of the 3 luminaires.}
+    \label{fig:n_}
+    \end{subfigure}
+    \caption{Metrics after system startup with the box close and desks 1 and 3 as occupied with the Simplex algorithm initializing the LED's intensities.}
+    \label{fig:res_simplex}
+\end{figure}
+
+With the same system configuration but without the Simplex we obtained \ref{fig:closed_o101}
+
+\begin{figure}[ht]
+    \centering
+    \begin{subfigure}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=.95\textwidth]{img/e_closed_o101}
+    \caption{Energy over time of the 3 luminaires.}
+    \label{fig:e_closed_o101}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=.95\textwidth]{img/f_closed_o101}
+    \caption{Comfort variance over time of the 3 luminaires.}
+    \label{fig:f_closed_o101}
+    \end{subfigure}
+    \begin{subfigure}[t]{0.32\textwidth}
+    \centering
+    \includegraphics[width=.95\textwidth]{img/n_closed_o101}
+    \caption{Comfort error over time of the 3 luminaires.}
+    \label{fig:n_closed_o101}
+    \end{subfigure}
+    \caption{Metrics after system startup with the box closed and desks 1 and 3 as occupied. }
+    \label{fig:closed_o101}
+\end{figure}
+
+The results are clearly worse than the ones in both
 
 %\subsection{Energy}
 %\subsection{Comfort Error}
