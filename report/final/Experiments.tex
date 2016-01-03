@@ -1,3 +1,14 @@
 \section{Experiments}
 
-Experiments
+To analyze the resulting system 3 metrics were implemented (as specified on the assignment):
+\begin{itemize}
+    \item Energy: the energy consumed at each desk assuming 1W power.
+%$$ E = \sum_{i=2}^{N} d_{i-1}(t_{i-1}-t_i) $$
+
+    \item Confort error: the average error between the reference illuminance and the measured
+illuminance for the periods when the measured illuminance is below the reference.
+
+    \item Confort variance: the average variation of the illuminance during periods of constant occupation computed by and approximation to the second derivative of the illuminance.
+\end{itemize}
+
+We used these metrics to evaluate system performance on our experiments
