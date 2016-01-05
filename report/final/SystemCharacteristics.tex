@@ -13,7 +13,7 @@ A graph of the acquired data can be seen in \autoref{fig:steady_state}. We concl
 \begin{figure}[h]
     \centering
     \resizebox{\textwidth}{!}{\input{img/steady_state}}
-    \caption{Steady state voltage at pin \texttt{A0} as a function of the duty cycle of the LED}
+    \caption{Steady state voltage at pin \texttt{A0} as a function of the duty cycle of the LED.}
     \label{fig:steady_state}
 \end{figure}
 
@@ -34,16 +34,16 @@ With that in mind the LDR datasheet was analysed. On it the graph in \autoref{fi
     \begin{subfigure}[t]{0.39\textwidth}
 	\centering
 	\includegraphics[width=.95\textwidth]{img/LDR_datasheet}
-	\caption{LDR resistance as a function of illuminance according to the GL5528's datasheet}
+	\caption{LDR resistance as a function of illuminance according to the GL5528's datasheet.}
 	\label{fig:LDR_datasheet}
     \end{subfigure}
     \begin{subfigure}[t]{0.59\textwidth}
 	\centering
 	\includegraphics[width=.95\textwidth]{img/LDR_model}
-	\caption{Model for the resistance of the LDR as function of the incident illuminance}
+	\caption{Model for the resistance of the LDR as function of the incident illuminance.}
 	\label{fig:LDR_model}
     \end{subfigure}
-    \caption{LDR characteristic}
+    \caption{LDR characteristic.}
     %\label{fig:LDR_characteristic}
 \end{figure}
 
@@ -77,7 +77,7 @@ we can substitute \eqref{eq:VA0_to_Rldr} in \eqref{eq:Rldr_to_lux} and apply the
 \begin{figure}[h]
     \centering
     \resizebox{0.75\textwidth}{!}{\input{img/pwm_to_lux}}
-    \caption{Illuminance detected by the LDR in function of the duty cycle of the LED}
+    \caption{Illuminance detected by the LDR in function of the duty cycle of the LED.}
     \label{fig:pwm_to_lux}
 \end{figure}
 
@@ -98,23 +98,23 @@ If the system is linearised by using the transformation presented in \ref{subsub
     \begin{subfigure}[t]{0.49\textwidth}
 	\centering
 	\includegraphics[width=.95\textwidth]{img/step_response}
-	\caption{With capacitor, not linearised}
+	\caption{With capacitor, not linearised.}
 	\label{fig:step_response}
     \end{subfigure}
     \begin{subfigure}[t]{0.49\textwidth}
 	\centering
 	\includegraphics[width=.95\textwidth]{img/step_response_linearised}
-	\caption{With capacitor, linearised}
+	\caption{With capacitor, linearised.}
 	\label{fig:step_response_linearised}
     \end{subfigure}
 
     \begin{subfigure}[t]{0.49\textwidth}
 	\centering
 	\includegraphics[width=.95\textwidth]{img/step_response_no_capacitor}
-	\caption{No capacitor, not linearised}
+	\caption{No capacitor, not linearised.}
 	\label{fig:step_response_no_capacitor}
     \end{subfigure}
-    \caption{Response of the system to a step with 50\% duty cycle applied at time \SI{20}{\milli\second}}
+    \caption{Response of the system to a step with 50\% duty cycle applied at time \SI{20}{\milli\second}.}
     %\label{fig:}
 \end{figure}
 
@@ -129,13 +129,13 @@ The acquired data is noisy and therefore it is difficult to measure the time con
     \begin{subfigure}[t]{0.49\textwidth}
 	\centering
 	\includegraphics[width=.95\textwidth]{img/incstep_response}
-	\caption{Not linearised}
+	\caption{Not linearised.}
 	\label{fig:incstep_response}
     \end{subfigure}
     \begin{subfigure}[t]{0.49\textwidth}
 	\centering
 	\includegraphics[width=.95\textwidth]{img/incstep_response_linearised}
-	\caption{Linearised}
+	\caption{Linearised.}
 	\label{fig:incstep_response_linearised}
     \end{subfigure}
     \caption{Incremental step responses with increments of 3.92\% duty cycle. First step is at \SI{20}{\milli\second}.}

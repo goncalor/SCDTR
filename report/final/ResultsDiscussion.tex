@@ -7,7 +7,7 @@
 %     589 690 92
 %     302 571 664
 
-In this section the obtained results are shown and discussed. First we present the results for the analysis of the system through the metrics and with only the local controller. In Figure~\ref{fig:closed_o000} and Figure~\ref{fig:open_o101}  we show two cases of the evolution of the three metrics after the startup of the system.
+In this section the obtained results are shown and discussed. First we present the results for the analysis of the system through the metrics and with only the local controller. In \autoref{fig:closed_o000} and \autoref{fig:open_o101}  we show two cases of the evolution of the three metrics after the startup of the system.
 
 \begin{figure}[ht]
     \centering
@@ -29,7 +29,7 @@ In this section the obtained results are shown and discussed. First we present t
     \caption{Comfort error over time of the 3 luminaires.}
     \label{fig:n_closed_o000}
     \end{subfigure}
-    \caption{Metrics after system startup with the box closed and all desks as unoccupied. }
+    \caption{Metrics after system startup with the box closed and all desks as unoccupied.}
     \label{fig:closed_o000}
 \end{figure}
 
@@ -63,9 +63,9 @@ The first figure corresponds to the system without external light and with all t
 %e o 3 para além de lhe faltar um bocado de papel por baixo é o unico que o LDR nao recebe luz directa do lado direito
 %E dizer que a iluminação está lá (até está demais) o sensor é que não a apanha
 
-On Figure~\ref{fig:open_o101} we see some similarities on the behaviour of the metrics. The energy for luminaires 1 and 3 rises linearly however energy spent by luminaire 2 is approximately 0. This means that the second LED is off and that it isn't necessary to reach the desired illuminance. The main difference in this result is that the comfort error for the luminaire 3 doesn't converge to 0, but to 6. This means that the even with the luminaire at it's maximum intensity the sensor can't read the 30 lux value, only 24. This might seem weird, but there are many reasons to explain this. First the steady state plot on Figure~\ref{fig:steady_state} was taken for luminaire 1 and not 3 that might have different characteristics such as the reflection of the light. Also the 3rd LDR is the only one that doesn't have a LED to it's right. The most important factor is the fact that the box is slightly open, this causes the LED and the LDR to not be directly in their reflection path.
+On \autoref{fig:open_o101} we see some similarities on the behaviour of the metrics. The energy for luminaires 1 and 3 rises linearly however energy spent by luminaire 2 is approximately 0. This means that the second LED is off and that it isn't necessary to reach the desired illuminance. The main difference in this result is that the comfort error for the luminaire 3 doesn't converge to 0, but to 6. This means that the even with the luminaire at it's maximum intensity the sensor can't read the 30 lux value, only 24. This might seem weird, but there are many reasons to explain this. First the steady state plot on \autoref{fig:steady_state} was taken for luminaire 1 and not 3 that might have different characteristics such as the reflection of the light. Also the 3rd LDR is the only one that doesn't have a LED to it's right. The most important factor is the fact that the box is slightly open, this causes the LED and the LDR to not be directly in their reflection path.
 
-With the simplex already in use we ran another experiment with the results displayed on Figure~\ref{fig:res_simplex}. This experiment was run with the box closed and with desk 1 and 3 set as occupied.
+With the simplex already in use we ran another experiment with the results displayed on \autoref{fig:res_simplex}. This experiment was run with the box closed and with desk 1 and 3 set as occupied.
 
 \begin{figure}[ht]
     \centering
@@ -91,7 +91,7 @@ With the simplex already in use we ran another experiment with the results displ
     \label{fig:res_simplex}
 \end{figure}
 
-With the same system configuration but without the Simplex we obtained \ref{fig:closed_o101}.
+With the same system configuration but without the Simplex we obtained \autoref{fig:closed_o101}.
 
 \begin{figure}[ht]
     \centering
@@ -113,11 +113,11 @@ With the same system configuration but without the Simplex we obtained \ref{fig:
     \caption{Comfort error over time of the 3 luminaires.}
     \label{fig:n_closed_o101}
     \end{subfigure}
-    \caption{Metrics after system startup with the box closed and desks 1 and 3 as occupied. }
+    \caption{Metrics after system startup with the box closed and desks 1 and 3 as occupied.}
     \label{fig:closed_o101}
 \end{figure}
 
-The results in Figure~\ref{fig:res_simplex}  are clearly worse than the ones in Figure~\ref{fig:closed_o101}. This is explained by the fact that the system doesn't converge to the same solution proposed by the simplex, causing more effort on the local controllers to satisfy the conditions. This causes the system to be inefficient as the simplex's solution uses less energy. The final states of the duty cycle of the LED's are 52\%, 0\% and 100\% while the simplex sets them to 85\%, 0\% and 62\%.
+The results in \autoref{fig:res_simplex}  are clearly worse than the ones in \autoref{fig:closed_o101}. This is explained by the fact that the system doesn't converge to the same solution proposed by the simplex, causing more effort on the local controllers to satisfy the conditions. This causes the system to be inefficient as the simplex's solution uses less energy. The final states of the duty cycle of the LED's are 52\%, 0\% and 100\% while the simplex sets them to 85\%, 0\% and 62\%.
 
 %\subsection{Energy}
 %\subsection{Comfort Error}
