@@ -4,24 +4,24 @@
 The Server in this system has 3 main goals:
 \begin{itemize}
     \item Allow a client to send commands and change the state of the lights.
-    \item Allow a client to inspect the system, sending them statistics about energy consumption and confort of the user.
+    \item Allow a client to inspect the system, sending them statistics about energy consumption and comfort of the user.
     \item Run the Simplex implementation and send the results as commands to each arduino.
 \end{itemize}
 
-The Server is an interface between clients and the arduinos controlling each light, with the clients it communicates via TCP/IP and with the arduinos it uses a serial connection.
+The Server is an interface between clients and the Arduinos controlling each light, with the clients it communicates via TCP/IP and with the Arduinos it uses a serial connection.
 
 The Server was implemented in C++ using the C++ Standard Library and the \emph{Boost ASIO} Library \cite{BoostSite}.
 
 Although the Server was implemented using an asynchronous library it is only able to service the request of one client at a time.
 We considered it would only be connect to a lighting system at each moment.
-As the system is only able to service one request at a time we considered making the server asynchronous might lead to problems with overlaping communications.
-So the server is only able to answer to one client, if another client connects, it acepts the connection but only processes the request after the first client disconnects.
+As the system is only able to service one request at a time we considered making the server asynchronous might lead to problems with overlapping communications.
+So the server is only able to answer to one client, if another client connects, it accepts the connection but only processes the request after the first client disconnects.
 
 The client can request the information about a variable or statistic with three different modes: actual values (just the current reading), last minute values and stream (instead of a real stream the server outputs the next 100 readings).
 
 As the assignment didn't specify how to change between these modes we implemented our own commands. The actual value commands were implemented exactly as in the assignment.
 To indicate last minute or stream mode a character \emph{'G'} was added before each command and then if the letters were capital it would mean stream and last minute otherwise.
 
-At each received command over TCP/IP the server would send exaclty the same command to the Arduino it was connected. That Arduino would then be responsible for retrieving the information from the system. If it didn't have the information then it would communicate with it's neighbours via  I\textsuperscript{2}C/TWI to collect it.
+At each received command over TCP/IP the server would send exactly the same command to the Arduino it was connected. That Arduino would then be responsible for retrieving the information from the system. If it didn't have the information then it would communicate with it's neighbours via  I\textsuperscript{2}C/TWI to collect it.
 
-When there is a change in the occupancy state of the server runs the Simplex algorithm with the new configuration. It then takes the results and sends them to the arduinos. They turn off the controller take the results and apply them directly on the LEDs and only after that they change the references and restart the controllers.
+When there is a change in the occupancy state of the server runs the Simplex algorithm with the new configuration. It then takes the results and sends them to the Arduinos. They turn off the controller take the results and apply them directly on the LEDs and only after that they change the references and restart the controllers.

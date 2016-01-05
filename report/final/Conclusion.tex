@@ -7,7 +7,7 @@ One contribution of this work is the implementation of an interrupt based PID co
 
 The use of the results provided by the simplex failed to improve the system. Even when the results of the simplex algorithm are applied the system evolves naturally to the state it was before. That state satisfies the illumination requirements but is proved not to be optimal energy-wise.
 
-There is room to improve several aspects of the system. Namely the protocols used could be more robust; the ATMega ADC noise reduction mode could be used to acquire better samples; and the ADC readings could be made in the background by using the interrupts that exist for that purpose and a circular buffer instead of using \texttt{analogRead()} several times and make a mean of the values to filter some noise.
+There is room to improve several aspects of the system. Namely the protocols used could be more robust; the ATmega ADC noise reduction mode could be used to acquire better samples; and the ADC readings could be made in the background by using the interrupts that exist for that purpose and a circular buffer instead of using \texttt{analogRead()} several times and make a mean of the values to filter some noise.
 
 
 

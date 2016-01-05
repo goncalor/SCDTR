@@ -1,9 +1,9 @@
 \begin{abstract}
-We present our solution to the Distributed Lighting Problem. The goal is to control in a distributed manner a set of lights keeping them at a desired level while minimizing the energy spent and maximing confort to the people using the light. This solution is tested and implemented in a physical setup consisting of a wooden box with 3 Arduino Uno Boards controlling each one white LED and reading the values of illuminance with the help of an LDR.
+We present our solution to the Distributed Lighting Problem. The goal is to control in a distributed manner a set of lights keeping them at a desired level while minimizing the energy spent and maximizing comfort to the people using the light. This solution is tested and implemented in a physical setup consisting of a wooden box with 3 Arduino Uno Boards controlling each one white LED and reading the values of illuminance with the help of an LDR.
 
 In each Arduino a Local Controller keeps the illuminance at a desired level. To interact with the system a client connects to a TCP/IP server that transmits the commands to the Arduino and sends statistics about the system operation in the other direction.
 
-The problem is represented in a Linear programm form to allow us to apply the Simplex algorithm. The results of this are then fed to the local controllers to speed up their response.
+The problem is represented in a Linear program form to allow us to apply the Simplex algorithm. The results of this are then fed to the local controllers to speed up their response.
 
 With our experiments we show that our approach is reasonable and achieves good results, however the Simplex algorithm seems not to improve system performance.
 
