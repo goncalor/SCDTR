@@ -3,7 +3,7 @@ This project is a demonstration of the local illumination control for the first 
 
 This repo contains the files used to solve the labs and project of this course.
 
-The report for this project can be previewed and downloaded [here](https://github.com/goncalor/SCDTR/blob/6f6670277e22030c8ff0d3f1e432b8f51dcbfe14/report/final/report.pdf).
+The report for this project can be previewed and downloaded [here](report/final/report.pdf).
 
 The final code for the Server is on  *server/main.cpp*. It can be compiled with:
 
